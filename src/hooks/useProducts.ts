@@ -1,0 +1,1 @@
+// Hook personalizado para la lógica de productos
