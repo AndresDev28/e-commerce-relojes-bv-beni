@@ -1,4 +1,6 @@
+import { keyframes } from "storybook/internal/theming";
 import type { Config } from "tailwindcss";
+import { transform } from "typescript";
 
 const config: Config = {
   content: [
@@ -27,6 +29,15 @@ const config: Config = {
       boxShadow: {
         dark: "0px 20px 100px -10px rgba(66, 71, 91, 0.1)",
       },
+      keyframes: {
+        spin: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' }
+        }
+      },
+      animation: {
+        'spin': 'spin 1s linear infinite'
+      }
     },
   },
   plugins: [],

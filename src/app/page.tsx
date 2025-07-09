@@ -1,5 +1,7 @@
 //import Image from "next/image";
 import Button from "./components/ui/Button";
+import Input from "./components/ui/Input";
+import Spinner from "./components/ui/Spinner";
 
 export default function Home() {
   return (
@@ -10,6 +12,20 @@ export default function Home() {
         <Button>Comprar Ahora</Button>
         <Button variant="secondary">Ver detalles</Button>
         <Button disabled>Agotado</Button>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h3>Inputs para formularios</h3>
+        <Input label="Email" placeholder="tu@email.com"/>
+        <Input error="Email inválido" label="Email" placeholder="tu@email.com"/>
+        <Input placeholder="Buscar relojes" variant="search"/>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h3>Modelos de spinner</h3>
+        <Spinner size="md" variant="primary" />
+        <Spinner size="sm" variant="primary" />
+        <Spinner size="lg" variant="primary" />
       </div>
     </main>
   );
