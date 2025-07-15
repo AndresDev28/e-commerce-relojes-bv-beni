@@ -15,12 +15,15 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const baseStyles = 
-    "px-6 py-2 rounded-md font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer"
+    "px-4 py-2 rounded-md font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer"
   const variants = {
     primary:
-      "bg-blue-500 text-white hover:bg-ble-600 focus:ring-blue-400 disabled:bg-blue-300",
+      'bg-primary text-white border border-primary hover:bg-primary-dark hover:border-primary-dark',
     secondary:
-      "bg-white border border-blue-500 text-blue-500 hover:bg-blue-50 focus:ring-blue-400 disabled:border-blue-200 disabled:text-blue-200",
+      "bg-secondary text-white hover:bg-secondary-dark focus:ring-red-600",
+    tertiary: 
+      'bg-transparent text-light border border-neutral-dark hover:bg-neutral-dark hover:text-light',
+    ghost: 'bg-transparent text-light hover:text-primary',
   }
 
   return (
@@ -29,6 +32,7 @@ export default function Button({
         baseStyles,
         variants[variant],
         disabled && "cursor-not-allowed opacity-60",
+        className
       )}
       disabled={disabled}
       {...props}

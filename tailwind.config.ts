@@ -11,23 +11,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: "#fff",
-        primaryDark: "rgba(255,255,255,0.7)",
-        secondary: "#fb923c",
+        // --- Paleta de Marca ---
+        primary: '#2563EB', // Azul Corporativo (blue-600)
+        secondary: '#DC2626', // Rojo Corporativo (red-600)
+
+        // --- Paleta de Texto y Fondos Base
+        dark: '#272727', // Gris Fondo Logo
+        light: '#ffffff',
+
+        // --- Paleta Neutral de Apoyo ---
+        'neutral-light': '#F3F4F6', // Gris muy claro para fondos (gray-100)
+        'neutral-medium': '#6B7280',// Gris medio para texto secundario (gray-500)
+        'neutral-dark': '#374151',  // Gris para bordes y hovers sutiles (gray-700)
       },
-      backgroundImage: {
-        radialBlack:
-          "linear-gradient(225.95deg, #ffffff 0%, #6d6d6d 0%, #11101d 91.61%)",
-        radialOrange: 
-          "linear-gradient(90deg, #f97316 0%, rgba(253, 186, 116, 0.6) 95.83%)",
-        lightOrange:
-          "linear-gradient(90deg, #fb923c 0%, rgba(255, 237, 213, 0.86) 95.83%)",
-        bannerImg: "url('/hero-image.jpg')",
-        blackOverlay:
-          "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.9) 100%)",
-      },
-      boxShadow: {
-        dark: "0px 20px 100px -10px rgba(66, 71, 91, 0.1)",
+      fontFamily: {
+        // sans: ['var(--font-oswald)'], 
+        // serif: ['var(--font-lora)'],
       },
       keyframes: {
         spin: {

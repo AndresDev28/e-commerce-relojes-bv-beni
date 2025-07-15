@@ -1,6 +1,20 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import Navbar from "./components/Navbar";
+import { Oswald, Lora } from 'next/font/google'
+import "./globals.css";
+
+// Configuramos fuentes y sus variables CSS
+const oswald = Oswald({
+  subsets: ['latin'],
+  variable: '--font-oswald', // Nombre de la variable CSS para la fuente
+  display: 'swap',
+})
+const lora = Lora({ 
+  subsets: ['latin'],
+  variable: '--font-lora',   // Nombre de la variable CSS para esta fuente
+  display: 'swap',
+})
+
 
 export const metadata: Metadata = {
   title: "Relojes BV Beni",
@@ -13,13 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es"
+      className={`${oswald.variable} ${lora.variable}`}
+    >
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
+
       <body>
         <Navbar />
         {children}
+        {/* Aqui va el Footer */}
       </body>
     </html>
   );
