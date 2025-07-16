@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import { Oswald, Lora } from 'next/font/google'
 import "./globals.css";
 
@@ -34,10 +35,12 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
 
-      <body>
+      <body className="bg-neutral-light flex flex-col min-h-screen">
         <Navbar />
-        {children}
-        {/* Aqui va el Footer */}
+        <main className="flex-grow">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

@@ -11,7 +11,7 @@ const Navbar = () => {
         <div className="flex items-center">
           <Link href="/">
             <Image 
-              src="/logo.png" 
+              src="/logo-no-bg.png" 
               alt="Relojes BV Beni Logo"
               width={120}
               height={32}
@@ -21,9 +21,9 @@ const Navbar = () => {
         </div>
         {/* Seccion central: Enlaces Navegación */}
         <nav className="hidden md:flex space-x-6">
-          <Link href="/" className="font-sans hover:text-primaryBlue transition-colors">Inicio</Link>
-          <Link href="/tienda" className="font-sans hover:text-primaryBlue transition-colors">Tienda</Link>
-          <Link href="/contacto" className="font-sans hover:text-primaryBlue transition-colors">Contacto</Link>
+          <Link href="/" className="font-sans hover:text-primaryBlue transition-colors text-xl">Inicio</Link>
+          <Link href="/tienda" className="font-sans hover:text-primaryBlue transition-colors text-xl">Tienda</Link>
+          <Link href="/contacto" className="font-sans hover:text-primaryBlue transition-colors text-xl">Contacto</Link>
         </nav>
         {/* Seccion derecha: Acciones */}
         <div className="flex items-center space-x-4">
@@ -41,11 +41,11 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center space-x-2 pl-4 border-l border-light">
             <Link href="/login">
               {/* Este botón parecería texto normal que cambia de color al hacer hover */}
-              <Button variant="tertiary">Iniciar Sesión</Button>
+              <Button variant="tertiary" className="font-sans">Iniciar Sesión</Button>
             </Link>
             <Link href="/registro">
               {/* Y este sería el botón principal para llamar más la atención */}
-              <Button variant="tertiary">Registrarse</Button>
+              <Button variant="tertiary" className="font-sans">Registrarse</Button>
             </Link>
           </div>
         </div>
