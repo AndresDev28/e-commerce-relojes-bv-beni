@@ -1,4 +1,4 @@
-import { keyframes } from "storybook/internal/theming";
+import { keyframes, themes } from "storybook/internal/theming";
 import type { Config } from "tailwindcss";
 import { transform } from "typescript";
 
@@ -23,6 +23,9 @@ const config: Config = {
         'neutral-light': '#F3F4F6', // Gris muy claro para fondos (gray-100)
         'neutral-medium': '#6B7280',// Gris medio para texto secundario (gray-500)
         'neutral-dark': '#374151',  // Gris para bordes y hovers sutiles (gray-700)
+      },
+      backgroundImage: {
+        'radial-dark': 'radial-gradient(ellipse at center, #374151 0%, #1F2937 70%)',
       },
       fontFamily: {
         // sans: ['var(--font-oswald)'], 

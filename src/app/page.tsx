@@ -7,8 +7,8 @@ import Spinner from "@/app/components/ui/Spinner";
 import Modal from "@/app/components/ui/Modal";
 import HeroSection from '@/app/components/HeroSection'
 import CategoryGrid from '@/app/components/CategoryGrid'
-// import FeatureProducts from '@/app/components/FeatureProducts'
-// import TrustSection from '@/app/components/TrustSection'
+import FeatureProducts from '@/app/components/FeatureProducts'
+import TrustSection from '@/app/components/TrustSection'
 
 export default function Home() {
   
@@ -16,8 +16,8 @@ export default function Home() {
     <>
       <HeroSection />
       <CategoryGrid />
-      {/* <FeatureProducts />
-      <TrustSection /> */}
+      <FeatureProducts />
+      <TrustSection /> 
     </>
   );
 }
