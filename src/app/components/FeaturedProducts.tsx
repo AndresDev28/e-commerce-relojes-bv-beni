@@ -1,5 +1,5 @@
-import ProductCard from "./ui/ProductCard";
-import { featureProducts } from "@/lib/data";
+import ProductCard from './ui/ProductCard'
+import { featuredProducts } from '@/lib/data'
 
 const FeatureProducts = () => {
   return (
@@ -9,12 +9,12 @@ const FeatureProducts = () => {
           Los Más Deseados
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featureProducts.map((product) => (
-            <ProductCard 
+          {featuredProducts.map(product => (
+            <ProductCard
               key={product.id}
               href={product.href}
               imageUrl={product.imageUrl}
-              productName={product.name}
+              name={product.name}
               price={product.price}
             />
           ))}
@@ -24,4 +24,4 @@ const FeatureProducts = () => {
   )
 }
 
-export default FeatureProducts;
+export default FeatureProducts

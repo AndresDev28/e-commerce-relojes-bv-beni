@@ -1,13 +1,13 @@
-import React from "react";
-import clsx from "clsx";
+import React from 'react'
+import clsx from 'clsx'
 
-type InputVariant = "default" | "search" | "error";
+type InputVariant = 'default' | 'search' | 'error'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  variant?: InputVariant;
-  error?: string;
-  helperText?: string;
+  label?: string
+  variant?: InputVariant
+  error?: string
+  helperText?: string
 }
 
 export default function Input({
@@ -18,13 +18,14 @@ export default function Input({
   className,
   ...props
 }: InputProps) {
-  const baseStyles = " w-full px-4 py-2 rounded-md border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
+  const baseStyles =
+    ' w-full px-4 py-2 rounded-md border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
 
   const variants = {
-    default: "border-gray-300 focus:border-blue-500 focus:ring-blue-400",
-    search: "pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-400",
-    error: "border-red-500 focus:border-red-500 focus:ring-red-400"
-  };
+    default: 'border-gray-300 focus:border-blue-500 focus:ring-blue-400',
+    search: 'pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-400',
+    error: 'border-red-500 focus:border-red-500 focus:ring-red-400',
+  }
 
   return (
     <div className="w-full">
@@ -44,13 +45,15 @@ export default function Input({
         />
       </div>
       {(error || helperText) && (
-        <p className={clsx(
-          "mt-1 text-sm",
-          error ? "text-red-500" : "text-gray-500"
-        )}>
+        <p
+          className={clsx(
+            'mt-1 text-sm',
+            error ? 'text-red-500' : 'text-gray-500'
+          )}
+        >
           {error || helperText}
         </p>
       )}
     </div>
-  );
+  )
 }

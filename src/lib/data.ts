@@ -20,37 +20,37 @@ const categories = [
     imageUrl: '/images/category-4.avif',
     href: '/tienda?categoria=clasicos',
   },
-];
+]
 
-export const featureProducts = [
+export const featuredProducts = [
   {
     id: '1',
     name: 'Casio G-Shock GM-2100',
     price: 199.99,
-    imageUrl: '/images/products/gshok/gm2100.avif', 
+    imageUrl: '/images/products/gshok/gm2100.avif',
     href: '/tienda/casio-g-shock-gm-2100',
   },
   {
     id: '2',
     name: 'Casio Vintage A168WEM-1EF',
-    price: 59.90,
+    price: 59.9,
     imageUrl: '/images/products/vintage/a168.avif',
     href: '/tienda/casio-vintage-a168',
   },
   {
     id: '3',
     name: 'Casio Edifice EFS-S570DB-2AUEF',
-    price: 279.00,
+    price: 279.0,
     imageUrl: '/images/products/edifice/efs-s570.avif',
     href: '/tienda/casio-edifice-efs-s570',
   },
   {
     id: '4',
     name: 'Casio G-Shock GA-2100 "CasiOak"',
-    price: 99.00,
+    price: 99.0,
     imageUrl: '/images/products/gshok/ga21001a1.avif',
     href: '/tienda/casio-g-shock-ga2100',
   },
 ]
 
-export default categories;
+export default categories

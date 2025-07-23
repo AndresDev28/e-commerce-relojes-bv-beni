@@ -1,20 +1,20 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { useState } from "react";
-import Modal from "./Modal";
-import Button from "./Button";
+import type { Meta, StoryObj } from '@storybook/react'
+import { useState } from 'react'
+import Modal from './Modal'
+import Button from './Button'
 
 const meta: Meta<typeof Modal> = {
-  title: "UI/Modal",
+  title: 'UI/Modal',
   component: Modal,
-  tags: ["autodocs"],
-};
+  tags: ['autodocs'],
+}
 
-export default meta;
-type Story = StoryObj<typeof Modal>;
+export default meta
+type Story = StoryObj<typeof Modal>
 
 // Wrapper para controlar el estado del modal en Storybook
 function ModalWrapper() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <>
@@ -36,10 +36,10 @@ function ModalWrapper() {
         </div>
       </Modal>
     </>
-  );
+  )
 }
 
 // Historia por defecto que usa el wrapper
 export const Default: Story = {
   render: () => <ModalWrapper />, // Renderiza nuestro componente wrapper
-};
+}

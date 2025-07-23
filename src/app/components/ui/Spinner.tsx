@@ -1,26 +1,26 @@
-import clsx from 'clsx';
+import clsx from 'clsx'
 
 interface SpinnerProps {
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'primary' | 'white';
-  className?: string;
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'primary' | 'white'
+  className?: string
 }
 
-export default function Spinner({ 
-  size = 'md', 
+export default function Spinner({
+  size = 'md',
   variant = 'primary',
-  className 
+  className,
 }: SpinnerProps) {
   const sizes = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
-    lg: 'h-12 w-12'
-  };
+    lg: 'h-12 w-12',
+  }
 
   const variants = {
     primary: 'border-blue-500',
-    white: 'border-white'
-  };
+    white: 'border-white',
+  }
 
   return (
     <div
@@ -31,7 +31,7 @@ export default function Spinner({
         variants[variant],
         className
       )}
-      arial-label= "Cargando..." // Mejora de accesibilidad
+      arial-label="Cargando..." // Mejora de accesibilidad
     />
-  );
+  )
 }
