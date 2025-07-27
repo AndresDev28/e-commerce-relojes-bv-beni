@@ -10,13 +10,16 @@ export default function ProductsPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredProducts.map(product => (
-            <ProductCard
+            // Comprobación de seguridad
+            (product.images && product.images.length > 0) && (
+              <ProductCard
               key={product.id}
               href={product.href}
-              imageUrl={product.imageUrl}
+              imageUrl={product.images[0]} // pasamos solo la primera imagen del array
               name={product.name}
               price={product.price}
             />
+            )  
           ))}
         </div>
       </div>

@@ -6,24 +6,28 @@ import ProductActionIcon from './ProductActionIcon'
 
 interface ProductCardProps {
   href: string
-  imageUrl: string
+  imageUrl: string 
   name: string
   price: number
+  
 }
 
 const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
+  
+  const handleAddToCart = () => {
     console.log(`Producto ${name} agregado al carrito!`)
   }
 
-  const handleAddToFavorites = (e: React.MouseEvent) => {
-    e.preventDefault()
+  const handleAddToFavorites = () => {
     console.log(`Producto ${name} agregado a favoritos!`)
   }
 
   const handleViewDetails = () => {
     window.location.href = href
+  }
+  // Validación para evitar src vacío
+  if (!imageUrl || !name || !href) {
+    return null // No renderiza si faltan datos críticos
   }
 
   return (
@@ -37,6 +41,9 @@ const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
             fill
             style={{ objectFit: 'contain' }}
             className="group-hover:scale-105 transition-transform duration-300 p-4"
+            onError={(e) => {
+              console.log('Error cargando imagen:', imageUrl)
+            }}
           />
         </div>
 

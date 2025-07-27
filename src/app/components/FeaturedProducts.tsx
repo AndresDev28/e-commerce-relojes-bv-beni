@@ -13,7 +13,7 @@ const FeatureProducts = () => {
             <ProductCard
               key={product.id}
               href={product.href}
-              imageUrl={product.imageUrl}
+              imageUrl={product.images[0]}
               name={product.name}
               price={product.price}
             />

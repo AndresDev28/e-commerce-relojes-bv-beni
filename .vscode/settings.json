@@ -4,5 +4,56 @@
   },
   "editor.dropIntoEditor.preferences": [
     
-  ]
+  ],
+  // Configuración para evitar subrayado azul en texto español
+  "cSpell.enabled": true,
+  "cSpell.language": "en,es",
+  "cSpell.enableFiletypes": [
+    "!typescript",
+    "!typescriptreact",
+    "!javascript",
+    "!javascriptreact"
+  ],
+  // Deshabilitar spell checking en archivos de código
+  "cSpell.enabledLanguageIds": [
+    "markdown",
+    "text",
+    "plaintext"
+  ],
+  // Configuración adicional para TypeScript/JavaScript
+  "typescript.preferences.quoteStyle": "single",
+  "javascript.preferences.quoteStyle": "single",
+  // Deshabilitar completamente las sugerencias automáticas
+  "editor.quickSuggestions": {
+    "comments": true,
+    "strings": true,
+    "other": true
+  },
+  // Configuraciones para deshabilitar autocompletado no deseado
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.acceptSuggestionOnCommitCharacter": false,
+  "editor.acceptSuggestionOnEnter": "off",
+  "editor.tabCompletion": "off",
+  "editor.wordBasedSuggestions": "off",
+  "editor.parameterHints.enabled": true,
+  "editor.quickSuggestionsDelay": 1000,
+  "typescript.suggest.enabled": true,
+  "javascript.suggest.enabled": true,
+  "typescript.suggest.autoImports": true,
+  "javascript.suggest.autoImports": true,
+  // Habilitar autocompletado específico
+  "typescript.suggest.paths": true,
+  "javascript.suggest.paths": true,
+  "typescript.suggest.names": true,
+  "javascript.suggest.names": true,
+  "typescript.suggest.includeCompletionsForModuleExports": false,
+  "javascript.suggest.includeCompletionsForModuleExports": false,
+  "path-intellisense.autoSlashAfterDirectory": true,
+  "path-intellisense.extensionOnImport": true,
+  // Habilitar autocompletado de atributos HTML/JSX
+  "html.suggest.html5": true,
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  }
 }
