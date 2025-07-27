@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Button from './ui/Button'
-import { Heart, ShoppingCart, User } from 'lucide-react'
+import { Heart, ShoppingCart, } from 'lucide-react'
 
 const Navbar = () => {
   return (

@@ -1,7 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 
-type ButtonVariant = 'primary' | 'secondary'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'tertiary'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant

@@ -1,56 +1,41 @@
+// .eslintrc.js
+
 module.exports = {
+  // El parser le dice a ESLint cómo entender tu código TypeScript
+  parser: '@typescript-eslint/parser',
+  
+  // 'extends' es una lista de configuraciones predefinidas
   extends: [
-    "next/core-web-vitals",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:prettier/recommended",
-    "plugin:storybook/recommended"
+    'eslint:recommended', // Reglas base de ESLint
+    'plugin:@typescript-eslint/recommended', // Reglas recomendadas para TypeScript
+    'plugin:react/recommended', // Reglas recomendadas para React
+    'plugin:react-hooks/recommended', // Reglas para los hooks de React
+    'next/core-web-vitals', // Reglas específicas de Next.js (muy importante)
+    'prettier', // ¡AÑADE ESTO AL FINAL! Integra con Prettier
   ],
-  plugins: ["@typescript-eslint", "prettier"],
+  
+  // 'plugins' son las "cajas de herramientas" que contienen las reglas
+  plugins: [
+    '@typescript-eslint',
+    'react',
+    'react-hooks',
+  ],
+  
+  // 'rules' te permite personalizar reglas específicas
   rules: {
-    // Prettier config
-    "prettier/prettier": [
-      "error",
-      {
-        semi: false,
-        singleQuote: true,
-        trailingComma: "es5",
-        tabWidth: 2,
-        printWidth: 80,
-        bracketSpacing: true,
-        arrowParens: "avoid"
-      }
-    ],
+    // Es una buena práctica desactivar esta regla en proyectos de Next.js,
+    // ya que no necesitas importar React en cada archivo.
+    'react/react-in-jsx-scope': 'off',
     
-    // Modern JavaScript/TypeScript rules
-    "semi": ["error", "never"],
-    "quotes": ["error", "single"],
-    "comma-dangle": ["error", "only-multiline"],
-    
-    // TypeScript specific
-    "@typescript-eslint/no-extra-semi": "error",
-    "@typescript-eslint/member-delimiter-style": [
-      "error",
-      {
-        multiline: {
-          delimiter: "none",
-          requireLast: false
-        },
-        singleline: {
-          delimiter: "comma",
-          requireLast: false
-        }
-      }
-    ],
-    
-    // React best practices
-    "react/jsx-quotes": ["error", "prefer-double"],
-    "react-hooks/exhaustive-deps": "warn",
-    
-    // General code quality
-    "no-console": "warn",
-    "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-    "prefer-const": "error",
-    "no-var": "error"
-  }
-}
+    // Puedes añadir otras reglas personalizadas aquí si quieres
+  },
+  
+  // 'settings' permite configurar el comportamiento de los plugins
+  settings: {
+    react: {
+      // Le dice a eslint-plugin-react que detecte automáticamente
+      // la versión de React que estás usando.
+      version: 'detect',
+    },
+  },
+};

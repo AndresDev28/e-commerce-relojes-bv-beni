@@ -41,7 +41,7 @@ const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
             fill
             style={{ objectFit: 'contain' }}
             className="group-hover:scale-105 transition-transform duration-300 p-4"
-            onError={(e) => {
+            onError={() => {
               console.log('Error cargando imagen:', imageUrl)
             }}
           />

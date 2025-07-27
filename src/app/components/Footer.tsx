@@ -20,7 +20,7 @@ const Footer = () => {
               />
             </Link>
             <p className="text-neutral-medium text-sm italic">
-              "Hay que saber la hora para controlar el tiempo"
+              &quot;Hay que saber la hora para controlar el tiempo&quot;
             </p>
           </div>
 

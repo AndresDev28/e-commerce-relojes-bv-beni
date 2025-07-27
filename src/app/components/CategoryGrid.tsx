@@ -1,5 +1,3 @@
-import Link from 'next/link'
-import Image from 'next/image'
 import CategoryCard from './ui/CategoryCard'
 import categories from '@/lib/data'
 
