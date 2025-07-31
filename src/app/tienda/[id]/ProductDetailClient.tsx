@@ -10,7 +10,7 @@ interface Product {
   id: string
   name: string
   price: number
-  images: string[]
+  imageUrl: string[]
   href: string
   description?: string
 }
@@ -20,7 +20,7 @@ interface ProductDetailClientProps {
 }
 
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
-  const [activeImage, setActiveImage] = useState(product.images[0])
+  const [activeImage, setActiveImage] = useState(product.imageUrl[0])
   const [quantity, setQuantity] = useState(1)
 
   const handleIncrement = () => {
@@ -53,7 +53,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           </div>
           {/* Miniaturas (Thumbnails) */}
           <div className='grid grid-cols-5 gap-2'>
-            {product.images.map((image, index) => (
+            {product.imageUrl.map((image, index) => (
               <div
                 key={index}
                 className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${activeImage === image ? 'border-primary' : 'border-transparent'}`}

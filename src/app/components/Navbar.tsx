@@ -23,19 +23,19 @@ const Navbar = () => {
         <nav className="hidden md:flex space-x-6">
           <Link
             href="/"
-            className="font-sans hover:text-primaryBlue transition-colors text-xl"
+            className="font-sans hover:text-primary transition-colors text-xl"
           >
             Inicio
           </Link>
           <Link
             href="/tienda"
-            className="font-sans hover:text-primaryBlue transition-colors text-xl"
+            className="font-sans hover:text-primary transition-colors text-xl"
           >
             Tienda
           </Link>
           <Link
             href="/contacto"
-            className="font-sans hover:text-primaryBlue transition-colors text-xl"
+            className="font-sans hover:text-primary transition-colors text-xl"
           >
             Contacto
           </Link>

@@ -6,14 +6,14 @@ import ProductActionIcon from './ProductActionIcon'
 
 interface ProductCardProps {
   href: string
-  imageUrl: string 
+  imageUrl: string | string[]
   name: string
   price: number
-  
 }
 
 const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
-  
+  // Si imageUrl es un array, usar la primera imagen, si no, usar la string directamente
+  const mainImageUrl = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl
   const handleAddToCart = () => {
     console.log(`Producto ${name} agregado al carrito!`)
   }
@@ -25,10 +25,6 @@ const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
   const handleViewDetails = () => {
     window.location.href = href
   }
-  // Validación para evitar src vacío
-  if (!imageUrl || !name || !href) {
-    return null // No renderiza si faltan datos críticos
-  }
 
   return (
     <div className="group block rounded-lg overflow-hidden bg-white transition-shadow hover:shadow-xl border border-neutral-light/50">
@@ -36,14 +32,11 @@ const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
       <Link href={href} className="block">
         <div className="relative h-64 w-full bg-neutral-light">
           <Image
-            src={imageUrl}
+            src={mainImageUrl}
             alt={name}
             fill
             style={{ objectFit: 'contain' }}
             className="group-hover:scale-105 transition-transform duration-300 p-4"
-            onError={() => {
-              console.log('Error cargando imagen:', imageUrl)
-            }}
           />
         </div>
 
