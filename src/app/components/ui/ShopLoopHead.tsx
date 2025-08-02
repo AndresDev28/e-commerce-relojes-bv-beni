@@ -1,22 +1,56 @@
+'use client'
 import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowUpDown, ChevronDown } from 'lucide-react';
 
+// Define la estructura de un solo breadcrumb, asegurando que cada uno tenga un nombre visible y una URL de destino.
 interface Breadcrumb {
   name: string;
   href: string;
 }
 
+// Define las props que el componente ShopLoopHead espera recibir.
 interface ShopLoopHeadProps {
-  breadcrumbs: Breadcrumb[];
-  totalResults: number;
-  currentSort: string;
-  onSortChange: (sortValue: string) => void;
+  breadcrumbs: Breadcrumb[]; // Un array de objetos Breadcrumb para construir la navegación.
+  totalResults: number; // El número total de productos para mostrar en el contador.
+  currentSort: string; // El criterio de ordenación actualmente activo (ej: 'price-asc').
+  onSortChange: (sortValue: string) => void; // Una función callback que se ejecuta cuando el usuario selecciona una nueva opción de ordenación.
 }
 
 const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange }: ShopLoopHeadProps) => {
+  // visibilidad del menú dentro del componente
+  const [isSortOpen, setIsSortOpen] = useState(false)
+  // Definimos las opciones
+  const sortOptions = [
+    { value: 'default', label: 'Ordenar por' },
+    { value: 'price-asc', label: 'Precio: Ascendente' },
+    { value: 'price-desc', label: 'Precio: Descendente' },
+    { value: 'name-asc', label: 'Nombre: A-Z' },
+    { value: 'name-desc', label: 'Nombre: Z-A' },
+  ]
+
+  // Cerrar el menú desplegable si el usuario hace clic en cualquier otro lugar de la página
+  const dropDownRef = useRef<HTMLDivElement>(null); // Referencia para el contenedor del menú
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Comprueba si el menú desplegable existe (dropDownRef.current) y si el clic (e.target) ocurrió fuera de él.
+      // `!dropDownRef.current.contains(e.target as Node)` devuelve true si el clic fue fuera.
+      if (dropDownRef.current && !dropDownRef.current.contains(e.target as Node)) {
+        setIsSortOpen(false);
+      }
+    }
+    // Agregamos el listener
+    document.addEventListener('mousedown', handleClickOutside);
+    // Limpiamos el listener cuando el componente se desmonte
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, []) // // El array vacío asegura que el efecto solo se ejecute una vez
+    
   return (
-    <div className='flex flex-col gap-4'>
-      <div className='flex justify-between'>
-        <nav className='mb-4'>
+    <div className='mb-8 flex flex-col gap-4'>
+      <nav>
           {breadcrumbs.map((crumb, index) => (
             <span key={crumb.href}>
               <Link href={crumb.href} className='font-serif text-sm text-neutral-medium hover:text-primary transition-colors'>
@@ -26,23 +60,44 @@ const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange }: 
               {index < breadcrumbs.length - 1 && <span className="mx-2">/</span>}
             </span>
           ))}
-        </nav>
-        <div className='flex items-center gap-4'>
-          <p className='font-serif text-sm text-neutral-medium'>
-            Mostrando {totalResults} resultados
-          </p>
-          <select 
-            value={currentSort}
-            onChange={(e) => onSortChange(e.target.value)}
-            className='border border-neutral-light rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary'
-          >
-            <option value='default'>Ordenar por</option>
-            <option value='price-asc'>Precio: Ascendente</option>
-            <option value='price-desc'>Precio: Descendente</option>
-            <option value='name-asc'>Nombre: A-Z</option>
-            <option value='name-desc'>Nombre: Z-A</option>
-          </select>
-        </div>
+      </nav>
+      <div className='flex items-center justify-between'>        
+        <p className='font-serif text-sm text-neutral-medium'>
+          Mostrando {totalResults} resultados
+        </p>
+        <div className='relative' ref={dropDownRef}>
+          <button
+            onClick={() => setIsSortOpen(!isSortOpen)}
+            className='flex items-center gap-2 rounded-md border border-l-neutral-light px-3 py-2 text-sm'
+            >
+              <ArrowUpDown size={16} />
+              {/* Ocultamos el texto en mobile */}
+              <span className='hidden md:inline-block'>
+                {sortOptions.find(option => option.value === currentSort)?.label || 'Ordenar por'}
+              </span>
+              {/* Mostramos una flecha solo en móvil */}
+              <ChevronDown size={16} className={`transition-transform md:hidden ${isSortOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {/* Menú de despliegue */}
+          {isSortOpen && (
+            <div className='absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10'>
+              <div className='py-1'>
+                {sortOptions.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      onSortChange(option.value);
+                      setIsSortOpen(false); // Cierra el menú al seleccionar
+                    }}
+                    className='block w-full px-4 py-2 text-left text-sm text-neutral-dark hover:bg-neutral-lightest'
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>        
       </div>
     </div>
   );

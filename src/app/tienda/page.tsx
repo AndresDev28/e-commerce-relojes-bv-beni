@@ -19,7 +19,7 @@ export default function ProductsPage() {
     setSortOrder(newSortValue);
   }
 
-  let sortedProducts = [...featuredProducts]; // Creamos una copia y así no mutamos el original
+  const sortedProducts = [...featuredProducts]; // Creamos una copia y así no mutamos el original
 
   switch (sortOrder) {
   case 'price-asc':
