@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { useState } from 'react'
+import { useState } from 'react' //Más adelante importaremos useMemo para optimizar el rederizado
 import ProductCard from '../components/ui/ProductCard'
 import { featuredProducts } from '@/lib/data'
 import ShopLoopHead from '@/app/components/ui/ShopLoopHead'

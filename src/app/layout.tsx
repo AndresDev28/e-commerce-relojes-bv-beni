@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import { Oswald, Lora } from 'next/font/google'
+import { CartProvider } from '@/context/CartContext'
 import './globals.css'
 
 // Configuramos fuentes y sus variables CSS
@@ -31,11 +32,14 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-
       <body className="bg-neutral-light flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow">{children}</main>
+        <CartProvider>
+          <Navbar />
+        <main className="flex-grow">
+          {children}
+        </main>
         <Footer />
+        </CartProvider>
       </body>
     </html>
   )

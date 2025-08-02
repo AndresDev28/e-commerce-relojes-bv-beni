@@ -1,9 +1,15 @@
+'use client'
 import Link from 'next/link'
 import Image from 'next/image'
 import Button from './ui/Button'
 import { Heart, ShoppingCart, } from 'lucide-react'
+import { useCart } from '@/context/CartContext'
 
 const Navbar = () => {
+
+  const { cartItems } = useCart()
+  console.log('Estado del carrito leído desde el Navbar:', cartItems);
+  
   return (
     <header className="bg-dark text-white shadow-md">
       <div className="container mx-auto flex items-center justify-between p-4">
