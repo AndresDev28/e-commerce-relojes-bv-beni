@@ -2,7 +2,7 @@
 import React from 'react'
 import { useState, useMemo } from 'react'
 import ProductCard from '@/app/components/ui/ProductCard'
-import { featuredProducts, categories } from '@/lib/data'
+import { featuredProducts } from '@/lib/data'
 import ShopLoopHead from '@/app/components/ui/ShopLoopHead'
 
 export default function ProductsPage() {
