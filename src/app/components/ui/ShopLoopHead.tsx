@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { ArrowUpDown, ChevronDown } from 'lucide-react';
+import { categories } from '@/lib/data'
+import Button from './Button';
 
 // Define la estructura de un solo breadcrumb, asegurando que cada uno tenga un nombre visible y una URL de destino.
 interface Breadcrumb {
@@ -15,9 +17,11 @@ interface ShopLoopHeadProps {
   totalResults: number; // El número total de productos para mostrar en el contador.
   currentSort: string; // El criterio de ordenación actualmente activo (ej: 'price-asc').
   onSortChange: (sortValue: string) => void; // Una función callback que se ejecuta cuando el usuario selecciona una nueva opción de ordenación.
+  activeCategory: string;
+  onCategoryChange: (category: string) => void; // Función para cambiar de categoria
 }
 
-const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange }: ShopLoopHeadProps) => {
+const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange, activeCategory, onCategoryChange }: ShopLoopHeadProps) => {
   // visibilidad del menú dentro del componente
   const [isSortOpen, setIsSortOpen] = useState(false)
   // Definimos las opciones
@@ -49,6 +53,7 @@ const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange }: 
   }, []) // // El array vacío asegura que el efecto solo se ejecute una vez
     
   return (
+    // El JSX de breadcrumbs...
     <div className='mb-8 flex flex-col gap-4'>
       <nav>
           {breadcrumbs.map((crumb, index) => (
@@ -61,6 +66,24 @@ const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange }: 
             </span>
           ))}
       </nav>
+      {/* Agregamos el filtro de categorías */}
+      <div className='flex items-center gap-2 flex-wrap border-b border-neutral-light pb-4'>
+          <Button
+            variant={activeCategory === 'Todos' ? 'primary' : 'tertiary' }
+            onClick={() => onCategoryChange('Todos')}
+          >
+            Todos
+          </Button>
+          {categories.map(category => (
+          <Button
+            key={category.title}
+            variant={activeCategory === category.title ? 'primary' : 'tertiary'}
+            onClick={() => onCategoryChange(category.title)}
+          >
+            {category.title}
+          </Button>
+        ))}
+      </div>
       <div className='flex items-center justify-between'>        
         <p className='font-serif text-sm text-neutral-medium'>
           Mostrando {totalResults} resultados

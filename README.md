@@ -45,6 +45,14 @@ This project is built with a modern, robust, and scalable tech stack:
 
 ---
 
+## 🚀 Development Journey & Challenges
+
+This project was a significant learning experience. Beyond just building the final product, it involved overcoming several real-world development challenges. I've documented the most interesting ones, including my thought process and the professional solutions I implemented.
+
+➡️ **[Read about the challenges I solved in CHALLENGES.md](./CHALLENGES.md)**
+
+---
+
 ## 🚀 Getting Started
 
 To get a local copy up and running, follow these simple steps.

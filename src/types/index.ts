@@ -9,15 +9,16 @@
 export interface Product {
   id: string // O number, pero string (UUID) es más robusto
   name: string
-  description: string
   price: number // Corregido el typo
-  stock: number
-  category: number
-  imageUrl: string // La URL de la imagen principal
-  images?: string[] // Un array opcional para galería de imágenes
+  images: string[] 
+  href: string // La URL de la imagen principal
+  description?: string
+  category?: string
+  stock?: number
 }
 
 // Representa un producto dentro del carrito de compras
+// Para usarlo en CartContext
 export interface CartItem extends Product {
   quantity: number // Agregamos la cantidad que el usuario ha seleccionado
 }

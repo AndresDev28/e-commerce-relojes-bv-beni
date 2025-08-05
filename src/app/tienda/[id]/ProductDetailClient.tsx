@@ -5,23 +5,26 @@ import Image from 'next/image'
 import QuantitySelector from '@/app/components/ui/QuantitySelector'
 import Button from '@/app/components/ui/Button'
 import { CheckSquare } from 'lucide-react'
+import { useCart } from '@/context/CartContext'
+import { Product } from '@/types'
 
-interface Product {
-  id: string
-  name: string
-  price: number
-  imageUrl: string[]
-  href: string
-  description?: string
-}
+// interface Product {
+//   id: string
+//   name: string
+//   price: number
+//   imageUrl: string[]
+//   href: string
+//   description?: string
+// }
 
 interface ProductDetailClientProps {
   product: Product
 }
 
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
-  const [activeImage, setActiveImage] = useState(product.imageUrl[0])
+  const [activeImage, setActiveImage] = useState(product.images[0])
   const [quantity, setQuantity] = useState(1)
+  const { addToCart } = useCart()
 
   const handleIncrement = () => {
     setQuantity(prev => prev + 1)
@@ -32,7 +35,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   }
 
   const handleAddToCart = () => {
-    console.log(`Añadiendo ${quantity} x ${product.name} al carrito`)
+    addToCart(product, quantity)
+    alert(`Se añadidó ${quantity} x ${product.name} al carrito!`)
   }
 
   return (
@@ -53,7 +57,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           </div>
           {/* Miniaturas (Thumbnails) */}
           <div className='grid grid-cols-5 gap-2'>
-            {product.imageUrl.map((image, index) => (
+            {product.images.map((image, index) => (
               <div
                 key={index}
                 className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${activeImage === image ? 'border-primary' : 'border-transparent'}`}

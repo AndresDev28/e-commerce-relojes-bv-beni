@@ -8,7 +8,10 @@ import { useCart } from '@/context/CartContext'
 const Navbar = () => {
 
   const { cartItems } = useCart()
-  console.log('Estado del carrito leído desde el Navbar:', cartItems);
+  const totalItems = cartItems.reduce((acumulator, actualItem) => {
+    return acumulator + actualItem.quantity
+  }, 0)
+  
   
   return (
     <header className="bg-dark text-white shadow-md">
@@ -50,10 +53,12 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           <Link href="/carrito" className="relative">
             <ShoppingCart className="h-6 w-6 hover:text-primaryBlue transition-colors" />
-            {/* Badge del contador hardcodeado de momento */}
-            <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center bg-secondary text-xs text-light rounded-full">
-              3
-            </span>
+            {/* Badge del contador, sólo se muestra cuando hay al menos un artículo en el carrito*/}
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center bg-secondary text-xs text-light rounded-full">
+                {totalItems}
+              </span>
+            )}
           </Link>
           <Link href="/favorito">
             <Heart className="h-6 w-6 hover:text-primaryBlue transition-colors" />

@@ -1,68 +1,74 @@
 'use client'
 import React from 'react'
-import { useState } from 'react' //Más adelante importaremos useMemo para optimizar el rederizado
-import ProductCard from '../components/ui/ProductCard'
-import { featuredProducts } from '@/lib/data'
+import { useState, useMemo } from 'react'
+import ProductCard from '@/app/components/ui/ProductCard'
+import { featuredProducts, categories } from '@/lib/data'
 import ShopLoopHead from '@/app/components/ui/ShopLoopHead'
 
 export default function ProductsPage() {
+  // --- SECCIÓN 1: DATOS Y ESTADO ---
 
+  // Datos estáticos para los breadcrumbs.
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
     { name: 'Tienda', href: '/tienda'}
   ]
-  // Estado de ordenación
+
+  // Estado para controlar qué categoría está activa. Es el "cerebro" del filtro.
+  const [activeCategory, setActiveCategory] = useState('Todos')
+  
+  // Estado para controlar el criterio de ordenación.
   const [sortOrder, setSortOrder] = useState('default')
 
-  // Función para manejar el cambio de orden
-  const handleSortChange = (newSortValue: string) => {
-    setSortOrder(newSortValue);
-  }
+  // --- SECCIÓN 2: LÓGICA DE DATOS OPTIMIZADA ---
 
-  const sortedProducts = [...featuredProducts]; // Creamos una copia y así no mutamos el original
+  // Usamos useMemo para evitar recalcular la lista de productos en cada renderizado.
+  // Esta lógica solo se volverá a ejecutar si 'activeCategory' o 'sortOrder' cambian.
+  const displayProducts = useMemo(() => {
+    // Primero, filtramos los productos basados en la categoría activa.
+    const filtered = featuredProducts.filter(product => 
+      activeCategory === 'Todos' ? true : product.category === activeCategory
+    );
 
-  switch (sortOrder) {
-  case 'price-asc':
-    sortedProducts.sort((a, b) => a.price - b.price);
-    break;
-  case 'price-desc':
-    sortedProducts.sort((a, b) => b.price - a.price);
-    break;
-  case 'name-asc':
-    sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
-    break;
-  case 'name-desc':
-    sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
-    break;
-  default:
-    // Para 'default' o cualquier otro caso, no hacemos nada.
-    break;
-  }
+    // Segundo, ordenamos la lista filtrada. Creamos una copia para no mutar el original.
+    const sorted = [...filtered];
+    switch (sortOrder) {
+      case 'price-asc': sorted.sort((a, b) => a.price - b.price); break;
+      case 'price-desc': sorted.sort((a, b) => b.price - a.price); break;
+      case 'name-asc': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case 'name-desc': sorted.sort((a, b) => b.name.localeCompare(a.name)); break;
+      default: break;
+    }
+    
+    return sorted;
+  }, [activeCategory, sortOrder]); // Dependencias: el array que activa el recálculo.
 
+  // --- SECCIÓN 3: RENDERIZADO (LA VISTA) ---
+  
   return (
-    <section className="bg-light py-16 md:py-24">
+    <section className="bg-white py-8">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-sans font-bold text-center text-dark mb-12">
+        <h2 className="text-4xl font-sans font-bold text-center text-dark mb-8">
           Todos los Relojes
         </h2>
+        
+        {/* Renderizamos el componente "cabecera" y le pasamos todo lo que necesita. */}
         <ShopLoopHead 
           breadcrumbs={breadcrumbs}
-          totalResults={featuredProducts.length}
-          currentSort={sortOrder}
-          onSortChange={handleSortChange}
+          totalResults={displayProducts.length}
+          activeCategory={activeCategory}        // Le pasamos el estado actual
+          onCategoryChange={setActiveCategory}  // Le pasamos la función para que el hijo pueda cambiar el estado del padre
+          currentSort={sortOrder}               // Le pasamos el estado actual
+          onSortChange={setSortOrder}           // Le pasamos la función para cambiar el estado
         />
+        
+        {/* Cuadrícula de Productos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sortedProducts.map(product => (
-            // Comprobación de seguridad
-            (product.imageUrl && product.imageUrl.length > 0) && (
-              <ProductCard
+          {displayProducts.map(product => (
+            <ProductCard
               key={product.id}
-              href={product.href}
-              imageUrl={product.imageUrl[0]} // pasamos solo la primera imagen del array
-              name={product.name}
-              price={product.price}
+              product={product} // Le pasamos el objeto de producto completo
             />
-            )  
           ))}
         </div>
       </div>

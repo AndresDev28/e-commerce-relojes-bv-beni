@@ -4,6 +4,7 @@ import ProductDetailClient from './ProductDetailClient'
 
 
 
+
 export default async function ProductDetailPage({
   params,
 }: {

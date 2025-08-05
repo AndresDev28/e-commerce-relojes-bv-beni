@@ -12,6 +12,8 @@ interface CartContextType {
   cartItems: CartItem[]; // El estado: un array de nuestros items de carrito.
   addToCart: (product: Product, quantity: number) => void; 
   removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, newQuantity: number) => void;
+  clearCart: () => void
 }
 
 // Plantilla del Contexto
@@ -52,8 +54,32 @@ export const CartProvider = ({children}: CartProviderProps) => {
     });
   };
 
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    setCartItems(prevItems => {
+      // Caso 1: Si la cantidad es 0 eliminamos el producto
+      if(newQuantity <= 0) {
+        return prevItems.filter(item => item.id !== productId)
+      }
+      // Caso 2: Si la cantidad es mayor que 0, actualizamos el producto.
+      // Usamos .map() para crear un nuevo array.
+      return prevItems.map(item => {
+        // Si es el producto que buscamos
+        if(item.id === productId) {
+          // Lo devolvemos con la cantidad actualizada (un nuevo Objeto)
+          return { ...item, quantity: newQuantity }
+        }
+        // Sino lo devolvemos sin cambios
+        return item;
+      })
+    })
+  }
+
+  const clearCart = () => {
+    setCartItems([])
+  }
+
   return (
-    <CartContext.Provider value={{cartItems, addToCart, removeFromCart }}>
+    <CartContext.Provider value={{cartItems, addToCart, removeFromCart, updateQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   )
