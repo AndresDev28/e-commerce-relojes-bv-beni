@@ -94,9 +94,11 @@ export default function CartPage() {
                 </div>
               </div>
               
-              <Button variant="secondary" className="w-full mt-6 py-3">
-                Finalizar Compra
-              </Button>
+              <Link href='/checkout'>
+                <Button variant="secondary" className="w-full mt-6 py-3">
+                  Finalizar Compra
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
