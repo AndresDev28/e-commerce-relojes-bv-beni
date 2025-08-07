@@ -9,7 +9,7 @@ import CartItemRow from '@/app/components/ui/CartItemRow'
 
 export default function CartPage() {
   // Extraemos de useCart lo que vamos a necesitar
-  const { cartItems, removeFromCart, updateQuantity, clearCart} = useCart();
+  const { cartItems, clearCart} = useCart();
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
     { name: 'Carrito', href: '/carrito'}

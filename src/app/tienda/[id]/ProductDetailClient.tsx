@@ -36,7 +36,6 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   const handleAddToCart = () => {
     addToCart(product, quantity)
-    alert(`Se añadidó ${quantity} x ${product.name} al carrito!`)
   }
 
   return (
