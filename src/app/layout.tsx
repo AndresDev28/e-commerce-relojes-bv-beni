@@ -32,7 +32,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className="bg-neutral-light flex flex-col min-h-screen">
+      <body className="bg-white flex flex-col min-h-screen">
         <CartProvider>
           <Navbar />
         <main className="flex-grow">

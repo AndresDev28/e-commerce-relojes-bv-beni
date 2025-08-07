@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowUpDown, ChevronDown } from 'lucide-react';
 import { categories } from '@/lib/data'
 import Button from './Button';
+import Breadcrumbs from './Breadcrumbs';
 
 // Define la estructura de un solo breadcrumb, asegurando que cada uno tenga un nombre visible y una URL de destino.
 interface Breadcrumb {
@@ -55,17 +56,7 @@ const ShopLoopHead = ({ breadcrumbs, totalResults, currentSort, onSortChange, ac
   return (
     // El JSX de breadcrumbs...
     <div className='mb-8 flex flex-col gap-4'>
-      <nav>
-          {breadcrumbs.map((crumb, index) => (
-            <span key={crumb.href}>
-              <Link href={crumb.href} className='font-serif text-sm text-neutral-medium hover:text-primary transition-colors'>
-                {crumb.name}
-              </Link>
-              {/* Agregamos la barra separadora si no es el último elemento */}
-              {index < breadcrumbs.length - 1 && <span className="mx-2">/</span>}
-            </span>
-          ))}
-      </nav>
+      <Breadcrumbs breadcrumbs={breadcrumbs} />
       {/* Agregamos el filtro de categorías */}
       <div className='flex items-center gap-2 flex-wrap border-b border-neutral-light pb-4'>
           <Button
