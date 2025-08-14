@@ -21,3 +21,15 @@
     Investigación: Analicé el flujo de datos y me di cuenta de que tenía múltiples "fuentes de la verdad" para la forma de un Product. Cada componente definía sus propias props ligeramente diferentes.
 
     Solución: Centralicé la definición de todos los tipos de datos principales en una carpeta types. Creé una interface Product maestra y refactoricé todos los componentes (ProductCard, ProductDetailPage, etc.) para que usaran este tipo importado. Esto eliminó todas las inconsistencias y hizo el código mucho más robusto y fácil de mantener.
+
+## El Desafío de la Integración con Strapi: De 400 Bad Request a Renderizado Robusto
+
+    Problema: Al conectar la aplicación con Strapi, aparecían dos errores críticos: un 400 Bad Request en el fetch de productos y un runtime error "Cannot read properties of undefined (reading 'image')" en el componente FeaturedProducts.
+
+    Investigación: El 400 venía de una construcción incorrecta de la URL de la API y parámetros de query inválidos. El runtime error se debía a que Strapi puede devolver relaciones de media como `image` (singular) o `images` (plural), y la estructura de datos no estaba normalizada para manejar ambos casos.
+
+    Solución:
+    - En `page.tsx`: Implementé construcción segura de URLs con `new URL()` y `populate='*'` para evitar queries inválidas. Añadí fallback entre variables de entorno públicas y privadas, y mejoré los mensajes de error para debugging.
+    - En `FeaturedProducts.tsx`: Creé tipos flexibles para relaciones de media que soportan tanto `image` como `images`, normalización de arrays de imágenes, y defensivas para evitar crashes cuando faltan datos. Añadí un placeholder cuando no hay imágenes disponibles.
+
+    Resultado: La aplicación ahora se conecta exitosamente a Strapi, maneja respuestas inconsistentes de la API de forma robusta, y no crashea aunque falten relaciones de media en algunos productos.
