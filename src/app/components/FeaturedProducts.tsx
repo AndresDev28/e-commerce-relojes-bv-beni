@@ -1,53 +1,7 @@
 // src/app/components/FeaturedProducts.tsx
 
 import ProductCard from '@/app/components/ui/ProductCard'
-import { Product } from '@/types'
-
-// --- TIPOS DE STRAPI: La versión final y correcta ---
-
-// Tipo para una sola imagen
-interface StrapiImage {
-  id: number
-  attributes: {
-    url: string
-  }
-}
-
-// Tipo para una sola categoría dentro del 'data'
-interface StrapiCategory {
-  id: number
-  attributes: {
-    name: string
-    slug: string
-  }
-}
-
-// Relación de media en Strapi puede ser una sola imagen o array
-interface StrapiMediaRelation {
-  data: StrapiImage | StrapiImage[] | null
-}
-
-// Tipo para los atributos de un producto
-interface StrapiProductAttributes {
-  name: string
-  price: number
-  slug: string
-  description: string | null
-  stock: number
-  image: StrapiMediaRelation // Puede ser único o arreglo
-  images?: StrapiMediaRelation // Alternativa si el campo es múltiple y se llama 'images'
-  category: {
-    data: StrapiCategory // <-- 'category' contiene un objeto 'data' que es una sola StrapiCategory
-  }
-}
-
-// El tipo final para un producto completo que viene de la API
-interface StrapiProduct {
-  id: number
-  attributes: StrapiProductAttributes
-}
-
-// --- FIN DE LOS TIPOS DE STRAPI ---
+import { Product, StrapiImage, StrapiProduct } from '@/types'
 
 interface FeaturedProductsProps {
   products: StrapiProduct[]
@@ -67,11 +21,12 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map(strapiProduct => {
-            const attributes = strapiProduct?.attributes
-            if (!attributes) return null
+            // Según la respuesta JSON, las propiedades están directamente en el objeto del producto
+            // No hay un objeto 'attributes' anidado
+
             // Transformamos los datos
             const mediaData =
-              (attributes.images ?? attributes.image)?.data ?? null
+              strapiProduct.images ?? strapiProduct.image ?? null
             const imagesArray: StrapiImage[] = Array.isArray(mediaData)
               ? mediaData
               : mediaData
@@ -80,18 +35,17 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
 
             const productForCard: Product = {
               id: strapiProduct.id.toString(),
-              name: attributes.name,
-              price: attributes.price,
+              name: strapiProduct.name || 'Sin nombre',
+              price: strapiProduct.price || 0,
               // Normalizamos para soportar imagen única o múltiple
               images: imagesArray.map(
-                img =>
-                  `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${img.attributes.url}`
+                img => `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${img.url}`
               ),
-              href: `/tienda/${attributes.slug}`,
-              description: attributes.description || '',
+              href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
+              description: strapiProduct.description || '',
               // Y esta también
-              category: attributes.category?.data?.attributes?.name,
-              stock: attributes.stock,
+              category: strapiProduct.category?.name,
+              stock: strapiProduct.stock || 0,
             }
 
             // Si no hay imágenes, añadimos un placeholder para evitar errores en <Image />
