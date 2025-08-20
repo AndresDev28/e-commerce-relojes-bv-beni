@@ -2,10 +2,9 @@
 import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
 import ProductCard from '@/app/components/ui/ProductCard'
-// import { featuredProducts } from '@/lib/data'
 import ShopLoopHead from '@/app/components/ui/ShopLoopHead'
 import { Product, StrapiProduct, StrapiImage } from '@/types'
-import { getProducts } from '@/lib/api'
+import { getProducts, getCategories } from '@/lib/api'
 
 export default function ProductsPage() {
   // --- SECCIÓN 1: DATOS Y ESTADO ---
@@ -33,8 +32,20 @@ export default function ProductsPage() {
     async function fetchProducts() {
       setIsLoading(true) // Empieza la carga (con un spinner o algo parecido)
       try {
-        const fetchedProducts = await getProducts()
+        const [fetchedProducts, fetchedCategories] = await Promise.all([
+          getProducts(),
+          getCategories(),
+        ])
         setProducts(fetchedProducts)
+        setCategoryOptions(
+          Array.from(
+            new Set(
+              fetchedCategories
+                .map(c => c.name)
+                .filter((n): n is string => Boolean(n))
+            )
+          )
+        )
       } catch (error) {
         console.error('Error fetching products:', error)
       } finally {
@@ -44,6 +55,9 @@ export default function ProductsPage() {
 
     fetchProducts()
   }, []) // Se ejecuta solo al montar el componente
+
+  // Opciones de categorías para el filtro
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([])
 
   // --- SECCIÓN 2: LÓGICA DE DATOS OPTIMIZADA ---
 
@@ -70,6 +84,11 @@ export default function ProductsPage() {
           img => `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${img.url}`
         )
 
+        // Normalizamos categoría (puede venir como objeto o array)
+        const categoryName = Array.isArray(strapiProduct.category)
+          ? strapiProduct.category[0]?.name
+          : strapiProduct.category?.name
+
         return {
           id: strapiProduct.id.toString(),
           name: strapiProduct.name || 'Sin nombre',
@@ -77,7 +96,7 @@ export default function ProductsPage() {
           images: images.length > 0 ? images : ['/images/empty-cart.png'],
           href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
           description: strapiProduct.description || '',
-          category: strapiProduct.category?.name,
+          category: categoryName,
           stock: strapiProduct.stock || 0,
         }
       })
@@ -129,6 +148,7 @@ export default function ProductsPage() {
           onCategoryChange={setActiveCategory} // Le pasamos la función para que el hijo pueda cambiar el estado del padre
           currentSort={sortOrder} // Le pasamos el estado actual
           onSortChange={setSortOrder} // Le pasamos la función para cambiar el estado
+          categories={categoryOptions}
         />
 
         {/* Indicador de carga */}

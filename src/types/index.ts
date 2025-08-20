@@ -37,6 +37,7 @@ export interface StrapiCategory {
   id: number
   name: string
   slug: string
+  image?: StrapiImage | StrapiImage[]
 }
 
 // El tipo final para un producto completo que viene de la API
@@ -49,7 +50,14 @@ export interface StrapiProduct {
   stock: number
   image?: StrapiImage | StrapiImage[] // Puede ser único o arreglo
   images?: StrapiImage | StrapiImage[] // Alternativa si el campo es múltiple y se llama 'images'
-  category?: StrapiCategory
+  category?: StrapiCategory | StrapiCategory[]
+}
+
+// Categorías de la cuadrícula de la home
+export interface CategoryItem {
+  title: string
+  imageUrl: string
+  href: string
 }
 
 // La estructura para un usuario registrado

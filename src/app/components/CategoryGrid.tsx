@@ -1,7 +1,26 @@
 import CategoryCard from './ui/CategoryCard'
-import categories from '@/lib/data'
+import { CategoryItem, StrapiCategory, StrapiImage } from '@/types'
 
-const CategoryGrid = () => {
+interface CategoryGridProps {
+  categories: StrapiCategory[]
+}
+
+const CategoryGrid = ({ categories }: CategoryGridProps) => {
+  // Transformamos categorías de Strapi a CategoryItem
+  const items: CategoryItem[] = categories.map(cat => {
+    // Si Strapi trae imagen, la usamos; si no, fallback local por slug
+    const media = (cat.image ?? null) as StrapiImage | StrapiImage[] | null
+    const image = Array.isArray(media) ? media[0] : media
+    const imageUrl = image
+      ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${image.url}`
+      : `/images/categories/${cat.slug}.avif`
+
+    return {
+      title: cat.name,
+      href: `/tienda?categoria=${cat.slug}`,
+      imageUrl,
+    }
+  })
   return (
     <section className="bg-light py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -9,7 +28,7 @@ const CategoryGrid = () => {
           Explora nuestras colecciones
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map(category => (
+          {items.map(category => (
             <CategoryCard
               key={category.title}
               href={category.href}

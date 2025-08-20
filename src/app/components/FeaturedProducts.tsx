@@ -33,6 +33,11 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
                 ? [mediaData]
                 : []
 
+            // Normalizamos categoría (puede venir como objeto o array)
+            const categoryName = Array.isArray(strapiProduct.category)
+              ? strapiProduct.category[0]?.name
+              : strapiProduct.category?.name
+
             const productForCard: Product = {
               id: strapiProduct.id.toString(),
               name: strapiProduct.name || 'Sin nombre',
@@ -44,7 +49,7 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
               href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
               description: strapiProduct.description || '',
               // Y esta también
-              category: strapiProduct.category?.name,
+              category: categoryName,
               stock: strapiProduct.stock || 0,
             }
 

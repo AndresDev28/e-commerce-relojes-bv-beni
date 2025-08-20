@@ -1,6 +1,6 @@
 // src/lib/api.ts
 
-import { StrapiProduct } from '@/types'
+import { StrapiProduct, StrapiCategory } from '@/types'
 
 // Tipo para la respuesta de la API de Strapi (genérico)
 interface StrapiApiResponse<T> {
@@ -59,6 +59,29 @@ async function fetchApi<T>(
 }
 
 // Ahora creamos funciones específicas usando nuestro helper
+// Función para obtener todos los productos
 export async function getProducts(): Promise<StrapiProduct[]> {
   return fetchApi<StrapiProduct[]>('/products', { populate: '*' })
+}
+
+// Función para obtner un solo producto y ya desempaquetado
+export async function getProductBySlug(
+  slug: string
+): Promise<StrapiProduct | null> {
+  const products = await fetchApi<StrapiProduct[]>('/products', {
+    'filters[slug][$eq]': slug,
+    populate: '*',
+  })
+
+  // Si el array está vacío significa que no encontró nada
+  if (!products || products.length === 0) {
+    return null
+  }
+  // Si lo encontró entonces devuelve el primer producto del array StrapiProduct
+  return products[0]
+}
+
+// Función para obtener categorías
+export async function getCategories(): Promise<StrapiCategory[]> {
+  return fetchApi<StrapiCategory[]>('/categories', { populate: '*' })
 }

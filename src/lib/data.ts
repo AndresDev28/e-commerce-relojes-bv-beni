@@ -1,6 +1,6 @@
-import { Product } from '@/types'
+import { Product, CategoryItem } from '@/types'
 // Definimos las categorías, esto simula la futura base de datos
-export const categories = [
+export const categories: CategoryItem[] = [
   {
     title: 'G-Shock',
     imageUrl: '/images/category-1.avif',
@@ -36,7 +36,9 @@ export const featuredProducts: Product[] = [
       '/images/products/gshock/gm2100/gm2100-5.avif',
     ],
     href: '/tienda/casio-g-shock-gm-2100',
-    category: 'G-Shock'
+    category: 'G-Shock',
+    description: '',
+    stock: 0,
   },
   {
     id: 'casio-vintage-A168WEM-1EF',
@@ -50,7 +52,9 @@ export const featuredProducts: Product[] = [
       '/images/products/vintage/a168wem-1ef/a168-5.avif',
     ],
     href: '/tienda/casio-vintage-A168WEM-1EF',
-    category: 'Vintage'
+    category: 'Vintage',
+    description: '',
+    stock: 0,
   },
   {
     id: 'casio-edifice-EFS-S570DB-2AUEF',
@@ -64,7 +68,9 @@ export const featuredProducts: Product[] = [
       '/images/products/edifice/efss570/efs-s570-5.avif',
     ],
     href: '/tienda/casio-edifice-EFS-S570DB-2AUEF',
-    category: 'Edifice'
+    category: 'Edifice',
+    description: '',
+    stock: 0,
   },
   {
     id: 'casio-g-shock-ga-2100',
@@ -78,7 +84,9 @@ export const featuredProducts: Product[] = [
       '/images/products/gshock/ga2100/ga2100-5.avif',
     ],
     href: '/tienda/casio-g-shock-ga-2100',
-    category: 'G-Shock'
+    category: 'G-Shock',
+    description: '',
+    stock: 0,
   },
 ]
 

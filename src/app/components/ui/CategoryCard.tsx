@@ -20,6 +20,7 @@ const CategoryCard = ({ href, imageUrl, title }: CategoryCardProps) => {
           src={imageUrl}
           alt={`Coleccion de ${title}`}
           fill // Hace que la imagen ocupe todo el espacio del contenedor padre
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
           style={{ objectFit: 'cover' }} // Asegura que la imagen cubra el espacio sin desformarse
           className="transition-transform duration-500 group-hover:scale-110 cursor-pointer" // Efecto zoom al hacer hover
         />

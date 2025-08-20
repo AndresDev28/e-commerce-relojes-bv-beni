@@ -1,19 +1,20 @@
 // 'use client' // Necesario para hooks en páginas de next.js
 import React from 'react'
 import HeroSection from '@/app/components/HeroSection'
-import CategoryGrid from '@/app/components/CategoryGrid'
 import FeaturedProducts from '@/app/components/FeaturedProducts'
 import TrustSection from '@/app/components/TrustSection'
-import { getProducts } from '@/lib/api'
+import { getProducts, getCategories } from '@/lib/api'
+import CategoryGrid from '@/app/components/CategoryGrid'
 
 // 1. Agregamos async
 export default async function Home() {
   const products = await getProducts()
+  const categories = await getCategories()
 
   return (
     <>
       <HeroSection />
-      <CategoryGrid />
+      <CategoryGrid categories={categories} />
       {/* 3. Pasamos los productos reales como prop */}
       <FeaturedProducts products={products} />
       <TrustSection />
