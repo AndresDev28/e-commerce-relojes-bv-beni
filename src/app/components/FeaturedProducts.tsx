@@ -43,9 +43,7 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
               name: strapiProduct.name || 'Sin nombre',
               price: strapiProduct.price || 0,
               // Normalizamos para soportar imagen única o múltiple
-              images: imagesArray.map(
-                img => `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${img.url}`
-              ),
+              images: imagesArray.map(img => img.url),
               href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
               description: strapiProduct.description || '',
               // Y esta también

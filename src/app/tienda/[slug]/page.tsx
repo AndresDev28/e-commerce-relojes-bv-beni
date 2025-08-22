@@ -27,9 +27,7 @@ export default async function ProductDetailPage({
       ? [mediaData]
       : []
 
-  const images = imagesArray.map(
-    img => `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${img.url}`
-  )
+  const images = imagesArray.map(img => img.url)
 
   // Normalizamos categoría (puede venir como objeto o array)
   const category = Array.isArray(strapiProduct.category)

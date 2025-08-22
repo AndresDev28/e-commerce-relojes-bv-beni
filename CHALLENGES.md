@@ -51,3 +51,23 @@
 3.  **Capa de Transformación de Datos:** En cada componente que recibe datos de la API (como `FeaturedProducts` y `ProductsPage`), implementé una lógica de mapeo dentro de un `useMemo`. Esta capa es responsable de transformar los datos "crudos" de Strapi en la estructura `Product` limpia, manejando defensivamente campos que puedan faltar y normalizando inconsistencias.
 
 **Resultado:** La aplicación ahora se comunica con la API de forma fiable. Los componentes son agnósticos a la estructura de la API, ya que solo reciben datos limpios y predecibles. El código es más robusto, mantenible y a prueba de errores de datos.
+
+## Desafío de Producción: La Persistencia de Imágenes y la Arquitectura "Headless" Real
+
+**Problema:** Tras el despliegue exitoso inicial, me enfrenté a un problema crítico y silencioso: todas las imágenes subidas a Strapi a través del Media Library **desaparecían con cada nuevo despliegue del backend en Render**. Adicionalmente, las URLs de las imágenes no se resolvían correctamente en el frontend desplegado en Vercel, mostrando imágenes rotas.
+
+**Investigación:**
+
+1.  **Análisis del Entorno de Render:** Descubrí que la mayoría de las plataformas de despliegue modernas (como Render o Heroku) tienen un **sistema de archivos efímero**. Esto significa que cualquier archivo subido directamente al servidor se borra cuando la instancia se reinicia o se redespliega, lo cual es una práctica estándar para mantener la escalabilidad y la inmutabilidad de los servidores.
+2.  **Análisis de URLs:** Me di cuenta de que Strapi, por defecto, generaba URLs relativas (ej. `/uploads/imagen.png`). Mi frontend en Vercel intentaba resolver esa ruta desde su propio dominio, no desde el dominio del backend, causando las imágenes rotas.
+3.  **Investigación de Soluciones:** La solución estándar de la industria para este problema es no almacenar los archivos subidos por los usuarios en el mismo servidor que la aplicación. En su lugar, se utiliza un **proveedor de almacenamiento de objetos o una CDN (Content Delivery Network)** de terceros.
+
+**Solución:**
+Implementé una arquitectura de gestión de medios de nivel de producción, desacoplando el almacenamiento de imágenes de la aplicación del backend:
+
+1.  **Integración de Cloudinary:** Elegí Cloudinary como mi proveedor de almacenamiento de medios. Instalé y configuré el `strapi-provider-upload-cloudinary` en mi proyecto de Strapi, añadiendo las credenciales de la API de Cloudinary como variables de entorno seguras en Render.
+2.  **Actualización de la Política de Seguridad (CSP):** Modifiqué el `middleware` de seguridad de Strapi (`config/middlewares.ts`) para añadir `res.cloudinary.com` a las directivas `img-src` y `media-src`. Esto le da permiso a mi panel de administración para mostrar imágenes servidas desde Cloudinary.
+3.  **Refactorización del Frontend:** Una vez que las imágenes se servían desde Cloudinary, estas ya venían con una URL absoluta y completa. Refactoricé toda la lógica de transformación de datos en mi frontend para eliminar el prefijo de `STRAPI_API_URL` que antes añadía a las URLs de las imágenes.
+4.  **Configuración de `next.config.ts`:** Añadí el dominio de Cloudinary a la configuración `images.remotePatterns` en mi `next.config.ts` para permitir que el componente `<Image>` de Next.js optimice estas imágenes externas.
+
+**Resultado:** Mi aplicación ahora tiene un sistema de gestión de imágenes robusto, persistente y altamente optimizado. Las imágenes sobreviven a los despliegues, se sirven globalmente a través de la CDN de Cloudinary para una carga ultrarrápida, y la arquitectura está verdaderamente desacoplada, siguiendo las mejores prácticas "headless".

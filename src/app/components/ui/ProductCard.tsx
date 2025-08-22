@@ -3,39 +3,37 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
-import { useCart } from '@/context/CartContext'
-import { Product } from '@/types' // El tipo maestro
 
 interface ProductCardProps {
-  product: Product;
+  href: string
+  imageUrl: string | string[]
+  name: string
+  price: number
 }
 
-const ProductCard = ({ product }: ProductCardProps) => {
-  const { addToCart } = useCart();
-
-  const mainImageUrl = product.images[0];
-
+const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
+  // Si imageUrl es un array, usar la primera imagen, si no, usar la string directamente
+  const mainImageUrl = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl
   const handleAddToCart = () => {
-    addToCart(product, 1);
-    console.log(`Producto ${product.name} agregado al carrito!`)
+    console.log(`Producto ${name} agregado al carrito!`)
   }
 
   const handleAddToFavorites = () => {
-    console.log(`Producto ${product.name} agregado a favoritos!`)
+    console.log(`Producto ${name} agregado a favoritos!`)
   }
 
-  // const handleViewDetails = () => {
-  //   window.location.href = href
-  // }
+  const handleViewDetails = () => {
+    window.location.href = href
+  }
 
   return (
     <div className="group block rounded-lg overflow-hidden bg-white transition-shadow hover:shadow-xl border border-neutral-light/50">
-      {/* Link solo para la imagen e información */}
-      <Link href={product.href} className="block">
+      {/* Link solo para la imagen y información */}
+      <Link href={href} className="block">
         <div className="relative h-64 w-full bg-neutral-light">
           <Image
             src={mainImageUrl}
-            alt={product.name}
+            alt={name}
             fill
             style={{ objectFit: 'contain' }}
             className="group-hover:scale-105 transition-transform duration-300 p-4"
@@ -44,13 +42,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         <div className="flex flex-col flex-grow p-4">
           <h3 className="font-sans font-semibold text-base text-dark truncate mb-1">
-            {product.name}
+            {name}
           </h3>
           <p className="font-serif text-lg text-primary mt-auto pt-2">
             {new Intl.NumberFormat('es-ES', {
               style: 'currency',
               currency: 'EUR',
-            }).format(product.price)}
+            }).format(price)}
           </p>
         </div>
       </Link>
@@ -69,12 +67,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
           onClick={handleAddToCart}
         />
         <div className="border-r h-8 border-neutral-light"></div>
-        <Link href={product.href} className='flex-1 text-center'>
-          <ProductActionIcon
-            icon={Eye}
-            label="Detalles"
-          />
-        </Link>
+        <ProductActionIcon
+          icon={Eye}
+          label="Detalles"
+          onClick={handleViewDetails}
+        />
       </div>
     </div>
   )
