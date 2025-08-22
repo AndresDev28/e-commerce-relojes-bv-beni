@@ -11,9 +11,7 @@ const CategoryGrid = ({ categories }: CategoryGridProps) => {
     // Si Strapi trae imagen, la usamos; si no, fallback local por slug
     const media = (cat.image ?? null) as StrapiImage | StrapiImage[] | null
     const image = Array.isArray(media) ? media[0] : media
-    const imageUrl = image
-      ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL}${image.url}`
-      : `/images/categories/${cat.slug}.avif`
+    const imageUrl = image ? image.url : `/images/categories/${cat.slug}.avif`
 
     return {
       title: cat.name,
