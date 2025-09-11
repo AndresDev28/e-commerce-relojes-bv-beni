@@ -3,17 +3,29 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
+import { Product } from '@/types'
 
-interface ProductCardProps {
-  href: string
-  imageUrl: string | string[]
-  name: string
-  price: number
-}
+// Permite usar el componente con un objeto `product` o con props sueltos.
+type ProductCardProps =
+  | {
+      product: Product
+    }
+  | {
+      href: string
+      imageUrl: string | string[]
+      name: string
+      price: number
+    }
 
-const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
-  // Si imageUrl es un array, usar la primera imagen, si no, usar la string directamente
-  const mainImageUrl = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl
+const ProductCard = (props: ProductCardProps) => {
+  // Normaliza props para soportar ambas firmas
+  const href = 'product' in props ? props.product.href : props.href
+  const rawImages = 'product' in props ? props.product.images : props.imageUrl
+  const name = 'product' in props ? props.product.name : props.name
+  const price = 'product' in props ? props.product.price : props.price
+
+  // Usa la primera imagen disponible; admite string o array
+  const mainImageUrl = Array.isArray(rawImages) ? rawImages[0] : rawImages
   const handleAddToCart = () => {
     console.log(`Producto ${name} agregado al carrito!`)
   }
@@ -23,13 +35,13 @@ const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
   }
 
   const handleViewDetails = () => {
-    window.location.href = href
+    window.location.href = href || '#'
   }
 
   return (
     <div className="group block rounded-lg overflow-hidden bg-white transition-shadow hover:shadow-xl border border-neutral-light/50">
-      {/* Link solo para la imagen y información */}
-      <Link href={href} className="block">
+      {/* Enlace a la ficha del producto */}
+      <Link href={href || '#'} className="block">
         <div className="relative h-64 w-full bg-neutral-light">
           <Image
             src={mainImageUrl}
@@ -53,7 +65,7 @@ const ProductCard = ({ href, imageUrl, name, price }: ProductCardProps) => {
         </div>
       </Link>
 
-      {/* Acciones fuera del Link */}
+      {/* Acciones rápidas */}
       <div className="p-4 pt-2 flex items-center justify-around border-t border-neutral-light">
         <ProductActionIcon
           icon={Heart}
