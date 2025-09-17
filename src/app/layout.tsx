@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import Navbar from './components/Navbar'
-import Footer from './components/Footer'
+import AppShell from './components/AppShell'
 import { Oswald, Lora } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { CartProvider } from '@/context/CartContext'
@@ -36,9 +35,7 @@ export default function RootLayout({
       <body className="bg-white flex flex-col min-h-screen">
         <AuthProvider>
           <CartProvider>
-            <Navbar />
-            <main className="flex-grow">{children}</main>
-            <Footer />
+            <AppShell>{children}</AppShell>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -71,3 +71,18 @@ Implementé una arquitectura de gestión de medios de nivel de producción, desa
 4.  **Configuración de `next.config.ts`:** Añadí el dominio de Cloudinary a la configuración `images.remotePatterns` en mi `next.config.ts` para permitir que el componente `<Image>` de Next.js optimice estas imágenes externas.
 
 **Resultado:** Mi aplicación ahora tiene un sistema de gestión de imágenes robusto, persistente y altamente optimizado. Las imágenes sobreviven a los despliegues, se sirven globalmente a través de la CDN de Cloudinary para una carga ultrarrápida, y la arquitectura está verdaderamente desacoplada, siguiendo las mejores prácticas "headless".
+
+## Desafío de UX: Navbar en páginas de autenticación (login/registro)
+
+**Problema:** Las páginas de `login` y `registro` necesitaban ser limpias y enfocadas, sin distracciones de navegación. Sin embargo, el `Navbar` y el `Footer` aparecían (o parpadeaban) al entrar a estas rutas, rompiendo la experiencia y la jerarquía visual.
+
+**Investigación:** En el App Router de Next.js, el `layout.tsx` raíz envuelve toda la app. Condicionar el `Navbar` ahí según la ruta puede provocar desajustes entre render de servidor y cliente, y mezcla responsabilidades que deberían estar segmentadas por áreas de la app. Además, requería una forma fiable de detectar la ruta desde el cliente.
+
+**Solución:** Apliqué el patrón de "shell de aplicación" combinado con un layout por segmento:
+
+1. Creé un `AppShell` como Client Component que usa `usePathname()` para detectar si la ruta actual es de auth.
+2. Definí `isAuthRoute` para `'/login'` y `'/registro'` y, en esos casos, `AppShell` devuelve solo `{children}` sin `Navbar` ni `Footer`.
+3. Añadí un `layout.tsx` dentro de `(auth)` que controla el fondo, el color y la altura mínima para toda la sección de auth, aislando su look&feel del layout global.
+4. Mantengo los `Providers` globales (`AuthProvider`, `CartProvider`) en el `RootLayout` para que el estado esté disponible también en auth aunque el `Navbar` no se muestre.
+
+**Resultado:** Las páginas de `login` y `registro` se renderizan sin `Navbar`/`Footer`, sin parpadeos ni desajustes, y con un diseño coherente propio. El resto de rutas conservan el layout global con navegación y pie, logrando una experiencia consistente y clara.

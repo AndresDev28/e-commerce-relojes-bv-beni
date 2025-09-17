@@ -91,9 +91,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   /**
    * Estado de carga para operaciones asíncronas
    * true = operación en progreso, false = operación completada
-   * Inicializado en true para verificar sesión al cargar la app
+   * Inicialmente false para no bloquear la UI; se activa al llamar login/register
    */
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   // ===================================================
   // FUNCIONES DE AUTENTICACIÓN
