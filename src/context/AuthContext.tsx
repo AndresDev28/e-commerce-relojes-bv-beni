@@ -148,20 +148,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       // TODO: Implementar llamada a la API
-      // const response = await fetch('/api/auth/local/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ username, email, password })
-      // })
-      // const data = await response.json()
-      //
-      // if (response.ok) {
-      //   setUser(data.user)
-      //   setJwt(data.jwt)
-      //   localStorage.setItem('jwt', data.jwt) // Persistir token
-      // } else {
-      //   throw new Error(data.error?.message || 'Error en el registro')
-      // }
+      const apiUrl = `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/auth/local/register`
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password }),
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        setUser(data.user)
+        setJwt(data.jwt)
+        localStorage.setItem('jwt', data.jwt) // Persistir token
+      } else {
+        throw new Error(data.error?.message || 'Error en el registro')
+      }
     } catch (error) {
       console.error('Error en registro:', error)
       // TODO: Manejar errores (mostrar toast, etc.)

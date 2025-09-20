@@ -1,4 +1,5 @@
 // 'use client' // Necesario para hooks en páginas de next.js
+export const dynamic = 'force-dynamic'
 import React from 'react'
 import HeroSection from '@/app/components/HeroSection'
 import FeaturedProducts from '@/app/components/FeaturedProducts'
