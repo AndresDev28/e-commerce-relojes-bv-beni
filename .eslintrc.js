@@ -26,6 +26,16 @@ module.exports = {
     // Es una buena práctica desactivar esta regla en proyectos de Next.js,
     // ya que no necesitas importar React en cada archivo.
     'react/react-in-jsx-scope': 'off',
+
+    // Permitir variables no usadas que comiencen con _
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^',
+        varsIgnorePattern: '^',
+        caughtErrorsIgnorePattern: '^',
+      },
+    ],
     
     // Puedes añadir otras reglas personalizadas aquí si quieres
   },
