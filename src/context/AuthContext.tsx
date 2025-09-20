@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * @param identifier - Email o username del usuario
    * @param password - Contraseña del usuario
    */
-  const login = async (identifier: string, password: string) => {
+  const login = async (identifier: string, _password: string) => {
     setIsLoading(true)
     console.log('LOGIN: Intentando iniciar sesión con:', identifier)
 

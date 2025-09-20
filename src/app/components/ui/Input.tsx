@@ -17,7 +17,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
     {
       label,
-      variant = 'default',
       error,
       helperText,
       className,
