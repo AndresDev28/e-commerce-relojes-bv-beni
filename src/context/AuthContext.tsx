@@ -1,5 +1,11 @@
 'use client'
-import { createContext, useState, useContext, ReactNode } from 'react'
+import {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from 'react'
 
 /**
  * ===================================================
@@ -96,6 +102,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   // ===================================================
+  // INICIALIZACIÓN DEL ESTADO DESDE LOCALSTORAGE
+  // ===================================================
+
+  /**
+   * Efecto para inicializar el estado desde localStorage cuando el componente se monte
+   * Solo se ejecuta en el cliente (navegador)
+   */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedJwt = localStorage.getItem('jwt')
+      if (savedJwt) {
+        setJwt(savedJwt)
+        // TODO: Validar token con el servidor y obtener datos del usuario
+        // Por ahora solo restauramos el token
+      }
+    }
+  }, [])
+
+  // ===================================================
   // FUNCIONES DE AUTENTICACIÓN
   // ===================================================
 
@@ -148,7 +173,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       // TODO: Implementar llamada a la API
-      const apiUrl = `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/auth/local/register`
+      const apiUrl = `http://127.0.0.1:1337/api/auth/local/register`
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,7 +184,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (response.ok) {
         setUser(data.user)
         setJwt(data.jwt)
-        localStorage.setItem('jwt', data.jwt) // Persistir token
+        // Persistir token solo en el navegador
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('jwt', data.jwt)
+        }
       } else {
         throw new Error(data.error?.message || 'Error en el registro')
       }
@@ -182,8 +210,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null)
     setJwt(null)
 
-    // Limpiar token del localStorage
-    localStorage.removeItem('jwt')
+    // Limpiar token del localStorage (solo en el navegador)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('jwt')
+    }
 
     // TODO: Opcionalmente, invalidar token en el servidor
   }

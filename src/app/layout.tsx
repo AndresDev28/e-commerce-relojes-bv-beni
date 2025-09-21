@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import AppShell from './components/AppShell'
 import { Oswald, Lora } from 'next/font/google'
-import { AuthProvider } from '@/context/AuthContext'
+import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper'
 import { CartProvider } from '@/context/CartContext'
 import './globals.css'
 
@@ -33,11 +33,11 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className="bg-white flex flex-col min-h-screen">
-        <AuthProvider>
+        <AuthProviderWrapper>
           <CartProvider>
             <AppShell>{children}</AppShell>
           </CartProvider>
-        </AuthProvider>
+        </AuthProviderWrapper>
       </body>
     </html>
   )

@@ -37,7 +37,12 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
               id: strapiProduct.id.toString(),
               name: strapiProduct.name || 'Sin nombre',
               price: strapiProduct.price || 0,
-              images: imagesArray.map(img => img.url),
+              images: imagesArray.map(img => {
+                if (!img || !img.url) return '/images/empty-cart.png'
+                return img.url.startsWith('http')
+                  ? img.url
+                  : `http://127.0.0.1:1337${img.url}`
+              }),
               href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
               description: strapiProduct.description || '',
               category: categoryName,

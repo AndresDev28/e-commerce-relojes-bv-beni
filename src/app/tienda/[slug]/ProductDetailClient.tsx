@@ -6,6 +6,7 @@ import QuantitySelector from '@/app/components/ui/QuantitySelector'
 import Button from '@/app/components/ui/Button'
 import { CheckSquare } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
+import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
 
 // interface Product {
@@ -24,7 +25,12 @@ interface ProductDetailClientProps {
 export default function ProductDetailClient({
   product,
 }: ProductDetailClientProps) {
-  const [activeImage, setActiveImage] = useState(product.images[0])
+  // Validar que el producto tenga al menos una imagen
+  const validImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : ['/images/empty-cart.png']
+  const [activeImage, setActiveImage] = useState(validImages[0])
   const [quantity, setQuantity] = useState(1)
   const { addToCart } = useCart()
 
@@ -59,7 +65,7 @@ export default function ProductDetailClient({
           </div>
           {/* Miniaturas (Thumbnails) */}
           <div className="grid grid-cols-5 gap-2">
-            {product.images.map((image, index) => (
+            {validImages.map((image, index) => (
               <div
                 key={index}
                 className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${activeImage === image ? 'border-primary' : 'border-transparent'}`}
@@ -97,9 +103,44 @@ export default function ProductDetailClient({
             </span>
           </div>
           {/* Descripción del Producto */}
-          <p className="text-lg font-serif text-neutral-medium mt-6 leading-relaxed">
-            {product.description}
-          </p>
+          <div className="prose prose-lg max-w-none text-neutral-medium mt-6 leading-relaxed font-serif">
+            {product.description ? (
+              <ReactMarkdown
+                components={{
+                  // Personalizar componentes para mejor integración con Tailwind
+                  p: ({ children }) => <p className="mb-4">{children}</p>,
+                  h1: ({ children }) => (
+                    <h1 className="text-2xl font-bold mb-4">{children}</h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-xl font-bold mb-3">{children}</h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-lg font-bold mb-2">{children}</h3>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="list-disc list-inside mb-4">{children}</ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="list-decimal list-inside mb-4">
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children }) => <li className="mb-1">{children}</li>,
+                  strong: ({ children }) => (
+                    <strong className="font-bold">{children}</strong>
+                  ),
+                  em: ({ children }) => <em className="italic">{children}</em>,
+                }}
+              >
+                {product.description}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-neutral-medium italic">
+                No hay descripción disponible para este producto.
+              </p>
+            )}
+          </div>
 
           {/* Panel de acciones */}
           <div className="mt-8">

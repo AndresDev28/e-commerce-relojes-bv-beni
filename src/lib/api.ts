@@ -26,12 +26,7 @@ async function fetchApi<T>(
   query?: Record<string, string>
 ): Promise<T> {
   const apiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL
-  if (!apiUrl) {
-    throw new Error(
-      'STRAPI_API_URL or NEXT_PUBLIC_STRAPI_API_URL is not defined in environment variables.'
-    )
-  }
+    process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL || 'http://127.0.0.1:1337'
 
   const url = new URL(`/api${endpoint}`, apiUrl)
 

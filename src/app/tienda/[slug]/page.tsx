@@ -28,12 +28,23 @@ export default async function ProductDetailPage({
       ? [mediaData]
       : []
 
-  const images = imagesArray.map(img => img.url)
+  const images = imagesArray.map(img => {
+    if (!img || !img.url) return '/images/empty-cart.png'
+    return img.url.startsWith('http')
+      ? img.url
+      : `http://127.0.0.1:1337${img.url}`
+  })
 
   // Normalizamos categoría (puede venir como objeto o array)
   const category = Array.isArray(strapiProduct.category)
     ? strapiProduct.category[0]?.name
     : strapiProduct.category?.name
+
+  // Limpiar y procesar la descripción para markdown
+  const cleanDescription =
+    strapiProduct.description && typeof strapiProduct.description === 'string'
+      ? strapiProduct.description.trim()
+      : ''
 
   const product: Product = {
     id: strapiProduct.id.toString(),
@@ -41,7 +52,7 @@ export default async function ProductDetailPage({
     price: strapiProduct.price || 0,
     images: images.length > 0 ? images : ['/images/empty-cart.png'],
     href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
-    description: strapiProduct.description || '',
+    description: cleanDescription,
     category,
     stock: strapiProduct.stock || 0,
   }
