@@ -6,6 +6,12 @@ import {
   ReactNode,
   useEffect,
 } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  API_URL,
+  AUTH_LOGIN_ENDPOINT,
+  AUTH_REGISTER_ENDPOINT,
+} from '@/lib/constants'
 
 /**
  * ===================================================
@@ -101,6 +107,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    */
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
+  /**
+   * Hook de navegación del App Router de Next.js
+   *
+   * Se utiliza para redirigir al usuario tras acciones de autenticación
+   * (por ejemplo, después de un login exitoso o un logout), y para
+   * navegar a páginas protegidas o públicas según corresponda.
+   *
+   * Nota: Este hook solo funciona en componentes del cliente, por eso
+   * este contexto está marcado como 'use client'.
+   */
+  const router = useRouter()
+
   // ===================================================
   // INICIALIZACIÓN DEL ESTADO DESDE LOCALSTORAGE
   // ===================================================
@@ -129,26 +147,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * @param identifier - Email o username del usuario
    * @param password - Contraseña del usuario
    */
-  const login = async (identifier: string, _password: string) => {
+  const login = async (identifier: string, password: string) => {
     setIsLoading(true)
     console.log('LOGIN: Intentando iniciar sesión con:', identifier)
 
+    // URl absoluta
+    const loginURl = `${API_URL}${AUTH_LOGIN_ENDPOINT}`
+
     try {
       // TODO: Implementar llamada a la API
-      // const response = await fetch('/api/auth/local', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ identifier, password })
-      // })
-      // const data = await response.json()
-      //
-      // if (response.ok) {
-      //   setUser(data.user)
-      //   setJwt(data.jwt)
-      //   localStorage.setItem('jwt', data.jwt) // Persistir token
-      // } else {
-      //   throw new Error(data.error?.message || 'Error en el login')
-      // }
+      const response = await fetch(loginURl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        console.log('Login exitoso:', data)
+        router.push('/mi-cuenta') // Redirigimos a cuenta de usuario
+        setUser(data.user)
+        //setJwt(data.jwt)
+        localStorage.setItem('jwt', data.jwt) // Persistir token
+        // TODO: Redirigimos al usuario
+      } else {
+        throw new Error(data.error?.message || 'Error en el login')
+      }
     } catch (error) {
       console.error('Error en login:', error)
       // TODO: Manejar errores (mostrar toast, etc.)
@@ -169,12 +193,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     password: string
   ) => {
     setIsLoading(true)
-    console.log('REGISTER: Intentando registrar a:', username, email)
+    console.log('REGISTER: Intentando registrar a:', username, email, password)
+
+    // URL absoluta
+    const registerUrl = `${API_URL}${AUTH_REGISTER_ENDPOINT}`
 
     try {
       // TODO: Implementar llamada a la API
-      const apiUrl = `http://127.0.0.1:1337/api/auth/local/register`
-      const response = await fetch(apiUrl, {
+      const response = await fetch(registerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -182,6 +208,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const data = await response.json()
 
       if (response.ok) {
+        console.log(`Registro exitoso. Bienvenido ${username}!`, data)
+        router.push('/mi-cuenta') // Redirigimos a cuenta de usuario
         setUser(data.user)
         setJwt(data.jwt)
         // Persistir token solo en el navegador
@@ -212,8 +240,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Limpiar token del localStorage (solo en el navegador)
     if (typeof window !== 'undefined') {
+      console.log('Logout exitoso de')
       localStorage.removeItem('jwt')
     }
+
+    // Redirigimos al usuario a la página de inicio
+    router.push('/')
 
     // TODO: Opcionalmente, invalidar token en el servidor
   }
