@@ -67,20 +67,42 @@ const Navbar = () => {
           <Link href="/favorito">
             <Heart className="h-6 w-6 hover:text-primaryBlue transition-colors" />
           </Link>
-          {/* Registro e inicio de sesión */}
+          {/* Lógica de renderizado condicional para autenticación */}
           <div className="hidden lg:flex items-center space-x-2 pl-4 border-l border-light">
-            <Link href="/login">
-              {/* Este botón parecería texto normal que cambia de color al hacer hover */}
-              <Button variant="tertiary" className="font-sans">
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <Link href="/registro">
-              {/* Y este sería el botón principal para llamar más la atención */}
-              <Button variant="tertiary" className="font-sans">
-                Registrarse
-              </Button>
-            </Link>
+            {auth.user ? ( // Si auth.user existe renderiza el porimer bloque, sino el segundo
+              // CASO 1: Si el usuario está logado
+              <>
+                <Link href="/mi-cuenta">
+                  <Button variant="tertiary" className="font-sans">
+                    Mi cuenta
+                  </Button>
+                </Link>
+                {/* El logout es una acción, no un link, por eso es un botón con onClick */}
+                <Button
+                  onClick={auth.logout}
+                  variant="secondary"
+                  className="font-sans"
+                >
+                  Cerrar sesión
+                </Button>
+              </>
+            ) : (
+              // CASO 2: El usuario no está logado
+              <>
+                <Link href="/login">
+                  {/* Este botón parecería texto normal que cambia de color al hacer hover */}
+                  <Button variant="tertiary" className="font-sans">
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link href="/registro">
+                  {/* Botón principal para llamar más la atención */}
+                  <Button variant="tertiary" className="font-sans">
+                    Registrarse
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

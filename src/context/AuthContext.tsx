@@ -128,15 +128,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * Solo se ejecuta en el cliente (navegador)
    */
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedJwt = localStorage.getItem('jwt')
-      if (savedJwt) {
-        setJwt(savedJwt)
-        // TODO: Validar token con el servidor y obtener datos del usuario
-        // Por ahora solo restauramos el token
+    const checkUserLoggedIn = async () => {
+      // Iniciamos el proceso avisando que estamos cargando
+      setIsLoading(true)
+      const jwt = localStorage.getItem('jwt')
+
+      // Si no hay token la decisión es instantánea para esperar mas tiempo del necesario
+      if (!jwt) {
+        setUser(null)
+        setIsLoading(false) // Se resuleve el estado de carga
+        return
+      }
+
+      // Si hay token, validamos con el servidor
+      try {
+        const response = await fetch(`${API_URL}/api/users/me`, {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        })
+
+        if (response.ok) {
+          const user = await response.json()
+          setUser(user) // <-- ¡Hidratamos el estado con los datos del usuario!
+          setJwt(jwt) // <-- Opcional: sincroniza el estado del JWT también
+        } else {
+          // El token es inválido, limpiamos todo
+          setUser(null)
+          setJwt(null)
+          localStorage.removeItem('jwt')
+        }
+      } catch (error) {
+        console.error('Error al validar sesión', error)
+        // Si hay un error de red, asumimos que no hay sesión
+        setUser(null)
+        setJwt(null)
+        localStorage.removeItem('jwt')
+      } finally {
+        // en cualquiera de los casos se resuelve el estado de carga
+        setIsLoading(false)
       }
     }
-  }, [])
+
+    checkUserLoggedIn()
+  }, []) // Solo se ejecuta una vez
 
   // ===================================================
   // FUNCIONES DE AUTENTICACIÓN
@@ -167,9 +202,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('Login exitoso:', data)
         router.push('/mi-cuenta') // Redirigimos a cuenta de usuario
         setUser(data.user)
-        //setJwt(data.jwt)
         localStorage.setItem('jwt', data.jwt) // Persistir token
-        // TODO: Redirigimos al usuario
       } else {
         throw new Error(data.error?.message || 'Error en el login')
       }

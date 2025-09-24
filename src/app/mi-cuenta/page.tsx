@@ -1,11 +1,24 @@
 'use client'
-
 import { useAuth } from '@/context/AuthContext'
 import Button from '../components/ui/Button'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-export default function MyCountPage() {
-  // Obtenemos el usuario y la función de logout del contexto
-  const { user, logout } = useAuth()
+export default function MyAccountPage() {
+  // Obtenemos el usuario e isLoading
+  const { user, isLoading, logout } = useAuth()
+  const router = useRouter()
+
+  // Guardian de la ruta
+  useEffect(() => {
+    // Actúa solo si la carga inicial ha terminado
+    if (!isLoading) {
+      if (!user) {
+        // Si no hay usuario redirigimos a login
+        router.push('/login')
+      }
+    }
+  }, [user, isLoading, router]) // El hook se ejecuta si una de estas dependencias cambian
 
   // Si el contexto esta cargando el usuario podemos mostrar un loader
   if (!user) {
@@ -22,10 +35,7 @@ export default function MyCountPage() {
 
       {/* Aqui incluiremos historial de pedidos, etc */}
 
-      <Button
-        onClick={logout} // Funcion logout del AuthContext
-        variant="secondary"
-      >
+      <Button onClick={logout} variant="secondary" className="font-sans">
         Cerrar sesión
       </Button>
     </div>
