@@ -1,28 +1,15 @@
 'use client'
 import { useAuth } from '@/context/AuthContext'
 import Button from '../components/ui/Button'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import Spinner from '../components/ui/Spinner'
 
 export default function MyAccountPage() {
   // Obtenemos el usuario e isLoading
-  const { user, isLoading, logout } = useAuth()
-  const router = useRouter()
-
-  // Guardian de la ruta
-  useEffect(() => {
-    // Actúa solo si la carga inicial ha terminado
-    if (!isLoading) {
-      if (!user) {
-        // Si no hay usuario redirigimos a login
-        router.push('/login')
-      }
-    }
-  }, [user, isLoading, router]) // El hook se ejecuta si una de estas dependencias cambian
+  const { user, logout } = useAuth()
 
   // Si el contexto esta cargando el usuario podemos mostrar un loader
   if (!user) {
-    return <div>Cargando...</div>
+    return <Spinner />
   }
 
   return (

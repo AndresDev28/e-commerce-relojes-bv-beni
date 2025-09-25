@@ -265,7 +265,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * Limpia el estado local y el token almacenado
    */
   const logout = () => {
-    console.log('LOGOUT: Cerrando sesión')
+    // Redirigimos al usuario a la página de inicio
+    router.push('/')
 
     // Limpiar estado local
     setUser(null)
@@ -276,11 +277,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('Logout exitoso de')
       localStorage.removeItem('jwt')
     }
-
-    // Redirigimos al usuario a la página de inicio
-    router.push('/')
-
-    // TODO: Opcionalmente, invalidar token en el servidor
   }
 
   // ===================================================
