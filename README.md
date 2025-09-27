@@ -29,7 +29,7 @@ Every feature implemented and every problem solved is a direct contribution to m
 - **Detailed Product Pages:** High-resolution images, detailed descriptions, and specifications for each watch.
 - **Filtering & Sorting:** Easy-to-use controls to find the perfect watch by brand, price, or style.
 - **Shopping Cart:** A persistent and intuitive cart to manage selected items.
-- **User Authentication:** Secure user registration and login functionality.
+- **User Authentication Module:** Handles all user-related functionalities, including registration, login, and session management.
 - **Secure Checkout:** (Coming Soon) Integration with Stripe for safe and reliable payments.
 
 ---
@@ -53,6 +53,13 @@ This project was a significant learning experience. Beyond just building the fin
 
 ---
 
+## 📄 Technical Documentation
+
+For a detailed technical breakdown of the core modules, including architecture and data flow, please refer to the documents in the `/docs` folder.
+
+- **[Authentication Module Documentation](./docs/authentication.md)**
+- _(Aquí irán los enlaces a los futuros módulos que documentemos)_
+
 ## 🚀 Getting Started
 
 To get a local copy up and running, follow these simple steps.
@@ -65,21 +72,25 @@ To get a local copy up and running, follow these simple steps.
 ### Installation
 
 **Clone the repo:**
+
 ```bash
 git clone https://github.com/AndresDev28/e-commerce-relojes-bv-beni.git
 ```
 
 **Navigate to the project directory:**
+
 ```bash
 cd e-commerce-relojes-bv-beni
 ```
 
 **Install NPM packages:**
+
 ```bash
 npm install
 ```
 
 **Run the development server:**
+
 ```bash
 npm run dev
 ```
