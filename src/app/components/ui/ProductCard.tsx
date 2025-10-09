@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
 import { Product } from '@/types'
+import { useFavorites } from '@/context/FavoritesContext'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
 type ProductCardProps =
@@ -30,8 +31,13 @@ const ProductCard = (props: ProductCardProps) => {
     console.log(`Producto ${name} agregado al carrito!`)
   }
 
-  const handleAddToFavorites = () => {
-    console.log(`Producto ${name} agregado a favoritos!`)
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const productId = 'product' in props ? props.product.id : undefined
+  const favorite = productId ? isFavorite(productId) : false
+  const handleToggleFavorite = () => {
+    if (!productId || !('product' in props)) return
+    if (favorite) removeFromFavorites(productId)
+    else addToFavorites(props.product)
   }
 
   const handleViewDetails = () => {
@@ -69,8 +75,8 @@ const ProductCard = (props: ProductCardProps) => {
       <div className="p-4 pt-2 flex items-center justify-around border-t border-neutral-light">
         <ProductActionIcon
           icon={Heart}
-          label="Favoritos"
-          onClick={handleAddToFavorites}
+          label={favorite ? 'Quitar' : 'Favoritos'}
+          onClick={handleToggleFavorite}
         />
         <div className="border-r h-8 border-neutral-light"></div>
         <ProductActionIcon

@@ -75,7 +75,7 @@ const Navbar = () => {
           </Link>
           {/* Favorito: solo visible con usuario logado */}
           {auth.user && (
-            <Link href="/favorito">
+            <Link href="/favoritos">
               <Heart className="h-6 w-6 hover:text-primaryBlue transition-colors" />
             </Link>
           )}

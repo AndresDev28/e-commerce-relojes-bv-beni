@@ -1,7 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'tertiary'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'tertiary' | 'outline'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -26,6 +26,8 @@ export default function Button({
     tertiaryDark:
       'bg-transparent text-dark border border-neutral-dark hover:bg-neutral-dark hover:text-light',
     ghost: 'bg-transparent text-light hover:text-primary',
+    outline:
+      'bg-transparent text-primary border-2 border-primary hover:bg-primary hover:text-white transition-all duration-300',
   }
 
   return (

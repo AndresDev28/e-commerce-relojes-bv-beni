@@ -3,6 +3,7 @@ import AppShell from './components/AppShell'
 import { Oswald, Lora } from 'next/font/google'
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper'
 import { CartProvider } from '@/context/CartContext'
+import { FavoritesProvider } from '@/context/FavoritesContext'
 import './globals.css'
 
 // Configuramos fuentes y sus variables CSS
@@ -35,7 +36,9 @@ export default function RootLayout({
       <body className="bg-white flex flex-col min-h-screen">
         <AuthProviderWrapper>
           <CartProvider>
-            <AppShell>{children}</AppShell>
+            <FavoritesProvider>
+              <AppShell>{children}</AppShell>
+            </FavoritesProvider>
           </CartProvider>
         </AuthProviderWrapper>
       </body>

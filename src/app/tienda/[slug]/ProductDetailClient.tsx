@@ -6,6 +6,8 @@ import QuantitySelector from '@/app/components/ui/QuantitySelector'
 import Button from '@/app/components/ui/Button'
 import { CheckSquare } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
+import { useFavorites } from '@/context/FavoritesContext'
+import { Heart } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
 
@@ -33,6 +35,8 @@ export default function ProductDetailClient({
   const [activeImage, setActiveImage] = useState(validImages[0])
   const [quantity, setQuantity] = useState(1)
   const { addToCart } = useCart()
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const favorite = isFavorite(product.id)
 
   const handleIncrement = () => {
     setQuantity(prev => prev + 1)
@@ -44,6 +48,14 @@ export default function ProductDetailClient({
 
   const handleAddToCart = () => {
     addToCart(product, quantity)
+  }
+
+  const toggleFavorite = () => {
+    if (favorite) {
+      removeFromFavorites(product.id)
+    } else {
+      addToFavorites(product)
+    }
   }
 
   return (
@@ -166,6 +178,20 @@ export default function ProductDetailClient({
               >
                 Añadir al Carrito
               </Button>
+              <button
+                onClick={toggleFavorite}
+                aria-label={
+                  favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'
+                }
+                className={`p-3 rounded-md border transition-colors ${
+                  favorite
+                    ? 'border-primary text-primary'
+                    : 'border-neutral-light text-neutral-medium hover:text-primary hover:border-primary'
+                }`}
+                title={favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+              >
+                <Heart className={favorite ? 'fill-current' : ''} />
+              </button>
             </div>
           </div>
         </div>
