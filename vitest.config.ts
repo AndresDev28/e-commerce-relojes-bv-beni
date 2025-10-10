@@ -18,10 +18,12 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
+        'next/',
         '.storybook/',
         '**/*.config.{js,ts}',
         '**/*.stories.{ts,tsx}',
         'src/stories/**',
+        '**/*.d.ts',
       ],
     },
     projects: [
