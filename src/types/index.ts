@@ -78,3 +78,33 @@ export interface Order {
   status: 'pending' | 'paid' | 'shipped' | 'delivered'
   createdAt: Date // Corregido el nombre a createdAt
 }
+
+// ... tus tipos existentes ...
+
+// ============================================
+// TIPOS DE STRIPE ([PAY-01])
+// ============================================
+
+/**
+ * Ambiente de Stripe
+ * - test: Claves de prueba (pk_test_, sk_test_)
+ * - live: Claves de producción (pk_live_, sk_live_)
+ */
+export type StripeEnvironment = 'test' | 'live'
+
+/**
+ * Configuración de Stripe
+ * Centraliza la configuración para fácil acceso
+ */
+export interface StripeConfig {
+  publishableKey: string
+  environment: StripeEnvironment
+  isTestMode: boolean
+}
+
+/**
+ * Re-exportar tipo de Stripe para conveniencia
+ * Esto permite importar { Stripe } desde '@/types'
+ * en lugar de '@stripe/stripe-js'
+ */
+export type { Stripe } from '@stripe/stripe-js'
