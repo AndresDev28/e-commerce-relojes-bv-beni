@@ -4,6 +4,7 @@ import { Oswald, Lora } from 'next/font/google'
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper'
 import { CartProvider } from '@/context/CartContext'
 import { FavoritesProvider } from '@/context/FavoritesContext'
+import StripeProviderWrapper from '@/components/providers/StripeProviderWrapper'
 import './globals.css'
 
 // Configuramos fuentes y sus variables CSS
@@ -37,7 +38,9 @@ export default function RootLayout({
         <AuthProviderWrapper>
           <CartProvider>
             <FavoritesProvider>
-              <AppShell>{children}</AppShell>
+              <StripeProviderWrapper>
+                <AppShell>{children}</AppShell>
+              </StripeProviderWrapper>
             </FavoritesProvider>
           </CartProvider>
         </AuthProviderWrapper>
