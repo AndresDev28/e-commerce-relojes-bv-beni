@@ -4,6 +4,7 @@ import { Oswald, Lora } from 'next/font/google'
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper'
 import { CartProvider } from '@/context/CartContext'
 import { FavoritesProvider } from '@/context/FavoritesContext'
+import StripeProviderWrapper from '@/components/providers/StripeProviderWrapper'
 import './globals.css'
 
 // Configuramos fuentes y sus variables CSS
@@ -34,13 +35,15 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className="bg-white flex flex-col min-h-screen">
-        <AuthProviderWrapper>
-          <CartProvider>
+        <CartProvider>
+          <AuthProviderWrapper>
             <FavoritesProvider>
-              <AppShell>{children}</AppShell>
+              <StripeProviderWrapper>
+                <AppShell>{children}</AppShell>
+              </StripeProviderWrapper>
             </FavoritesProvider>
-          </CartProvider>
-        </AuthProviderWrapper>
+          </AuthProviderWrapper>
+        </CartProvider>
       </body>
     </html>
   )

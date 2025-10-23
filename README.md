@@ -121,6 +121,19 @@ cd e-commerce-relojes-bv-beni
 npm install
 ```
 
+**Set up environment variables:**
+
+Copy the `.env.example` file to `.env.local` and fill in your actual values:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your actual API keys:
+- `NEXT_PUBLIC_STRAPI_API_URL`: URL of your Strapi backend
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key (use test keys for development: `pk_test_...`)
+- `STRIPE_SECRET_KEY`: Your Stripe secret key (use test keys for development: `sk_test_...`)
+
 **Run the development server:**
 
 ```bash
