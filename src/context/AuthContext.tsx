@@ -12,6 +12,7 @@ import {
   AUTH_LOGIN_ENDPOINT,
   AUTH_REGISTER_ENDPOINT,
 } from '@/lib/constants'
+import { useCart } from './CartContext'
 
 /**
  * ===================================================
@@ -118,6 +119,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * este contexto está marcado como 'use client'.
    */
   const router = useRouter()
+
+  /**
+   * Hook del contexto del carrito
+   * Usado para limpiar el carrito cuando el usuario cierra sesión
+   */
+  const { clearCart } = useCart()
 
   // ===================================================
   // INICIALIZACIÓN DEL ESTADO DESDE LOCALSTORAGE
@@ -262,9 +269,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   /**
    * Función para cerrar sesión del usuario
-   * Limpia el estado local y el token almacenado
+   * Limpia el estado local, el token almacenado y el carrito
    */
   const logout = () => {
+    // Limpiar el carrito antes de cerrar sesión
+    clearCart()
+
     // Redirigimos al usuario a la página de inicio
     router.push('/')
 
