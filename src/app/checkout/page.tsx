@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import CheckoutForm from '../components/checkout/CheckoutForm'
+import { getStripePublishableKey } from '@/lib/stripe/config'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -21,7 +22,9 @@ export default function CheckoutPage() {
     { name: 'Finalizar Compra', href: '/checkout' },
   ]
 
-  const stripePromise = loadStripe('pk_test_51QJq5RGraBvGMOy0dummykey123')
+  // Obtener la clave pública de Stripe desde variables de entorno
+  // Usa la función de validación que verifica el formato y ambiente
+  const stripePromise = loadStripe(getStripePublishableKey())
 
   // Protección de ruta: verificar autenticación y carrito vacío
   useEffect(() => {
