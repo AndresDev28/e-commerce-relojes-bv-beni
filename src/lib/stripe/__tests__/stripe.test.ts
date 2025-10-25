@@ -14,7 +14,7 @@ vi.mock('@stripe/stripe-js', () => ({
     // Crear un mock simple de Stripe
     const mockStripe: Partial<Stripe> = {
       _apiKey: 'pk_test_mock',
-    } as any
+    }
     return Promise.resolve(mockStripe as Stripe)
   }),
 }))

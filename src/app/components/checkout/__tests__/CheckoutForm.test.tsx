@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import CheckoutForm from '../CheckoutForm' // ← Cambiado
 import userEvent from '@testing-library/user-event'
+import type { Stripe, StripeElements } from '@stripe/stripe-js'
 
 const { mockUseStripe, mockUseElements } = vi.hoisted(() => ({
   mockUseStripe: vi.fn(),
@@ -36,8 +37,8 @@ describe('CheckoutForm - [PAY-05]', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUseStripe.mockReturnValue(mockStripe as any)
-    mockUseElements.mockReturnValue(mockElements as any)
+    mockUseStripe.mockReturnValue(mockStripe as unknown as Stripe)
+    mockUseElements.mockReturnValue(mockElements as unknown as StripeElements)
   })
 
   describe('Renderizado', () => {

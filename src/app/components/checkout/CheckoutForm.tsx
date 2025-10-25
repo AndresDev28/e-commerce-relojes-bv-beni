@@ -1,6 +1,7 @@
 'use client'
 import { useState, FormEvent, useEffect } from 'react'
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js'
+import { handleStripeError } from '@/lib/stripe/errorHandler'
 
 interface CheckoutFormProps {
   amount: number
@@ -52,20 +53,73 @@ export default function CheckoutForm({
     setIsProcessing(true)
     setErrorMessage('')
 
-    // Simular delay 2 segundos
     try {
+      // ================================================================
+      // TODO: Implementar integración real con Stripe
+      // ================================================================
+      // Cuando estés listo, reemplaza este bloque con:
+      //
+      // const { error, paymentIntent } = await stripe.confirmCardPayment(
+      //   clientSecret,
+      //   {
+      //     payment_method: {
+      //       card: cardElement,
+      //     },
+      //   }
+      // )
+      //
+      // if (error) {
+      //   throw error // El catch lo manejará con handleStripeError
+      // }
+      // ================================================================
+
+      // Simular delay de red
       await new Promise(resolve => setTimeout(resolve, 2000))
 
-      // Llamar onSuccess (punto 10 del DESIGN)
+      // ================================================================
+      // [PAY-06] SIMULACIÓN DE ERRORES PARA TESTING
+      // ================================================================
+      // Descomenta UNA de estas líneas para probar diferentes errores:
+      //
+      //throw {
+      //   type: 'card_error',
+      //   code: 'card_declined',
+      //   message: 'Your card was declined.',
+      // }
+      // throw {
+      //   type: 'card_error',
+      //   code: 'expired_card',
+      //   message: 'Your card has expired.',
+      // }
+      // throw { type: 'card_error', code: 'incorrect_cvc', message: 'Your card\'s security code is incorrect.' }
+      // throw {
+      //   type: 'card_error',
+      //   code: 'insufficient_funds',
+      //   message: 'Your card has insufficient funds.',
+      // }
+      // throw { type: 'card_error', code: 'processing_error', message: 'An error occurred while processing your card.' }
+      // throw new Error('Network error') // Error de red
+      // throw new Error('timeout') // Timeout
+      // ================================================================
+
+      // Si llegamos aquí, el pago fue exitoso
       onSuccess?.()
     } catch (error) {
-      // Manejar errores si los hay
-      const errorMsg =
-        error instanceof Error ? error.message : 'Error desconocido'
-      setErrorMessage(errorMsg)
-      onError?.(errorMsg)
+      // [PAY-06] Usar el manejador de errores de Stripe
+      const processedError = handleStripeError(error)
+
+      // Mostrar mensaje en español al usuario
+      setErrorMessage(processedError.localizedMessage)
+
+      // Notificar al componente padre (opcional)
+      onError?.(processedError.localizedMessage)
+
+      // Log en desarrollo para debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error procesado:', processedError)
+      }
     } finally {
-      // seIsProcessing(false) SIEMPRE
+      // setIsProcessing(false) SIEMPRE
       setIsProcessing(false)
     }
   }
