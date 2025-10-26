@@ -107,11 +107,11 @@ export default function CheckoutForm({
       //   code: 'insufficient_funds',
       //   message: 'Your card has insufficient funds.',
       // }
-      throw {
-        type: 'card_error',
-        code: 'processing_error',
-        message: 'An error occurred while processing your card.',
-      }
+      // throw {
+      //   type: 'card_error',
+      //   code: 'processing_error',
+      //   message: 'An error occurred while processing your card.',
+      // }
       // throw new Error('Network error') // Error de red
       // throw new Error('timeout') // Timeout
       // ================================================================
