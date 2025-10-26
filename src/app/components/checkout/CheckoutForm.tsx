@@ -1,7 +1,11 @@
 'use client'
 import { useState, FormEvent, useEffect } from 'react'
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js'
-import { handleStripeError } from '@/lib/stripe/errorHandler'
+import {
+  handleStripeError,
+  getErrorSuggestion,
+} from '@/lib/stripe/errorHandler'
+import ErrorMessage from '@/app/components/ui/ErrorMessage'
 
 interface CheckoutFormProps {
   amount: number
@@ -17,6 +21,7 @@ export default function CheckoutForm({
   // State
   const [isProcessing, setIsProcessing] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [errorSuggestion, setErrorSuggestion] = useState<string | undefined>()
   const [isMobile, setIsMobile] = useState(false)
 
   // Stripe Hooks
@@ -52,6 +57,7 @@ export default function CheckoutForm({
 
     setIsProcessing(true)
     setErrorMessage('')
+    setErrorSuggestion(undefined)
 
     try {
       // ================================================================
@@ -77,11 +83,11 @@ export default function CheckoutForm({
       await new Promise(resolve => setTimeout(resolve, 2000))
 
       // ================================================================
-      // [PAY-06] SIMULACIÓN DE ERRORES PARA TESTING
+      // [PAY-06] [PAY-07] SIMULACIÓN DE ERRORES PARA TESTING
       // ================================================================
       // Descomenta UNA de estas líneas para probar diferentes errores:
       //
-      //throw {
+      // throw {
       //   type: 'card_error',
       //   code: 'card_declined',
       //   message: 'Your card was declined.',
@@ -91,13 +97,21 @@ export default function CheckoutForm({
       //   code: 'expired_card',
       //   message: 'Your card has expired.',
       // }
-      // throw { type: 'card_error', code: 'incorrect_cvc', message: 'Your card\'s security code is incorrect.' }
+      // throw {
+      //   type: 'card_error',
+      //   code: 'incorrect_cvc',
+      //   message: "Your card's security code is incorrect.",
+      // }
       // throw {
       //   type: 'card_error',
       //   code: 'insufficient_funds',
       //   message: 'Your card has insufficient funds.',
       // }
-      // throw { type: 'card_error', code: 'processing_error', message: 'An error occurred while processing your card.' }
+      throw {
+        type: 'card_error',
+        code: 'processing_error',
+        message: 'An error occurred while processing your card.',
+      }
       // throw new Error('Network error') // Error de red
       // throw new Error('timeout') // Timeout
       // ================================================================
@@ -110,6 +124,10 @@ export default function CheckoutForm({
 
       // Mostrar mensaje en español al usuario
       setErrorMessage(processedError.localizedMessage)
+
+      // [PAY-07] Obtener sugerencia si existe
+      const suggestion = getErrorSuggestion(processedError.code)
+      setErrorSuggestion(suggestion)
 
       // Notificar al componente padre (opcional)
       onError?.(processedError.localizedMessage)
@@ -161,13 +179,17 @@ export default function CheckoutForm({
         </div>
       </div>
 
+      {/* [PAY-07] Nuevo componente ErrorMessage reutilizable */}
       {errorMessage && (
-        <div
-          className="p-4 bg-red-50 border border-secondary rounded-md text-secondary font-sans text-sm"
-          role="alert"
-        >
-          {errorMessage}
-        </div>
+        <ErrorMessage
+          message={errorMessage}
+          variant="error"
+          suggestion={errorSuggestion}
+          onDismiss={() => {
+            setErrorMessage('')
+            setErrorSuggestion(undefined)
+          }}
+        />
       )}
 
       <button
