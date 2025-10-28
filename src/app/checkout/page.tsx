@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import CheckoutForm from '../components/checkout/CheckoutForm'
+import OrderSummary from '../components/checkout/OrderSummary'
 import { getStripePublishableKey } from '@/lib/stripe/config'
 
 export default function CheckoutPage() {
@@ -81,13 +82,16 @@ export default function CheckoutPage() {
     console.error('❌ Error en pago:', error)
   }
 
-  // Cálculo de totales
+  // Cálculo de totales (debe coincidir con OrderSummary)
+  const SHIPPING_COST = 5.95
+  const FREE_SHIPPING_THRESHOLD = 50
+
   const subtotal = cartItems.reduce(
     (sum, cartItem) => sum + cartItem.price * cartItem.quantity,
     0
   )
-  const iva = subtotal * 0.21
-  const total = subtotal + iva
+  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST
+  const total = subtotal + shippingCost
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -126,44 +130,11 @@ export default function CheckoutPage() {
 
           {/* Columna Derecha - Resumen del Pedido */}
           <div className="order-1 lg:order-2">
-            <div className="bg-neutral-light rounded-lg shadow-md p-6 border border-neutral-light sticky top-8">
-              <h2 className="text-xl font-sans font-semibold text-dark mb-4">
-                Resumen del Pedido
-              </h2>
+            <div className="sticky top-8">
+              <OrderSummary />
 
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-neutral-dark">
-                  <span className="font-sans">Subtotal</span>
-                  <span className="font-sans font-semibold">
-                    {subtotal.toFixed(2)} €
-                  </span>
-                </div>
-                <div className="flex justify-between text-neutral-dark">
-                  <span className="font-sans">Envío</span>
-                  <span className="font-sans font-semibold text-green-600">
-                    Gratis
-                  </span>
-                </div>
-                <div className="flex justify-between text-neutral-dark">
-                  <span className="font-sans">IVA (21%)</span>
-                  <span className="font-sans font-semibold">
-                    {iva.toFixed(2)} €
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t-2 border-neutral-medium">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-sans font-bold text-dark">
-                    Total
-                  </span>
-                  <span className="text-2xl font-sans font-bold text-primary">
-                    {total.toFixed(2)} €
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-neutral-medium">
+              {/* Mensaje de seguridad */}
+              <div className="mt-4 bg-white rounded-lg shadow-md p-4">
                 <div className="flex items-start gap-2 text-sm text-neutral-medium">
                   <svg
                     className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
@@ -178,7 +149,7 @@ export default function CheckoutPage() {
                       d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                     />
                   </svg>
-                  <p className="font-serif">
+                  <p className="font-sans">
                     Pago 100% seguro con encriptación SSL
                   </p>
                 </div>
