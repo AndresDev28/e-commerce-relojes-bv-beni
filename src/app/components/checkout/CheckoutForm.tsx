@@ -117,7 +117,10 @@ export default function CheckoutForm({
       // ================================================================
 
       // Si llegamos aquí, el pago fue exitoso
+      console.log('🎯 CheckoutForm: Pago simulado exitoso, llamando a onSuccess...')
+      console.log('🎯 CheckoutForm: onSuccess existe?', typeof onSuccess)
       onSuccess?.()
+      console.log('🎯 CheckoutForm: onSuccess ejecutado')
     } catch (error) {
       // [PAY-06] Usar el manejador de errores de Stripe
       const processedError = handleStripeError(error)

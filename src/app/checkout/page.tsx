@@ -11,6 +11,7 @@ import { Elements } from '@stripe/react-stripe-js'
 import CheckoutForm from '../components/checkout/CheckoutForm'
 import OrderSummary from '../components/checkout/OrderSummary'
 import { getStripePublishableKey } from '@/lib/stripe/config'
+import { generateOrderId } from '@/lib/orders/generateOrderId'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -29,11 +30,19 @@ export default function CheckoutPage() {
 
   // Protección de ruta: verificar autenticación y carrito vacío
   useEffect(() => {
+    console.log('🔍 [useEffect] Ejecutándose...', {
+      authLoading,
+      hasUser: !!user,
+      cartItemsLength: cartItems.length,
+      paymentSuccessful,
+    })
+
     // Esperar a que termine de cargar el estado de autenticación
     if (authLoading) return
 
     // Validación 1: Usuario debe estar autenticado
     if (!user) {
+      console.log('🔍 [useEffect] No hay usuario, redirigiendo a /login')
       router.push('/login')
       return
     }
@@ -41,9 +50,12 @@ export default function CheckoutPage() {
     // Validación 2: Carrito no debe estar vacío
     // IMPORTANTE: No redirigir si el pago fue exitoso
     if (cartItems.length === 0 && !paymentSuccessful) {
+      console.log('🔍 [useEffect] Carrito vacío y pago NO exitoso, redirigiendo a /tienda')
       router.push('/tienda')
       return
     }
+
+    console.log('🔍 [useEffect] Todo OK, no se redirige')
   }, [authLoading, user, cartItems, router, paymentSuccessful])
 
   // Mostrar loading mientras se valida la autenticación
@@ -68,14 +80,29 @@ export default function CheckoutPage() {
   }
 
   const handleSuccess = () => {
+    console.log('✅ [CHECKPOINT 1] handleSuccess llamado')
     console.log('✅ Pago exitoso!')
-    // Marcar pago como exitoso ANTES de vaciar el carrito
-    // Esto evita que el useEffect redirija a /tienda
+
+    const orderId = generateOrderId()
+    console.log('📦 [CHECKPOINT 2] Order ID generado:', orderId)
+
+    // IMPORTANTE: Marcar pago como exitoso PRIMERO
+    // Esto evita que el useEffect redirija a /tienda cuando se vacíe el carrito
+    console.log('📦 [CHECKPOINT 3] Marcando pago como exitoso...')
     setPaymentSuccessful(true)
-    // Vaciar carrito
+
+    // IMPORTANTE: Redirigir INMEDIATAMENTE después de marcar el pago exitoso
+    // Hacerlo ANTES de vaciar el carrito previene race condition con useEffect
+    const targetUrl = `/order-confirmation?orderId=${orderId}`
+    console.log('📦 [CHECKPOINT 4] Redirigiendo a:', targetUrl)
+    router.push(targetUrl)
+    console.log('📦 [CHECKPOINT 5] router.push ejecutado')
+
+    // Vaciar carrito DESPUÉS de la navegación
+    // Esto es seguro porque ya estamos navegando fuera de la página
+    console.log('📦 [CHECKPOINT 6] Vaciando carrito...')
     clearCart()
-    // Redirigir a página de confirmación
-    router.push('/order-confirmation')
+    console.log('📦 [CHECKPOINT 7] Proceso completado')
   }
 
   const handleError = (error: string) => {
