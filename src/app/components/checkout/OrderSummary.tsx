@@ -22,12 +22,11 @@ import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ShoppingCart, Edit } from 'lucide-react'
-
-/**
- * Constantes para cálculos
- */
-const SHIPPING_COST = 5.95 // Costo de envío fijo
-const FREE_SHIPPING_THRESHOLD = 50 // Envío gratis a partir de 50€
+import {
+  SHIPPING_COST,
+  FREE_SHIPPING_THRESHOLD,
+  calculateShipping,
+} from '@/lib/constants/shipping'
 
 /**
  * Formatea un número como moneda española
@@ -63,7 +62,7 @@ export default function OrderSummary() {
   /**
    * Envío: gratis si subtotal >= 50€, sino 5.95€
    */
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST
+  const shippingCost = calculateShipping(subtotal)
 
   /**
    * Total: subtotal + envío
@@ -213,7 +212,8 @@ export default function OrderSummary() {
   )
 }
 
-// Exportación de constantes para test
+// NOTA: Las constantes ahora se importan desde @/lib/constants/shipping
+// Mantener esta exportación por compatibilidad con tests legacy
 export const CONSTATS = {
   SHIPPING_COST,
   FREE_SHIPPING_THRESHOLD,

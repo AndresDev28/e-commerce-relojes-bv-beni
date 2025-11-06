@@ -12,12 +12,15 @@ import CheckoutForm from '../components/checkout/CheckoutForm'
 import OrderSummary from '../components/checkout/OrderSummary'
 import { getStripePublishableKey } from '@/lib/stripe/config'
 import { generateOrderId } from '@/lib/orders/generateOrderId'
+import { createOrder } from '@/lib/api/orders'
+import { calculateShipping } from '@/lib/constants/shipping'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, jwt, isLoading: authLoading } = useAuth()
   const { cartItems, clearCart } = useCart()
   const [paymentSuccessful, setPaymentSuccessful] = useState(false)
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
     { name: 'Cesta', href: '/carrito' },
@@ -50,7 +53,9 @@ export default function CheckoutPage() {
     // Validación 2: Carrito no debe estar vacío
     // IMPORTANTE: No redirigir si el pago fue exitoso
     if (cartItems.length === 0 && !paymentSuccessful) {
-      console.log('🔍 [useEffect] Carrito vacío y pago NO exitoso, redirigiendo a /tienda')
+      console.log(
+        '🔍 [useEffect] Carrito vacío y pago NO exitoso, redirigiendo a /tienda'
+      )
       router.push('/tienda')
       return
     }
@@ -79,30 +84,54 @@ export default function CheckoutPage() {
     return null
   }
 
-  const handleSuccess = () => {
-    console.log('✅ [CHECKPOINT 1] handleSuccess llamado')
+  const handleSuccess = async () => {
     console.log('✅ Pago exitoso!')
 
+    // [PAY-17] Generar ID único del pedido al inicio
     const orderId = generateOrderId()
-    console.log('📦 [CHECKPOINT 2] Order ID generado:', orderId)
+    console.log('📦 Order ID generado:', orderId)
 
-    // IMPORTANTE: Marcar pago como exitoso PRIMERO
-    // Esto evita que el useEffect redirija a /tienda cuando se vacíe el carrito
-    console.log('📦 [CHECKPOINT 3] Marcando pago como exitoso...')
-    setPaymentSuccessful(true)
+    try {
+      // Activar estado de carga
+      setIsCreatingOrder(true)
 
-    // IMPORTANTE: Redirigir INMEDIATAMENTE después de marcar el pago exitoso
-    // Hacerlo ANTES de vaciar el carrito previene race condition con useEffect
-    const targetUrl = `/order-confirmation?orderId=${orderId}`
-    console.log('📦 [CHECKPOINT 4] Redirigiendo a:', targetUrl)
-    router.push(targetUrl)
-    console.log('📦 [CHECKPOINT 5] router.push ejecutado')
+      // Marcar pago como exitoso ANTES de vaciar el carrito
+      setPaymentSuccessful(true)
 
-    // Vaciar carrito DESPUÉS de la navegación
-    // Esto es seguro porque ya estamos navegando fuera de la página
-    console.log('📦 [CHECKPOINT 6] Vaciando carrito...')
-    clearCart()
-    console.log('📦 [CHECKPOINT 7] Proceso completado')
+      // [PAY-18] Crear orden en Strapi
+      if (jwt) {
+        console.log('💾 Creando orden en Strapi...')
+
+        const orderData = {
+          orderId,
+          items: cartItems,
+          subtotal,
+          shipping: shippingCost,
+          total,
+          orderStatus: 'paid' as const,
+          paymentIntentId: undefined, // TODO: Añadir cuando tengamos Stripe real
+        }
+
+        await createOrder(orderData, jwt)
+        console.log('✅ Orden creada en Strapi')
+      } else {
+        console.warn('⚠️ No se pudo crear la orden: usuario sin JWT')
+      }
+
+      // Vaciar carrito
+      clearCart()
+
+      // Redirigir con orderId en query params
+      router.push(`/order-confirmation?orderId=${orderId}`)
+    } catch (error) {
+      console.error('❌ Error al crear la orden:', error)
+      // Aún así redirigir usando el mismo orderId
+      clearCart()
+      router.push(`/order-confirmation?orderId=${orderId}`)
+    } finally {
+      // Desactivar estado de carga
+      setIsCreatingOrder(false)
+    }
   }
 
   const handleError = (error: string) => {
@@ -110,14 +139,11 @@ export default function CheckoutPage() {
   }
 
   // Cálculo de totales (debe coincidir con OrderSummary)
-  const SHIPPING_COST = 5.95
-  const FREE_SHIPPING_THRESHOLD = 50
-
   const subtotal = cartItems.reduce(
     (sum, cartItem) => sum + cartItem.price * cartItem.quantity,
     0
   )
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST
+  const shippingCost = calculateShipping(subtotal)
   const total = subtotal + shippingCost
 
   return (
@@ -185,6 +211,21 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de loading durante creación de orden */}
+      {isCreatingOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center">
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4"></div>
+            <h3 className="text-lg font-sans font-semibold text-dark mb-2">
+              Procesando tu orden...
+            </h3>
+            <p className="text-neutral-medium font-sans text-sm">
+              Por favor, espera un momento mientras guardamos tu pedido.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

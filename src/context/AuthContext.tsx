@@ -209,6 +209,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('Login exitoso:', data)
         router.push('/mi-cuenta') // Redirigimos a cuenta de usuario
         setUser(data.user)
+        setJwt(data.jwt)
         localStorage.setItem('jwt', data.jwt) // Persistir token
       } else {
         throw new Error(data.error?.message || 'Error en el login')
