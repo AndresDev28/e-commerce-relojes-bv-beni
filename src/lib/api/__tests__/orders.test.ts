@@ -38,7 +38,7 @@ describe('[PAY-19] Orders API', () => {
     {
       id: '2',
       name: 'Reloj Seiko',
-      price: 45.00,
+      price: 45.0,
       quantity: 1,
       images: ['/images/reloj2.jpg'],
       href: '/products/reloj-seiko',
@@ -67,6 +67,7 @@ describe('[PAY-19] Orders API', () => {
       data: {
         id: 1,
         documentId: 'order-doc-id-123',
+        orderId: 'ORD-1699123456-A5F3',
         items: mockCartItems,
         subtotal: 104.98,
         shipping: 0,
@@ -245,7 +246,9 @@ describe('[PAY-19] Orders API', () => {
      */
     it('should log errors to console', async () => {
       // ARRANGE
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
@@ -347,7 +350,7 @@ describe('[PAY-19] Orders API', () => {
           id: 2,
           documentId: 'order-2',
           items: [],
-          subtotal: 50.00,
+          subtotal: 50.0,
           shipping: 5.95,
           total: 55.95,
           orderStatus: 'shipped',
@@ -462,7 +465,9 @@ describe('[PAY-19] Orders API', () => {
      */
     it('should log errors to console', async () => {
       // ARRANGE
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
@@ -508,6 +513,7 @@ describe('[PAY-19] Orders API', () => {
         data: {
           id: 1,
           documentId: 'doc-123',
+          orderId: 'ORD-TEST-123',
           items: [],
           subtotal: 100,
           shipping: 0,

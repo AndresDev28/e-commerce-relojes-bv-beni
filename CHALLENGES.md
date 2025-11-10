@@ -157,3 +157,62 @@ Esto **desacopla** la lógica de seguridad de los componentes de la página, hac
 - **Next.js App Router:** La importancia de la importación correcta del _hook_ `useRouter` de `'next/navigation'`.
 - **Debug de Race Conditions:** Cómo depurar "condiciones de carrera" entendiendo el ciclo de vida de los componentes.
 - **Patrones de Diseño:** Implementación del patrón de **"Layouts Anidados"** y **"Componentes de Orden Superior"** (_Wrappers_) para gestionar responsabilidades transversales como la autenticación.
+
+---
+
+## Desafío de Testing: Tests de Integración Fallidos por Variables de Entorno y Paginación
+
+**Problema:**
+Al ejecutar los tests de integración para las órdenes (`orders.integration.test.ts`), surgieron múltiples fallos:
+
+1. **Error inicial:** `Failed to parse URL from undefined/api/orders` - La variable `API_URL` no estaba disponible en el entorno de tests
+2. **Tests fallidos:** 2 de 11 tests fallaban con "expected undefined to be defined" - Las órdenes recién creadas no aparecían al obtener la lista de órdenes del usuario
+
+**Investigación:**
+
+### Problema 1: Variables de Entorno No Disponibles
+Descubrí que **Vitest no carga automáticamente archivos `.env`** como lo hace Next.js en producción. El módulo `orders.ts` importa `API_URL` de `constants.ts`, que depende de `process.env.NEXT_PUBLIC_STRAPI_API_URL`, pero esta variable era `undefined` durante la ejecución de tests.
+
+### Problema 2: Paginación y Ordenamiento de Strapi
+Mediante logging de debug, descubrí que:
+- Strapi devuelve **25 órdenes por defecto** (límite de paginación)
+- Las órdenes se ordenaban por `createdAt` **ascendente** (más antiguas primero)
+- Las órdenes recién creadas en los tests no aparecían en la primera página de resultados
+
+**Solución: Configuración de Testing Robusta**
+
+### 1. Carga de Variables de Entorno en Tests (`vitest.setup.ts`)
+```typescript
+import { loadEnvConfig } from '@next/env'
+
+// Cargar variables de entorno de Next.js (.env.local, etc)
+loadEnvConfig(process.cwd())
+```
+
+Esto asegura que **todas las variables de entorno** de Next.js estén disponibles antes de que los módulos se importen.
+
+### 2. Optimización de Consultas a Strapi (`orders.ts`)
+Refactoricé `getUserOrders` para incluir parámetros de query que resuelven el problema de paginación:
+
+```typescript
+const queryParams = new URLSearchParams({
+  'sort[0]': 'createdAt:desc',    // Más recientes primero
+  'pagination[pageSize]': '100',   // Aumentar límite
+})
+```
+
+### 3. Timing de Consistencia Eventual
+Agregué delays estratégicos (500ms) después de crear órdenes para asegurar que Strapi procese completamente las escrituras antes de las lecturas subsecuentes.
+
+**Resultado:**
+- ✅ **11/11 tests pasando** (100% de éxito)
+- Los tests de integración ahora son **confiables y determinísticos**
+- Arquitectura de testing lista para **CI/CD**
+- Mejor comprensión del modelo de **consistencia eventual** en sistemas distribuidos
+
+**Aprendizajes Clave:**
+
+- **Vitest vs Next.js:** Diferencias fundamentales en cómo cada framework maneja variables de entorno
+- **API de Strapi:** Comprender los valores por defecto de paginación (`pageSize: 25`) y ordenamiento
+- **Testing de Integración:** Importancia de gestionar el timing y la consistencia eventual al probar contra APIs reales
+- **Query Parameters:** Uso correcto de la API de Strapi v5 con `URLSearchParams` para filtrado, ordenamiento y paginación

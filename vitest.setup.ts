@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
+import { loadEnvConfig } from '@next/env'
+
+// Cargar variables de entorno de Next.js (.env.local, etc)
+loadEnvConfig(process.cwd())
 
 // Limpia el DOM después de cada test
 afterEach(() => {

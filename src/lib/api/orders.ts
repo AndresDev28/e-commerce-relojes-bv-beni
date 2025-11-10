@@ -23,20 +23,29 @@ export interface CreateOrderData {
  * Order response form Strapi
  */
 
+/**
+ * Single order data from Strapi
+ */
+export interface OrderData {
+  id: number
+  documentId: string
+  orderId: string
+  items: CartItem[]
+  subtotal: number
+  shipping: number
+  total: number
+  orderStatus: string
+  paymentIntentId?: string
+  createdAt: string
+  updatedAt: string
+  publishedAt: string
+}
+
+/**
+ * Order response wrapper from Strapi
+ */
 export interface OrderResponse {
-  data: {
-    id: number
-    documentId: string
-    items: CartItem[]
-    subtotal: number
-    shipping: number
-    total: number
-    orderStatus: string
-    paymentIntentId?: string
-    createdAt: string
-    updatedAt: string
-    publishedAt: string
-  }
+  data: OrderData
 }
 
 /**
@@ -89,13 +98,19 @@ export async function createOrder(
  * Gets user's orders from Strapi
  *
  * @param jwtToken - User JWT token
- * @returns Array of user's orders
+ * @returns Array of user's orders (sorted by newest first)
  */
 export async function getUserOrders(
   jwtToken: string
-): Promise<OrderResponse[]> {
+): Promise<OrderData[]> {
   try {
-    const response = await fetch(`${API_URL}/api/orders`, {
+    // Strapi query params: ordenar por fecha descendente y aumentar el límite
+    const queryParams = new URLSearchParams({
+      'sort[0]': 'createdAt:desc', // Más recientes primero
+      'pagination[pageSize]': '100', // Aumentar límite de paginación
+    })
+
+    const response = await fetch(`${API_URL}/api/orders?${queryParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
