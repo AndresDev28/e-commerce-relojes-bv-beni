@@ -45,14 +45,47 @@ export default function CheckoutForm({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // [PAY-08] Función interna para realizar el pago
-  // Esta función contiene toda la lógica de pago y será envuelta con retry
+  // ================================================================
+  // [PAY-08][PAY-21] PAYMENT PROCESSING FUNCTION
+  // ================================================================
+  // This function handles the payment flow and is wrapped with retry logic.
+  //
+  // 🔒 SECURITY - TOKENIZATION FLOW (PCI DSS Compliant):
+  // ================================================================
+  // 1. CardElement is an iframe hosted by Stripe
+  //    - Card data never touches our JavaScript context
+  //    - Data is encrypted at the input level
+  //    - We never have access to raw card numbers
+  //
+  // 2. When stripe.confirmCardPayment() is called:
+  //    - Stripe Elements tokenizes the card data internally
+  //    - A secure token is created (starts with pm_)
+  //    - Only the token is sent to Stripe's servers
+  //    - Our server NEVER receives raw card data
+  //
+  // 3. The flow is:
+  //    User enters card → Stripe iframe → Stripe tokenization →
+  //    Token sent to Stripe API → Payment processed →
+  //    Result returned to our app
+  //
+  // 4. What we receive:
+  //    ✅ Payment confirmation (success/failure)
+  //    ✅ Payment Intent ID
+  //    ✅ Last 4 digits (safe to display)
+  //    ❌ Never full card number
+  //    ❌ Never CVV
+  //    ❌ Never raw card data
+  //
+  // This architecture ensures we are PCI DSS compliant by never
+  // handling sensitive card data directly.
+  // ================================================================
   const performPayment = async () => {
     // Validar que Stripe esté cargado
     if (!stripe || !elements) {
       throw new Error('Stripe no está listo')
     }
 
+    // Get CardElement reference (this is just a reference to Stripe's iframe)
     const cardElement = elements.getElement(CardElement)
     if (!cardElement) {
       throw new Error('Card element no encontrado')
@@ -63,11 +96,12 @@ export default function CheckoutForm({
     // ================================================================
     // Cuando estés listo, reemplaza este bloque con:
     //
+    // 🔒 IMPORTANT: This call handles tokenization automatically
     // const { error, paymentIntent } = await stripe.confirmCardPayment(
-    //   clientSecret,
+    //   clientSecret, // Obtained from your backend
     //   {
     //     payment_method: {
-    //       card: cardElement,
+    //       card: cardElement, // Stripe handles tokenization internally
     //     },
     //   }
     // )
@@ -204,6 +238,26 @@ export default function CheckoutForm({
   // JSX
   return (
     <form onSubmit={handleSubmit} role="form" className="space-y-6">
+      {/* ============================================================
+          [PAY-21] SECURE CARD INPUT - STRIPE ELEMENTS
+          ============================================================
+          🔒 SECURITY NOTE:
+          CardElement is an iframe hosted by Stripe that handles all
+          sensitive card data. The card information never touches our
+          application's JavaScript context, ensuring PCI DSS compliance.
+
+          How it works:
+          1. User types card details in Stripe's secure iframe
+          2. Data is encrypted at the input level
+          3. When form submits, Stripe tokenizes the data
+          4. We only receive a secure token (pm_xxx)
+          5. Raw card data never leaves Stripe's servers
+
+          This architecture means:
+          - We don't need PCI compliance certification
+          - No card data in our logs or databases
+          - No risk of exposing sensitive information
+          ============================================================ */}
       <div className="space-y-2">
         <label
           htmlFor="card-element"
@@ -215,6 +269,7 @@ export default function CheckoutForm({
           id="card-element"
           className="p-3 sm:p-4 border border-neutral-medium rounded-md bg-white focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all"
         >
+          {/* Stripe's secure iframe - card data stays within Stripe's infrastructure */}
           <CardElement options={cardeElementOptions} />
         </div>
       </div>

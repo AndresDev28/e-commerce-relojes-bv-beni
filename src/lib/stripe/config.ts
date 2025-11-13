@@ -2,12 +2,34 @@
  * Configuración de Stripe
  *
  * [PAY-01] Instalar y configurar Stripe SDK
- * Ticket: AND-10
+ * [PAY-21] Verificar tokenización y seguridad
+ * Ticket: AND-10, AND-30
  *
  * Este archivo gestiona:
  * 1. Validación de claves de API
  * 2. Separación de ambientes (dev/prod)
  * 3. Seguridad (no exponer claves secretas)
+ *
+ * ================================================================
+ * 🔒 SECURITY - API KEY MANAGEMENT
+ * ================================================================
+ * Stripe uses two types of API keys:
+ *
+ * 1. PUBLISHABLE KEYS (pk_test_* / pk_live_*):
+ *    - ✅ Safe to expose in browser/frontend code
+ *    - ✅ Can only create tokens and tokenize card data
+ *    - ✅ Cannot process payments or access sensitive data
+ *    - ✅ Exposed via NEXT_PUBLIC_ prefix
+ *
+ * 2. SECRET KEYS (sk_test_* / sk_live_*):
+ *    - ❌ NEVER expose in browser/frontend code
+ *    - ❌ Can process payments and access all data
+ *    - ❌ NEVER use NEXT_PUBLIC_ prefix
+ *    - ✅ Only used in server-side code (API routes)
+ *
+ * This separation ensures that even if frontend code is compromised,
+ * attackers cannot process payments or access sensitive data.
+ * ================================================================
  */
 
 /**
