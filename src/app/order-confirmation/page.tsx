@@ -1,11 +1,10 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Button from '@/app/components/ui/Button'
-import { ShoppingBag, CheckCircle } from 'lucide-react'
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -95,5 +94,21 @@ export default function OrderConfirmationPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-16">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      }
+    >
+      <OrderConfirmationContent />
+    </Suspense>
   )
 }
