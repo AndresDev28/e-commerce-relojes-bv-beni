@@ -326,7 +326,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
     const user = userEvent.setup()
 
     // Primer intento: falla despu�s de 3 intentos
-    let attemptCount = 0
+    const attemptCount = 0
     const mockRetryWithBackoff = vi.spyOn(retryHandler, 'retryWithBackoff')
 
     // Primera llamada: falla

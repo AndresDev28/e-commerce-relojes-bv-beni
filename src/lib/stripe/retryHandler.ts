@@ -171,7 +171,7 @@ export async function retryWithBackoff<T>(
  * const result = await confirmPaymentWithRetry(paymentData)
  * ```
  */
-export function withRetry<TArgs extends any[], TReturn>(
+export function withRetry<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
   options: RetryOptions = {}
 ): (...args: TArgs) => Promise<RetryResult<TReturn>> {
