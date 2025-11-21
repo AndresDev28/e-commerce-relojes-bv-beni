@@ -15,21 +15,27 @@ import { generateOrderId } from '@/lib/orders/generateOrderId'
 import { createOrder } from '@/lib/api/orders'
 import { calculateShipping } from '@/lib/constants/shipping'
 
+// Inicializar Stripe de forma lazy para evitar errores durante el build
+// La promesa se crea solo cuando se necesita en el cliente
+const getStripePromise = () => {
+  if (typeof window === 'undefined') {
+    return null
+  }
+  return loadStripe(getStripePublishableKey())
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, jwt, isLoading: authLoading } = useAuth()
   const { cartItems, clearCart } = useCart()
   const [paymentSuccessful, setPaymentSuccessful] = useState(false)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
+  const [stripePromise] = useState(getStripePromise)
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
     { name: 'Cesta', href: '/carrito' },
     { name: 'Finalizar Compra', href: '/checkout' },
   ]
-
-  // Obtener la clave pública de Stripe desde variables de entorno
-  // Usa la función de validación que verifica el formato y ambiente
-  const stripePromise = loadStripe(getStripePublishableKey())
 
   // Protección de ruta: verificar autenticación y carrito vacío
   useEffect(() => {
