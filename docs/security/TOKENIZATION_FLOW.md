@@ -10,6 +10,7 @@ This document explains how our payment system handles sensitive card data secure
 ## 🔒 The Tokenization Process
 
 ### Step 1: User Input (Secure Iframe)
+
 ```
 ┌─────────────────────────────────────┐
 │  User enters card details           │
@@ -17,7 +18,7 @@ This document explains how our payment system handles sensitive card data secure
 │  │  Stripe CardElement         │    │
 │  │  (Hosted in Stripe iframe)  │    │
 │  │                             │    │
-│  │  Card: 4242 4242 4242 4242 │    │
+│  │  Card: 4242 4242 4242 4242  │    │
 │  │  Exp: 12/25   CVV: 123      │    │
 │  └─────────────────────────────┘    │
 └─────────────────────────────────────┘
@@ -32,25 +33,25 @@ This document explains how our payment system handles sensitive card data secure
 ```
 
 **Key Points:**
+
 - CardElement is an **iframe** hosted by Stripe
 - Card data **never touches** our JavaScript context
 - Data is encrypted at the **input level**
 - Our code has **no access** to raw card numbers
 
 ### Step 2: Tokenization (stripe.confirmCardPayment)
+
 ```javascript
 // Our code calls Stripe's API
-const { error, paymentIntent } = await stripe.confirmCardPayment(
-  clientSecret,
-  {
-    payment_method: {
-      card: cardElement, // Reference to Stripe's iframe
-    },
-  }
-)
+const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+  payment_method: {
+    card: cardElement, // Reference to Stripe's iframe
+  },
+})
 ```
 
 **What happens internally:**
+
 1. Stripe reads card data from the iframe
 2. Creates a secure token (`pm_xxxxxx`)
 3. Sends token to Stripe's API
@@ -58,6 +59,7 @@ const { error, paymentIntent } = await stripe.confirmCardPayment(
 5. Returns result to our app
 
 **What we receive:**
+
 - ✅ Payment confirmation (success/failure)
 - ✅ Payment Intent ID (`pi_xxxxxx`)
 - ✅ Last 4 digits (safe to display: `•••• 4242`)
@@ -67,6 +69,7 @@ const { error, paymentIntent } = await stripe.confirmCardPayment(
 - ❌ **Never** raw card data
 
 ### Step 3: Data Flow Diagram
+
 ```
 ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
 │              │         │              │         │              │
@@ -119,18 +122,22 @@ Token = Safe to transmit, cannot be used to steal money
 ## 🔐 Security Guarantees
 
 ### What We Never Store or Transmit
+
 - ❌ Full credit card numbers
 - ❌ CVV/CVC codes
 - ❌ Raw card data of any kind
 
 ### What We Do Store (Safely)
+
 - ✅ Payment Intent IDs (`pi_xxxxxx`)
 - ✅ Last 4 digits (`•••• 4242`)
 - ✅ Payment status (succeeded, failed)
 - ✅ Order information
 
 ### PCI DSS Compliance
+
 By using Stripe Elements:
+
 - We are **PCI DSS SAQ A** compliant
 - We **don't need** full PCI certification
 - Card data **never touches** our servers
@@ -138,20 +145,23 @@ By using Stripe Elements:
 
 ## 🔑 API Key Security
 
-### Publishable Key (pk_test_* / pk_live_*)
+### Publishable Key (pk*test*_ / pk*live*_)
+
 ```javascript
 // ✅ Safe to expose in frontend
 const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 ```
 
 **Capabilities:**
+
 - ✅ Create tokens
 - ✅ Tokenize card data
 - ✅ Retrieve public payment information
 - ❌ Cannot process payments
 - ❌ Cannot access sensitive data
 
-### Secret Key (sk_test_* / sk_live_*)
+### Secret Key (sk*test*_ / sk*live*_)
+
 ```javascript
 // ❌ NEVER expose in frontend
 // ✅ Only used in server-side API routes
@@ -159,6 +169,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 ```
 
 **Capabilities:**
+
 - ✅ Process payments
 - ✅ Create charges
 - ✅ Access all account data
@@ -167,6 +178,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 ## 📝 Code Implementation
 
 ### Frontend (CheckoutForm.tsx)
+
 ```typescript
 // [PAY-21] Card element is a secure Stripe iframe
 <CardElement options={cardElementOptions} />
@@ -183,6 +195,7 @@ const { error, paymentIntent } = await stripe.confirmCardPayment(
 ```
 
 ### Configuration (config.ts)
+
 ```typescript
 // [PAY-21] Validates that only publishable keys are used in frontend
 export function getStripePublishableKey(): string {
@@ -202,6 +215,7 @@ export function getStripePublishableKey(): string {
 ### How to Verify Tokenization is Working
 
 1. **Check Network Requests:**
+
    ```
    ✅ Requests to https://api.stripe.com
    ✅ Only tokens (pm_*, pi_*) in payload
@@ -210,6 +224,7 @@ export function getStripePublishableKey(): string {
    ```
 
 2. **Check Console Logs:**
+
    ```javascript
    // ❌ This should NEVER appear in logs
    console.log('Card number:', cardNumber) // Dangerous!
@@ -244,6 +259,7 @@ export function getStripePublishableKey(): string {
 ## 📞 Support
 
 If you have questions about security implementation:
+
 1. Review this document
 2. Check Stripe's security documentation
 3. Consult with the security team
