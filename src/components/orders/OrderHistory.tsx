@@ -51,7 +51,7 @@ interface OrdersResponse {
 
 export default function OrderHistory() {
   // Hook para obtener usuario autenticado (necesitamos su JWT)
-  const { user } = useAuth()
+  const { user, jwt } = useAuth()
 
   // Hooks de Next.js para manejo de URL y navegación
   const searchParams = useSearchParams()  // Leer query params (?page=2)
@@ -79,7 +79,7 @@ export default function OrderHistory() {
    */
   useEffect(() => {
     // Guard clause: No continuar si no hay usuario autenticado
-    if (!user?.jwt) {
+    if (!jwt) {
       return
     }
 
@@ -105,7 +105,7 @@ export default function OrderHistory() {
         const response = await fetch(url, {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.jwt}`, // JWT requerido por el endpoint
+            Authorization: `Bearer ${jwt}`, // JWT requerido por el endpoint
           },
         })
 
@@ -128,7 +128,7 @@ export default function OrderHistory() {
     }
 
     fetchOrders()
-  }, [user?.jwt, currentPage])
+  }, [jwt, currentPage])
 
   /**
    * Handler para cambiar de página

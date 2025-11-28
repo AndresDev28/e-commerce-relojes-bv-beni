@@ -22,6 +22,7 @@ const mockUser = {
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     user: mockUser,
+    jwt: mockUser.jwt,
     isAuthenticated: true,
   }),
 }))
@@ -271,7 +272,7 @@ describe('[ORD-07] OrderHistory Component', () => {
   describe('Estado de loading', () => {
     it('should show loading indicator while fetching', () => {
       vi.mocked(fetch).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => { }) // Never resolves
       )
 
       render(<OrderHistory />)
