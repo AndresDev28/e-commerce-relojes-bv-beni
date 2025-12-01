@@ -104,9 +104,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   /**
    * Estado de carga para operaciones asíncronas
    * true = operación en progreso, false = operación completada
-   * Inicialmente false para no bloquear la UI; se activa al llamar login/register
+   * Inicialmente true para evitar redirecciones durante la hidratación inicial
    */
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   /**
    * Hook de navegación del App Router de Next.js
