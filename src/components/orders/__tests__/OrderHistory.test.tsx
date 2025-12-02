@@ -415,4 +415,82 @@ describe('[ORD-07] OrderHistory Component', () => {
       })
     })
   })
+
+  /**
+   * Test 7: Integración con OrderCard
+   */
+  describe('Integración con OrderCard', () => {
+    it('should render OrderCard for each order with correct props', async () => {
+      const mockOrders = [
+        createMockOrder({
+          orderId: 'ORD-1700000001-A',
+          total: 99.99,
+          orderStatus: 'delivered',
+          createdAt: '2025-11-20T10:00:00Z',
+        }),
+        createMockOrder({
+          id: 2,
+          documentId: 'doc-002',
+          orderId: 'ORD-1700000002-B',
+          total: 149.99,
+          orderStatus: 'shipped',
+          createdAt: '2025-11-19T10:00:00Z',
+        }),
+      ]
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: mockOrders,
+          meta: {
+            pagination: { page: 1, pageSize: 10, pageCount: 1, total: 2 },
+          },
+        }),
+      } as Response)
+
+      render(<OrderHistory />)
+
+      await waitFor(() => {
+        // Verificar que OrderCard muestra el orderId
+        expect(screen.getByText('ORD-1700000001-A')).toBeInTheDocument()
+        expect(screen.getByText('ORD-1700000002-B')).toBeInTheDocument()
+
+        // Verificar que OrderCard muestra el total formateado
+        expect(screen.getByText(/99,99/)).toBeInTheDocument()
+        expect(screen.getByText(/149,99/)).toBeInTheDocument()
+
+        // Verificar que OrderCard muestra el estado traducido
+        expect(screen.getByText('Entregado')).toBeInTheDocument()
+        expect(screen.getByText('Enviado')).toBeInTheDocument()
+      })
+    })
+
+    it('should render correct number of OrderCard components', async () => {
+      const mockOrders = Array.from({ length: 5 }, (_, i) =>
+        createMockOrder({
+          id: i + 1,
+          documentId: `doc-00${i + 1}`,
+          orderId: `ORD-170000000${i + 1}-A`,
+        })
+      )
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: mockOrders,
+          meta: {
+            pagination: { page: 1, pageSize: 10, pageCount: 1, total: 5 },
+          },
+        }),
+      } as Response)
+
+      render(<OrderHistory />)
+
+      await waitFor(() => {
+        // Verificar que se renderizan 5 OrderCards
+        const orderCards = screen.getAllByText(/ORD-/)
+        expect(orderCards).toHaveLength(5)
+      })
+    })
+  })
 })
