@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react'
 import StatusBadge from '../StatusBadge'
+import { describe, it, expect } from 'vitest'
 
 describe('StatusBadge Component', () => {
   /**
