@@ -1,5 +1,6 @@
 /**
  * [ORD-04] OrderCard Component
+ * [ORD-06] Refactored to use StatusBadge component
  *
  * Componente reutilizable que representa una tarjeta individual de pedido
  * en el listado del historial.
@@ -7,7 +8,7 @@
  * RESPONSABILIDADES:
  * - Mostrar información resumida del pedido (número, fecha, total, estado)
  * - Formatear datos correctamente (fecha DD/MM/YYYY, precio XXX,XX €)
- * - Badge visual con color según estado del pedido
+ * - Badge visual con color según estado del pedido (usando StatusBadge)
  * - Enlazar a página de detalle del pedido
  * - Diseño responsive (stack en mobile, flex-row en desktop)
  *
@@ -19,6 +20,7 @@
 
 import Link from 'next/link'
 import type { OrderData } from '@/lib/api/orders'
+import StatusBadge from '@/app/components/ui/StatusBadge'
 
 interface OrderCardProps {
   order: OrderData
@@ -50,49 +52,6 @@ export default function OrderCard({ order }: OrderCardProps) {
       style: 'currency',
       currency: 'EUR',
     }).format(price)
-  }
-
-  /**
-   * Mapeo de estados a colores Tailwind
-   *
-   * PALETA DE COLORES:
-   * - Gris: Pendiente (esperando confirmación)
-   * - Azul: Pagado (pago recibido)
-   * - Amarillo: En preparación (empaquetando)
-   * - Naranja: Enviado (en camino)
-   * - Verde: Entregado (completado exitosamente)
-   * - Rojo: Cancelado (orden cancelada)
-   * - Morado: Reembolsado (dinero devuelto)
-   */
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-gray-500',
-      paid: 'bg-blue-500',
-      processing: 'bg-yellow-500',
-      shipped: 'bg-orange-500',
-      delivered: 'bg-green-500',
-      cancelled: 'bg-red-500',
-      refunded: 'bg-purple-500',
-    }
-    return colors[status] || 'bg-gray-500' // Default: gris
-  }
-
-  /**
-   * Mapeo de estados (inglés → español)
-   *
-   * El backend almacena estados en inglés, pero mostramos español al usuario
-   */
-  const getStatusText = (status: string) => {
-    const statusTexts: Record<string, string> = {
-      pending: 'Pendiente',
-      paid: 'Pagado',
-      processing: 'En preparación',
-      shipped: 'Enviado',
-      delivered: 'Entregado',
-      cancelled: 'Cancelado',
-      refunded: 'Reembolsado',
-    }
-    return statusTexts[status] || status // Fallback: mostrar status original
   }
 
   /**
@@ -138,11 +97,7 @@ export default function OrderCard({ order }: OrderCardProps) {
 
         {/* Sección 3: Badge de estado con color */}
         <div className="flex-shrink-0">
-          <span
-            className={`inline-block px-4 py-2 rounded-full text-white text-sm font-sans ${getStatusColor(order.orderStatus)}`}
-          >
-            {getStatusText(order.orderStatus)}
-          </span>
+          <StatusBadge status={order.orderStatus} />
         </div>
       </div>
     </Link>

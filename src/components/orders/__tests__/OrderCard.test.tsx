@@ -239,36 +239,36 @@ describe('[ORD-04] OrderCard Component', () => {
       expect(badge).toHaveClass('bg-blue-500')
     })
 
-    it('should apply correct color class for "processing" (yellow)', () => {
+    it('should apply correct color class for "processing" (yellow) - WCAG AA', () => {
       const order = createMockOrder({ orderStatus: 'processing' })
       render(<OrderCard order={order} />)
 
       const badge = screen.getByText('En preparación')
-      expect(badge).toHaveClass('bg-yellow-500')
+      expect(badge).toHaveClass('bg-yellow-700') // Changed for accessibility
     })
 
-    it('should apply correct color class for "shipped" (orange)', () => {
+    it('should apply correct color class for "shipped" (orange) - WCAG AA', () => {
       const order = createMockOrder({ orderStatus: 'shipped' })
       render(<OrderCard order={order} />)
 
       const badge = screen.getByText('Enviado')
-      expect(badge).toHaveClass('bg-orange-500')
+      expect(badge).toHaveClass('bg-orange-600') // Changed for accessibility
     })
 
-    it('should apply correct color class for "delivered" (green)', () => {
+    it('should apply correct color class for "delivered" (green) - WCAG AA', () => {
       const order = createMockOrder({ orderStatus: 'delivered' })
       render(<OrderCard order={order} />)
 
       const badge = screen.getByText('Entregado')
-      expect(badge).toHaveClass('bg-green-500')
+      expect(badge).toHaveClass('bg-green-600') // Changed for accessibility
     })
 
-    it('should apply correct color class for "cancelled" (red)', () => {
+    it('should apply correct color class for "cancelled" (red) - WCAG AA', () => {
       const order = createMockOrder({ orderStatus: 'cancelled' })
       render(<OrderCard order={order} />)
 
       const badge = screen.getByText('Cancelado')
-      expect(badge).toHaveClass('bg-red-500')
+      expect(badge).toHaveClass('bg-red-600') // Changed for accessibility
     })
 
     it('should apply correct color class for "refunded" (purple)', () => {
