@@ -414,6 +414,150 @@ describe('[ORD-07] OrderHistory Component', () => {
         expect(screen.queryByText(/siguiente/i)).not.toBeInTheDocument()
       })
     })
+
+    it('should navigate to next page and update URL when clicking "Siguiente"', async () => {
+      const mockOrdersPage1 = [
+        createMockOrder({ orderId: 'ORD-PAGE1', id: 1 }),
+      ]
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: mockOrdersPage1,
+          meta: {
+            pagination: { page: 1, pageSize: 10, pageCount: 3, total: 25 },
+          },
+        }),
+      } as Response)
+
+      render(<OrderHistory />)
+
+      // Esperar a que carguen los datos de página 1
+      await waitFor(() => {
+        expect(screen.getByText('ORD-PAGE1')).toBeInTheDocument()
+      })
+
+      // Hacer click en botón "Siguiente"
+      const nextButton = screen.getByText(/siguiente/i)
+      await userEvent.click(nextButton)
+
+      // Verificar que router.push se llamó con la URL correcta
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(
+          '/mi-cuenta/pedidos?page=2'
+        )
+      })
+    })
+
+    it('should navigate to previous page and update URL when clicking "Anterior"', async () => {
+      // Simular que estamos en página 2
+      mockSearchParams.set('page', '2')
+
+      const mockOrdersPage2 = [
+        createMockOrder({ orderId: 'ORD-PAGE2', id: 2 }),
+      ]
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: mockOrdersPage2,
+          meta: {
+            pagination: { page: 2, pageSize: 10, pageCount: 3, total: 25 },
+          },
+        }),
+      } as Response)
+
+      render(<OrderHistory />)
+
+      // Esperar a que carguen los datos de página 2
+      await waitFor(() => {
+        expect(screen.getByText('ORD-PAGE2')).toBeInTheDocument()
+      })
+
+      // Hacer click en botón "Anterior"
+      const prevButton = screen.getByText(/anterior/i)
+      await userEvent.click(prevButton)
+
+      // Verificar que router.push se llamó con la URL correcta
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(
+          '/mi-cuenta/pedidos?page=1'
+        )
+      })
+    })
+
+    it('should reflect current page in URL parameter', async () => {
+      // Simular que estamos en página 3
+      mockSearchParams.set('page', '3')
+
+      const mockOrdersPage3 = [createMockOrder()]
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: mockOrdersPage3,
+          meta: {
+            pagination: { page: 3, pageSize: 10, pageCount: 5, total: 45 },
+          },
+        }),
+      } as Response)
+
+      render(<OrderHistory />)
+
+      await waitFor(() => {
+        // Verificar que se muestra el indicador de página correcta
+        expect(screen.getByText('Página 3 de 5')).toBeInTheDocument()
+      })
+
+      // Verificar que fetch se llamó con el parámetro de página correcto
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/orders?page=3',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer mock-jwt-token',
+          }),
+        })
+      )
+    })
+
+    it('should load correct data for each page', async () => {
+      // Página 1: primeros 10 pedidos
+      const mockOrdersPage1 = Array.from({ length: 10 }, (_, i) =>
+        createMockOrder({
+          id: i + 1,
+          documentId: `doc-00${i + 1}`,
+          orderId: `ORD-PAGE1-${i + 1}`,
+        })
+      )
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: mockOrdersPage1,
+          meta: {
+            pagination: { page: 1, pageSize: 10, pageCount: 2, total: 15 },
+          },
+        }),
+      } as Response)
+
+      render(<OrderHistory />)
+
+      // Verificar que se muestran los pedidos de página 1
+      await waitFor(() => {
+        expect(screen.getByText('ORD-PAGE1-1')).toBeInTheDocument()
+        expect(screen.getByText('ORD-PAGE1-10')).toBeInTheDocument()
+      })
+
+      // Verificar que fetch se llamó con page=1
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/orders?page=1',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer mock-jwt-token',
+          }),
+        })
+      )
+    })
   })
 
   /**
