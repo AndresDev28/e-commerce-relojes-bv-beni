@@ -42,7 +42,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -61,7 +61,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -99,7 +99,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-NONEXISTENT' },
+        params: Promise.resolve({ orderId: 'ORD-NONEXISTENT' }),
       })
       const data = await response.json()
 
@@ -152,7 +152,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -217,7 +217,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -288,7 +288,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -324,7 +324,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -355,7 +355,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
@@ -378,7 +378,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const response = await GET(request, {
-        params: { orderId: 'ORD-1234567890-A' },
+        params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 

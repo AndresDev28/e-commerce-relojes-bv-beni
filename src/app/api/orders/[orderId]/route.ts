@@ -28,7 +28,7 @@ import { API_URL } from '@/lib/constants'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     // 1. Validate JWT token
@@ -49,7 +49,7 @@ export async function GET(
     }
 
     const jwtToken = authHeader.replace('Bearer ', '')
-    const { orderId } = params
+    const { orderId } = await params
 
     // 2. Get authenticated user from Strapi
     const userResponse = await fetch(`${API_URL}/api/users/me`, {
