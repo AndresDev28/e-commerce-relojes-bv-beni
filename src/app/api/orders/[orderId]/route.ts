@@ -1,5 +1,6 @@
 /**
  * [ORD-09] GET /api/orders/:orderId endpoint
+ * [ORD-10] Refactored to use reusable ownership validation middleware
  *
  * Returns specific order details with ownership validation
  * Requires JWT authentication
@@ -7,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
+import { validateOrderOwnership } from '@/lib/security/ownership-validator'
 
 /**
  * GET /api/orders/:orderId
@@ -109,11 +111,20 @@ export async function GET(
 
     const order = orderData.data[0]
 
-    // 5. Validate ownership: check if order belongs to authenticated user
-    if (order.user.id !== userId) {
+    // 5. Validate ownership using reusable middleware
+    // [ORD-10] This replaces the inline validation with the centralized validator
+    // which includes:
+    // - Security audit logging (authorized and unauthorized attempts)
+    // - Consistent error messages across all endpoints
+    // - Reusable logic for other resource ownership checks
+    const ownershipValidation = validateOrderOwnership(userId, order, orderId)
+
+    if (!ownershipValidation.isOwner) {
+      // Access denied - user does not own this order
+      // The middleware has already logged this unauthorized attempt
       return NextResponse.json(
-        { error: 'You do not have permission to view this order' },
-        { status: 403 }
+        { error: ownershipValidation.error!.message },
+        { status: ownershipValidation.error!.status }
       )
     }
 
