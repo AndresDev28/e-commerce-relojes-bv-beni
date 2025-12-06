@@ -12,7 +12,8 @@ import type { Stripe } from '@stripe/stripe-js'
 vi.mock('@stripe/stripe-js', () => ({
   loadStripe: vi.fn(() => {
     // Crear un mock simple de Stripe
-    const mockStripe: Partial<Stripe> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockStripe: any = {
       _apiKey: 'pk_test_mock',
     }
     return Promise.resolve(mockStripe as Stripe)
