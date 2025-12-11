@@ -8,7 +8,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
-import { validateOrderOwnership } from '@/lib/security/ownership-validator'
 
 /**
  * GET /api/orders/:orderId
@@ -75,58 +74,48 @@ export async function GET(
     const user = await userResponse.json()
     const userId = user.id
 
-    // 3. Fetch order from Strapi filtering by orderId
-    const strapiParams = new URLSearchParams({
-      'filters[orderId][$eq]': orderId,
-      'populate': 'user', // Include user relation to validate ownership
+    // 3. First, get user's orders to validate ownership
+    // Strapi v5 doesn't allow filtering by 'user' relation, so we:
+    // 1) Fetch user's orders list (the /api/orders endpoint returns only user's orders)
+    // 2) Check if requested orderId is in that list
+    // 3) If yes, fetch the specific order details
+    const userOrdersUrl = `${API_URL}/api/orders?sort[0]=createdAt:desc&pagination[pageSize]=100`
+    console.log('🔍 Fetching user orders to validate ownership...')
+
+    const userOrdersResponse = await fetch(userOrdersUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwtToken}`,
+      },
     })
 
-    const orderResponse = await fetch(
-      `${API_URL}/api/orders?${strapiParams}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      }
-    )
-
-    if (!orderResponse.ok) {
-      console.error(
-        `Strapi error: ${orderResponse.status} ${orderResponse.statusText}`
-      )
+    if (!userOrdersResponse.ok) {
+      const errorBody = await userOrdersResponse.text()
+      console.error(`Strapi error fetching user orders: ${userOrdersResponse.status}`)
+      console.error('Strapi error body:', errorBody)
       return NextResponse.json(
-        { error: 'Failed to fetch order from Strapi' },
+        { error: 'Failed to validate order ownership' },
         { status: 500 }
       )
     }
 
-    const orderData = await orderResponse.json()
+    const userOrdersData = await userOrdersResponse.json()
+    const userOrderIds = (userOrdersData.data || []).map((o: { orderId: string }) => o.orderId)
 
-    // 4. Check if order exists
-    if (!orderData.data || orderData.data.length === 0) {
+    // 4. Check if user owns this order
+    if (!userOrderIds.includes(orderId)) {
+      console.log(`🔒 Order ${orderId} not found in user ${userId}'s orders`)
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    const order = orderData.data[0]
+    console.log(`✅ Order ${orderId} verified as belonging to user ${userId}`)
 
-    // 5. Validate ownership using reusable middleware
-    // [ORD-10] This replaces the inline validation with the centralized validator
-    // which includes:
-    // - Security audit logging (authorized and unauthorized attempts)
-    // - Consistent error messages across all endpoints
-    // - Reusable logic for other resource ownership checks
-    const ownershipValidation = validateOrderOwnership(userId, order, orderId)
+    // 5. Find the order in the already-fetched list
+    const order = userOrdersData.data.find((o: { orderId: string }) => o.orderId === orderId)
 
-    if (!ownershipValidation.isOwner) {
-      // Access denied - user does not own this order
-      // The middleware has already logged this unauthorized attempt
-      return NextResponse.json(
-        { error: ownershipValidation.error!.message },
-        { status: ownershipValidation.error!.status }
-      )
-    }
+    // DEBUG: Log order structure
+    console.log('📦 Order data:', JSON.stringify(order, null, 2))
 
     // 6. Return complete order details
     return NextResponse.json({

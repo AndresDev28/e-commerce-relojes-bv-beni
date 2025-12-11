@@ -1,24 +1,28 @@
 /**
- * [ORD-11] Tests para OrderDetail Component
+ * [ORD-12] Tests for OrderDetail Component
  *
- * Tests unitarios para el componente que muestra los detalles completos
- * de un pedido específico.
+ * Unit tests for the component that displays complete order details.
  *
- * COBERTURA:
- * - Renderizado de información del pedido (número, fecha, estado)
- * - Formateo correcto de fechas y precios
- * - Visualización de productos con imágenes
- * - Cálculo y visualización de totales
- * - Badge de estado del pedido
- * - Diseño responsive
+ * COVERAGE:
+ * - Order information rendering (number, date, status)
+ * - Date and price formatting
+ * - Product visualization with images
+ * - Product links to detail pages
+ * - Totals calculation and display
+ * - Order status badge
+ * - Payment information display
+ * - OrderTimeline integration
+ * - "Back to orders" button navigation
+ * - Responsive design
  */
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import OrderDetail from '../OrderDetail'
 import type { OrderData } from '@/lib/api/orders'
 
-// Mock de Next.js Image
+// Mock Next.js Image
 vi.mock('next/image', () => ({
   default: ({
     src,
@@ -34,16 +38,65 @@ vi.mock('next/image', () => ({
   },
 }))
 
-// Mock de StatusBadge
+// Mock Next.js Link
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string
+    children: React.ReactNode
+    [key: string]: unknown
+  }) => {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    )
+  },
+}))
+
+// Mock Next.js navigation
+const mockPush = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}))
+
+// Mock StatusBadge
 vi.mock('@/app/components/ui/StatusBadge', () => ({
   default: ({ status }: { status: string }) => (
     <span data-testid="status-badge">{status}</span>
   ),
 }))
 
-describe('[ORD-11] OrderDetail Component', () => {
+// Mock OrderTimeline
+vi.mock('../OrderTimeline', () => ({
+  default: ({
+    currentStatus,
+    statusHistory,
+  }: {
+    currentStatus: string
+    statusHistory?: unknown[]
+  }) => (
+    <div data-testid="order-timeline">
+      <span>Timeline: {currentStatus}</span>
+      {statusHistory && <span>History items: {statusHistory.length}</span>}
+    </div>
+  ),
+}))
+
+// Mock react-icons
+vi.mock('react-icons/bs', () => ({
+  BsArrowLeft: () => <svg data-testid="arrow-left-icon" />,
+  BsCreditCard: () => <svg data-testid="credit-card-icon" />,
+}))
+
+describe('[ORD-12] OrderDetail Component', () => {
   /**
-   * Datos de prueba: Pedido de ejemplo
+   * Test data: Sample order with all features
    */
   const mockOrder: OrderData = {
     id: 1,
@@ -51,7 +104,7 @@ describe('[ORD-11] OrderDetail Component', () => {
     orderId: 'ORD-1234567890-A',
     items: [
       {
-        id: '1',
+        id: 'prod-casio-123',
         name: 'Reloj Casio Clásico',
         description: 'Reloj digital con cronómetro',
         price: 49.99,
@@ -61,7 +114,7 @@ describe('[ORD-11] OrderDetail Component', () => {
         stock: 10,
       },
       {
-        id: '2',
+        id: 'prod-seiko-456',
         name: 'Reloj Seiko Automático',
         description: 'Reloj mecánico de alta precisión',
         price: 299.99,
@@ -76,6 +129,21 @@ describe('[ORD-11] OrderDetail Component', () => {
     total: 399.97,
     orderStatus: 'paid',
     paymentIntentId: 'pi_123456789',
+    paymentInfo: {
+      method: 'card',
+      last4: '4242',
+      brand: 'visa',
+    },
+    statusHistory: [
+      {
+        status: 'pending',
+        date: '2025-11-20T10:00:00Z',
+      },
+      {
+        status: 'paid',
+        date: '2025-11-20T10:05:00Z',
+      },
+    ],
     createdAt: '2025-11-20T10:30:00Z',
     updatedAt: '2025-11-20T10:30:00Z',
     publishedAt: '2025-11-20T10:30:00Z',
@@ -366,8 +434,13 @@ describe('[ORD-11] OrderDetail Component', () => {
     it('should render main container with proper styling', () => {
       const { container } = render(<OrderDetail order={mockOrder} />)
 
+      // Main wrapper has space-y-6 for spacing between elements
       const mainDiv = container.firstChild
-      expect(mainDiv).toHaveClass('bg-white', 'border', 'rounded-lg')
+      expect(mainDiv).toHaveClass('space-y-6')
+
+      // The order detail card should have the bg-white, border, rounded-lg classes
+      const orderCard = container.querySelector('.bg-white.border.rounded-lg')
+      expect(orderCard).toBeInTheDocument()
     })
 
     it('should have three main sections', () => {
@@ -389,6 +462,179 @@ describe('[ORD-11] OrderDetail Component', () => {
       render(<OrderDetail order={mockOrder} />)
 
       expect(screen.getByText(/^Resumen$/i)).toBeInTheDocument()
+    })
+  })
+
+  /**
+   * Test Suite: Back Button Navigation
+   */
+  describe('[ORD-12] Back Button', () => {
+    it('should display back button with correct text', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByText('Volver a mis pedidos')).toBeInTheDocument()
+    })
+
+    it('should display back arrow icon', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByTestId('arrow-left-icon')).toBeInTheDocument()
+    })
+
+    it('should navigate to orders page when clicked', async () => {
+      const user = userEvent.setup()
+      render(<OrderDetail order={mockOrder} />)
+
+      const backButton = screen.getByText('Volver a mis pedidos')
+      await user.click(backButton)
+
+      expect(mockPush).toHaveBeenCalledWith('/mi-cuenta/pedidos')
+    })
+  })
+
+  /**
+   * Test Suite: Payment Information
+   */
+  describe('[ORD-12] Payment Information', () => {
+    it('should display payment information section when paymentInfo exists', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByText('Información de Pago')).toBeInTheDocument()
+    })
+
+    it('should display payment card icon', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByTestId('credit-card-icon')).toBeInTheDocument()
+    })
+
+    it('should display card brand', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByText('visa')).toBeInTheDocument()
+    })
+
+    it('should display last 4 digits of card', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByText(/•••• •••• •••• 4242/)).toBeInTheDocument()
+    })
+
+    it('should display payment method when brand is not available', () => {
+      const orderWithoutBrand: OrderData = {
+        ...mockOrder,
+        paymentInfo: {
+          method: 'paypal',
+        },
+      }
+
+      render(<OrderDetail order={orderWithoutBrand} />)
+
+      expect(screen.getByText('paypal')).toBeInTheDocument()
+    })
+
+    it('should not display payment section when paymentInfo is missing', () => {
+      const orderWithoutPayment: OrderData = {
+        ...mockOrder,
+        paymentInfo: undefined,
+      }
+
+      render(<OrderDetail order={orderWithoutPayment} />)
+
+      expect(
+        screen.queryByText('Información de Pago')
+      ).not.toBeInTheDocument()
+    })
+
+    it('should not display last4 when not provided', () => {
+      const orderWithoutLast4: OrderData = {
+        ...mockOrder,
+        paymentInfo: {
+          method: 'card',
+          brand: 'mastercard',
+        },
+      }
+
+      render(<OrderDetail order={orderWithoutLast4} />)
+
+      expect(screen.queryByText(/••••/)).not.toBeInTheDocument()
+    })
+  })
+
+  /**
+   * Test Suite: Product Links
+   */
+  describe('[ORD-12] Product Links', () => {
+    it('should render products as links', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      const productLinks = screen.getAllByRole('link')
+      // Should have at least 2 product links
+      expect(productLinks.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('should link first product to correct URL', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      const firstProductLink = screen.getByText('Reloj Casio Clásico')
+        .closest('a')
+      expect(firstProductLink).toHaveAttribute(
+        'href',
+        '/productos/prod-casio-123'
+      )
+    })
+
+    it('should link second product to correct URL', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      const secondProductLink = screen.getByText('Reloj Seiko Automático')
+        .closest('a')
+      expect(secondProductLink).toHaveAttribute(
+        'href',
+        '/productos/prod-seiko-456'
+      )
+    })
+
+    it('should apply hover styles to product links', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      const productLink = screen.getByText('Reloj Casio Clásico').closest('a')
+      expect(productLink).toHaveClass('hover:bg-neutral-light/50')
+    })
+  })
+
+  /**
+   * Test Suite: OrderTimeline Integration
+   */
+  describe('[ORD-12] OrderTimeline Integration', () => {
+    it('should render OrderTimeline component', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByTestId('order-timeline')).toBeInTheDocument()
+    })
+
+    it('should pass currentStatus to OrderTimeline', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByText('Timeline: paid')).toBeInTheDocument()
+    })
+
+    it('should pass statusHistory to OrderTimeline', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      expect(screen.getByText('History items: 2')).toBeInTheDocument()
+    })
+
+    it('should render OrderTimeline without statusHistory', () => {
+      const orderWithoutHistory: OrderData = {
+        ...mockOrder,
+        statusHistory: undefined,
+      }
+
+      render(<OrderDetail order={orderWithoutHistory} />)
+
+      expect(screen.getByTestId('order-timeline')).toBeInTheDocument()
+      expect(screen.queryByText(/History items/)).not.toBeInTheDocument()
     })
   })
 })

@@ -109,10 +109,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
   })
 
   /**
-   * Test 3: Pedido pertenece a otro usuario (403)
+   * Test 3: Pedido pertenece a otro usuario (now returns 404 for security)
+   * With the filter-based approach, orders are filtered by userId, so orders
+   * belonging to other users simply aren't found (returns 404, not 403)
    */
   describe('Validación de propiedad', () => {
-    it('should return 403 if order belongs to another user', async () => {
+    it('should return 404 if order belongs to another user (security: do not reveal existence)', async () => {
       // Mock de /api/users/me para obtener el usuario autenticado
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
@@ -120,26 +122,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }), // Usuario ID=1
       } as Response)
 
-      // Mock de Strapi retornando pedido de otro usuario
-      const mockOrder = {
-        id: 1,
-        documentId: 'doc-001',
-        orderId: 'ORD-1234567890-A',
-        user: { id: 999 }, // Usuario diferente
-        items: [],
-        subtotal: 100,
-        shipping: 0,
-        total: 100,
-        orderStatus: 'paid',
-        createdAt: '2025-11-20T10:00:00Z',
-        updatedAt: '2025-11-20T10:00:00Z',
-        publishedAt: '2025-11-20T10:00:00Z',
-      }
-
+      // With filter-based validation, if order belongs to another user,
+      // the query returns empty results (filtered by userId)
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ data: [mockOrder] }),
+        json: async () => ({ data: [] }), // No results - order filtered out by userId
       } as Response)
 
       const request = new NextRequest(
@@ -156,8 +144,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       })
       const data = await response.json()
 
-      expect(response.status).toBe(403)
-      expect(data.error).toBe('You do not have permission to view this order')
+      // Returns 404 instead of 403 for security (don't reveal if order exists)
+      expect(response.status).toBe(404)
+      expect(data.error).toBe('Order not found')
     })
   })
 

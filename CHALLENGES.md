@@ -216,3 +216,99 @@ Agregué delays estratégicos (500ms) después de crear órdenes para asegurar q
 - **API de Strapi:** Comprender los valores por defecto de paginación (`pageSize: 25`) y ordenamiento
 - **Testing de Integración:** Importancia de gestionar el timing y la consistencia eventual al probar contra APIs reales
 - **Query Parameters:** Uso correcto de la API de Strapi v5 con `URLSearchParams` para filtrado, ordenamiento y paginación
+
+---
+
+## Desafío de Strapi v5: La Relación User-Order que no Populaba (7+ horas debuggeando)
+
+**Problema:**
+Al intentar acceder a los detalles de un pedido (`/mi-cuenta/pedidos/[orderId]`), la aplicación devolvía un **error 500**. Los logs mostraban:
+
+```
+📦 Order data from Strapi: { id: 657, orderId: "ORD-1765452834-CI51", ... }
+👤 Order user relation: undefined
+❌ SECURITY ERROR: Order has no user relation. This should never happen.
+```
+
+Lo frustrante era que **en el Content Manager de Strapi, el usuario SÍ estaba asignado** al pedido. El problema ocurría únicamente al consultar la API.
+
+**Investigación: Una Odisea de 7+ Horas**
+
+Este bug requirió múltiples intentos de solución, cada uno revelando nuevas restricciones de Strapi v5:
+
+### Intento 1: Populate Simple
+```typescript
+const queryParams = { 'populate': 'user' }
+```
+**Resultado:** `user: undefined` - Strapi v5 no populaba relaciones de `users-permissions` con la sintaxis estándar.
+
+### Intento 2: Populate con Selección de Campos
+```typescript
+const queryParams = {
+  'populate[user][fields][0]': 'id',
+  'populate[user][fields][1]': 'email',
+}
+```
+**Resultado:** `user: undefined` - Mismo problema. La documentación de Strapi v5 sugería esta sintaxis, pero no funcionaba para relaciones con `plugin::users-permissions.user`.
+
+### Intento 3: Filtrar por Relación de Usuario
+```typescript
+const queryParams = {
+  'filters[orderId][$eq]': orderId,
+  'filters[user][id][$eq]': userId.toString(),
+}
+```
+**Resultado:** `400 Bad Request: Invalid key user` - Strapi v5 **no permite filtrar directamente por relaciones de users-permissions** en queries públicas.
+
+### Hipótesis Descartada: Permisos
+Verificamos que el rol **Authenticated** tenía todos los permisos necesarios (`find`, `findOne`, `create`, `update`) tanto para `Order` como para `User`. El problema no era de permisos.
+
+**Causa Raíz:**
+Strapi v5 tiene **restricciones de seguridad específicas** para el plugin `users-permissions`. Las relaciones con usuarios:
+- No se pueden poblar (`populate`) desde la REST API pública
+- No se pueden usar como filtro (`filters[user][id]`) en queries
+- Estas restricciones existen para prevenir la exposición de datos de usuarios
+
+**Solución: Validación de Propiedad en Dos Pasos**
+
+Implementé un enfoque alternativo que aprovecha el hecho de que Strapi **sí filtra los pedidos por usuario autenticado** internamente:
+
+```typescript
+// 1. Obtener la lista de pedidos del usuario (ya filtrada por Strapi)
+const userOrdersUrl = `${API_URL}/api/orders?sort[0]=createdAt:desc&pagination[pageSize]=100`
+
+const userOrdersResponse = await fetch(userOrdersUrl, {
+  headers: { Authorization: `Bearer ${jwtToken}` },
+})
+
+const userOrdersData = await userOrdersResponse.json()
+const userOrderIds = userOrdersData.data.map(o => o.orderId)
+
+// 2. Validar que el orderId solicitado pertenece al usuario
+if (!userOrderIds.includes(orderId)) {
+  return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+}
+
+// 3. Encontrar y devolver el pedido de la lista ya obtenida
+const order = userOrdersData.data.find(o => o.orderId === orderId)
+```
+
+**Por qué funciona:**
+- Strapi aplica automáticamente un filtro por usuario cuando se usa JWT authentication
+- El endpoint `/api/orders` devuelve **solo los pedidos del usuario autenticado**
+- Al verificar si el `orderId` está en esa lista, validamos la propiedad sin necesitar populate ni filter por user
+
+**Resultado:**
+- ✅ Los detalles del pedido ahora se muestran correctamente
+- ✅ La validación de propiedad funciona de forma segura
+- ✅ Pedidos de otros usuarios devuelven 404 (no revelan existencia)
+- ✅ Compatible con las restricciones de seguridad de Strapi v5
+
+**Aprendizajes Clave:**
+
+1. **Strapi v5 vs v4:** El plugin `users-permissions` tiene restricciones adicionales en v5 que no están claramente documentadas
+2. **Debugging Sistemático:** La importancia de agregar logs detallados (`Strapi error body:`) para entender respuestas de error
+3. **Pensamiento Lateral:** Cuando una API no permite hacer algo directamente, buscar formas alternativas de lograr el mismo objetivo
+4. **Seguridad por Diseño:** Las restricciones de Strapi existen por buenas razones - la solución final respeta el modelo de seguridad en lugar de intentar evitarlo
+5. **Documentación:** Cuando un bug toma 7+ horas, **documentarlo** para el "yo del futuro" y otros desarrolladores
+

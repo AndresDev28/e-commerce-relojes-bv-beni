@@ -129,7 +129,7 @@ export interface OwnershipAuditLog {
  */
 export function validateOrderOwnership(
   authenticatedUserId: number,
-  order: { user: { id: number }; [key: string]: unknown },
+  order: { user?: { id: number }; [key: string]: unknown },
   orderId: string
 ): OwnershipValidationResult {
   // ================================================================
@@ -137,6 +137,20 @@ export function validateOrderOwnership(
   // ================================================================
   // Compare the authenticated user's ID with the order's owner ID
   // This is the core security check that prevents unauthorized access
+
+  // Defensive check: ensure user relation is populated
+  if (!order.user || !order.user.id) {
+    console.error(
+      `❌ SECURITY ERROR: Order ${orderId} has no user relation. This should never happen.`
+    )
+    return {
+      isOwner: false,
+      error: {
+        message: 'Order ownership could not be verified',
+        status: 500,
+      },
+    }
+  }
 
   const isOwner = order.user.id === authenticatedUserId
 
