@@ -1,25 +1,28 @@
 /**
- * [ORD-11] OrderDetail Component EPIC-15
+ * [ORD-12] OrderDetail Component EPIC-15
  *
- * Componente que muestra los detalles completos de un pedido específico.
+ * Component that displays complete order details.
  *
- * RESPONSABILIDADES:
- * - Mostrar información completa del pedido (número, fecha, estado, total)
- * - Listar todos los productos del pedido con sus detalles
- * - Mostrar resumen de costos (subtotal, envío, total)
- * - Badge visual del estado del pedido
- * - Diseño responsive (stack en mobile, grid en desktop)
+ * RESPONSIBILITIES:
+ * - Display complete order information (number, date, status, total)
+ * - List all order products with details (linked to product pages)
+ * - Show cost summary (subtotal, shipping, total)
+ * - Display payment information (method, last 4 digits)
+ * - Integrate order timeline component
+ * - Visual status badge
+ * - "Back to orders" navigation button
+ * - Responsive design (stack on mobile, grid on desktop)
  *
- * LEARNING: ¿Por qué crear un componente separado?
- * ================================================
+ * LEARNING: Why create a separate component?
+ * ===========================================
  *
- * Podríamos poner todo el código en la página, pero separarlo en un componente:
- * - ✅ Facilita testing (podemos testearlo independientemente)
- * - ✅ Reutilizable (si queremos mostrar detalle en otro lugar)
- * - ✅ Separación de responsabilidades (presentación vs. lógica de página)
- * - ✅ Más fácil de mantener y modificar
+ * We could put all code in the page, but separating it into a component:
+ * - ✅ Easier testing (can test independently)
+ * - ✅ Reusable (if we want to show detail elsewhere)
+ * - ✅ Separation of concerns (presentation vs. page logic)
+ * - ✅ Easier to maintain and modify
  *
- * USO:
+ * USAGE:
  * <OrderDetail order={orderData} />
  */
 
@@ -27,15 +30,21 @@
 
 import type { OrderData } from '@/lib/api/orders'
 import StatusBadge from '@/app/components/ui/StatusBadge'
+import OrderTimeline from './OrderTimeline'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { BsArrowLeft, BsCreditCard } from 'react-icons/bs'
 
 interface OrderDetailProps {
   order: OrderData
 }
 
 export default function OrderDetail({ order }: OrderDetailProps) {
+  const router = useRouter()
+
   /**
-   * Formatear fecha a formato español completo
+   * Format date to Spanish format
    *
    * @example "2025-11-20T10:00:00Z" → "20 de noviembre de 2025, 10:00"
    */
@@ -51,7 +60,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
   }
 
   /**
-   * Formatear precio a formato de moneda español
+   * Format price to Spanish currency format
    *
    * @example 99.99 → "99,99 €"
    */
@@ -63,26 +72,46 @@ export default function OrderDetail({ order }: OrderDetailProps) {
   }
 
   /**
-   * RENDERIZADO
+   * Navigate back to orders list
+   */
+  const handleBackClick = () => {
+    router.push('/mi-cuenta/pedidos')
+  }
+
+  /**
+   * RENDERING
    *
-   * ESTRUCTURA:
-   * 1. Cabecera con número de pedido y estado
-   * 2. Información general (fecha, total)
-   * 3. Lista de productos del pedido
-   * 4. Resumen de costos
+   * STRUCTURE:
+   * 0. Back button
+   * 1. Header with order number and status
+   * 2. General information and cost summary (2 columns on desktop)
+   * 3. Payment information
+   * 4. Order products list (linked to product pages)
+   * 5. Order timeline
    *
-   * LEARNING: ¿Por qué usar grid en desktop?
-   * ========================================
-   * grid-cols-1 (mobile): Una columna, todo apilado
-   * md:grid-cols-2 (desktop): Dos columnas, info general a la izquierda,
-   *                           resumen de costos a la derecha
+   * LEARNING: Why use grid on desktop?
+   * ===================================
+   * grid-cols-1 (mobile): Single column, everything stacked
+   * md:grid-cols-2 (desktop): Two columns, general info on left,
+   *                           cost summary on right
    *
-   * Esto aprovecha mejor el espacio en pantallas grandes.
+   * This better utilizes space on large screens.
    */
   return (
-    <div className="bg-white border border-neutral-light rounded-lg shadow-sm">
-      {/* 1. CABECERA - Número de pedido y estado */}
-      <div className="border-b border-neutral-light p-6">
+    <div className="space-y-6">
+      {/* 0. BACK BUTTON */}
+      <button
+        onClick={handleBackClick}
+        className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors font-medium"
+      >
+        <BsArrowLeft className="w-5 h-5" />
+        Volver a mis pedidos
+      </button>
+
+      {/* Main order detail card */}
+      <div className="bg-white border border-neutral-light rounded-lg shadow-sm">
+        {/* 1. HEADER - Order number and status */}
+        <div className="border-b border-neutral-light p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold font-sans text-neutral-dark">
@@ -98,13 +127,13 @@ export default function OrderDetail({ order }: OrderDetailProps) {
         </div>
       </div>
 
-      {/* 2. INFORMACIÓN GENERAL Y RESUMEN */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-        {/* Información general (izquierda en desktop) */}
-        <div>
-          <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
-            Información del Pedido
-          </h3>
+        {/* 2. GENERAL INFORMATION AND SUMMARY */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+          {/* General information (left on desktop) */}
+          <div>
+            <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
+              Información del Pedido
+            </h3>
           <dl className="space-y-2">
             <div className="flex justify-between">
               <dt className="text-sm text-neutral font-serif">
@@ -139,88 +168,120 @@ export default function OrderDetail({ order }: OrderDetailProps) {
           </dl>
         </div>
 
-        {/* Resumen de costos (derecha en desktop) */}
-        <div className="bg-neutral-lightest p-4 rounded-lg">
-          <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
-            Resumen
-          </h3>
-          <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-sm text-neutral font-serif">Subtotal:</dt>
-              <dd className="text-sm font-medium text-neutral-dark">
-                {formatPrice(order.subtotal)}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm text-neutral font-serif">Envío:</dt>
-              <dd className="text-sm font-medium text-neutral-dark">
-                {order.shipping === 0 ? 'Gratis' : formatPrice(order.shipping)}
-              </dd>
-            </div>
-            <div className="flex justify-between pt-2 border-t border-neutral-light">
-              <dt className="text-base font-bold font-sans text-neutral-dark">
-                Total:
-              </dt>
-              <dd className="text-base font-bold font-sans text-primary">
-                {formatPrice(order.total)}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-
-      {/* 3. PRODUCTOS DEL PEDIDO */}
-      <div className="border-t border-neutral-light p-6">
-        <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
-          Productos ({order.items.length})
-        </h3>
-        <div className="space-y-4">
-          {order.items.map((item, index) => (
-            <div
-              key={`${item.id}-${index}`}
-              className="flex gap-4 p-4 bg-neutral-lightest rounded-lg"
-            >
-              {/* Imagen del producto */}
-              <div className="flex-shrink-0 w-20 h-20 relative bg-white rounded-md overflow-hidden">
-                <Image
-                  src={item.images[0] || '/placeholder-watch.jpg'}
-                  alt={item.name}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
-                />
+          {/* Cost summary (right on desktop) */}
+          <div className="bg-neutral-lightest p-4 rounded-lg">
+            <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
+              Resumen
+            </h3>
+            <dl className="space-y-2">
+              <div className="flex justify-between">
+                <dt className="text-sm text-neutral font-serif">Subtotal:</dt>
+                <dd className="text-sm font-medium text-neutral-dark">
+                  {formatPrice(order.subtotal)}
+                </dd>
               </div>
+              <div className="flex justify-between">
+                <dt className="text-sm text-neutral font-serif">Envío:</dt>
+                <dd className="text-sm font-medium text-neutral-dark">
+                  {order.shipping === 0 ? 'Gratis' : formatPrice(order.shipping)}
+                </dd>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-neutral-light">
+                <dt className="text-base font-bold font-sans text-neutral-dark">
+                  Total:
+                </dt>
+                <dd className="text-base font-bold font-sans text-primary">
+                  {formatPrice(order.total)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
 
-              {/* Información del producto */}
-              <div className="flex-1 min-w-0">
-                <h4 className="text-base font-bold font-sans text-neutral-dark truncate">
-                  {item.name}
-                </h4>
-                {item.description && (
-                  <p className="text-sm text-neutral font-serif mt-1 line-clamp-2">
-                    {item.description}
+        {/* 3. PAYMENT INFORMATION */}
+        {order.paymentInfo && (
+          <div className="border-t border-neutral-light p-6">
+            <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
+              Información de Pago
+            </h3>
+            <div className="bg-neutral-lightest p-4 rounded-lg">
+              <div className="flex items-center gap-3">
+                <BsCreditCard className="w-6 h-6 text-neutral" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-neutral-dark capitalize">
+                    {order.paymentInfo.brand || order.paymentInfo.method}
                   </p>
-                )}
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-sm text-neutral font-serif">
-                    Cantidad: {item.quantity}
-                  </span>
-                  <span className="text-sm font-medium text-neutral-dark">
-                    {formatPrice(item.price)} c/u
-                  </span>
+                  {order.paymentInfo.last4 && (
+                    <p className="text-xs text-neutral font-serif mt-1">
+                      •••• •••• •••• {order.paymentInfo.last4}
+                    </p>
+                  )}
                 </div>
               </div>
-
-              {/* Subtotal del producto */}
-              <div className="flex-shrink-0 text-right">
-                <p className="text-base font-bold font-sans text-primary">
-                  {formatPrice(item.price * item.quantity)}
-                </p>
-              </div>
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* 4. ORDER PRODUCTS */}
+        <div className="border-t border-neutral-light p-6">
+          <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
+            Productos ({order.items.length})
+          </h3>
+          <div className="space-y-4">
+            {order.items.map((item, index) => (
+              <Link
+                key={`${item.id}-${index}`}
+                href={`/productos/${item.id}`}
+                className="flex gap-4 p-4 bg-neutral-lightest rounded-lg hover:bg-neutral-light/50 transition-colors group"
+              >
+                {/* Product image */}
+                <div className="flex-shrink-0 w-20 h-20 relative bg-white rounded-md overflow-hidden">
+                  <Image
+                    src={item.images[0] || '/placeholder-watch.jpg'}
+                    alt={item.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform"
+                    sizes="80px"
+                  />
+                </div>
+
+                {/* Product information */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-base font-bold font-sans text-neutral-dark truncate group-hover:text-primary transition-colors">
+                    {item.name}
+                  </h4>
+                  {item.description && (
+                    <p className="text-sm text-neutral font-serif mt-1 line-clamp-2">
+                      {item.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="text-sm text-neutral font-serif">
+                      Cantidad: {item.quantity}
+                    </span>
+                    <span className="text-sm font-medium text-neutral-dark">
+                      {formatPrice(item.price)} c/u
+                    </span>
+                  </div>
+                </div>
+
+                {/* Product subtotal */}
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-base font-bold font-sans text-primary">
+                    {formatPrice(item.price * item.quantity)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* 5. ORDER TIMELINE */}
+      <OrderTimeline
+        currentStatus={order.orderStatus}
+        statusHistory={order.statusHistory}
+      />
     </div>
   )
 }

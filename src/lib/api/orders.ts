@@ -24,6 +24,24 @@ export interface CreateOrderData {
  */
 
 /**
+ * Order status history item
+ */
+export interface StatusHistoryItem {
+  status: string
+  date: string
+  description?: string
+}
+
+/**
+ * Payment method information
+ */
+export interface PaymentInfo {
+  method: string // 'card', 'paypal', etc.
+  last4?: string // Last 4 digits of card
+  brand?: string // 'visa', 'mastercard', etc.
+}
+
+/**
  * Single order data from Strapi
  */
 export interface OrderData {
@@ -36,6 +54,8 @@ export interface OrderData {
   total: number
   orderStatus: string
   paymentIntentId?: string
+  paymentInfo?: PaymentInfo
+  statusHistory?: StatusHistoryItem[]
   createdAt: string
   updatedAt: string
   publishedAt: string
@@ -62,6 +82,8 @@ export async function createOrder(
   jwtToken: string
 ): Promise<OrderResponse> {
   try {
+    // Create order in Strapi - user is assigned automatically via lifecycle hook
+    console.log('📝 Creating order...')
     const response = await fetch(`${API_URL}/api/orders`, {
       method: 'POST',
       headers: {
@@ -77,16 +99,19 @@ export async function createOrder(
           total: orderData.total,
           orderStatus: orderData.orderStatus || 'pending',
           paymentIntentId: orderData.paymentIntentId,
+          // Note: user is assigned automatically by Strapi lifecycle hook
         },
       }),
     })
 
     if (!response.ok) {
       const error = await response.json()
+      console.error('❌ Strapi error response:', JSON.stringify(error, null, 2))
       throw new Error(error.error?.message || 'Failed to create order')
     }
 
     const data: OrderResponse = await response.json()
+    console.log('✅ Order created successfully:', data.data.orderId)
     return data
   } catch (error) {
     console.error('❌ Error creating order:', error)
