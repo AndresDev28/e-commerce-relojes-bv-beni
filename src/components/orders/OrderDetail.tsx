@@ -31,6 +31,7 @@
 import type { OrderData } from '@/lib/api/orders'
 import StatusBadge from '@/app/components/ui/StatusBadge'
 import OrderTimeline from './OrderTimeline'
+import { formatPaymentMethod } from '@/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -112,20 +113,20 @@ export default function OrderDetail({ order }: OrderDetailProps) {
       <div className="bg-white border border-neutral-light rounded-lg shadow-sm">
         {/* 1. HEADER - Order number and status */}
         <div className="border-b border-neutral-light p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold font-sans text-neutral-dark">
-              Pedido {order.orderId}
-            </h2>
-            <p className="text-sm text-neutral font-serif mt-1">
-              Realizado el {formatDate(order.createdAt)}
-            </p>
-          </div>
-          <div>
-            <StatusBadge status={order.orderStatus} />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold font-sans text-neutral-dark">
+                Pedido {order.orderId}
+              </h2>
+              <p className="text-sm text-neutral font-serif mt-1">
+                Realizado el {formatDate(order.createdAt)}
+              </p>
+            </div>
+            <div>
+              <StatusBadge status={order.orderStatus} />
+            </div>
           </div>
         </div>
-      </div>
 
         {/* 2. GENERAL INFORMATION AND SUMMARY */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
@@ -134,39 +135,39 @@ export default function OrderDetail({ order }: OrderDetailProps) {
             <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
               Información del Pedido
             </h3>
-          <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-sm text-neutral font-serif">
-                Número de pedido:
-              </dt>
-              <dd className="text-sm font-medium text-neutral-dark">
-                {order.orderId}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm text-neutral font-serif">Fecha:</dt>
-              <dd className="text-sm font-medium text-neutral-dark">
-                {formatDate(order.createdAt)}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm text-neutral font-serif">Estado:</dt>
-              <dd className="text-sm font-medium text-neutral-dark">
-                <StatusBadge status={order.orderStatus} />
-              </dd>
-            </div>
-            {order.paymentIntentId && (
+            <dl className="space-y-2">
               <div className="flex justify-between">
                 <dt className="text-sm text-neutral font-serif">
-                  ID de Pago:
+                  Número de pedido:
                 </dt>
-                <dd className="text-sm font-medium text-neutral-dark font-mono">
-                  {order.paymentIntentId}
+                <dd className="text-sm font-medium text-neutral-dark">
+                  {order.orderId}
                 </dd>
               </div>
-            )}
-          </dl>
-        </div>
+              <div className="flex justify-between">
+                <dt className="text-sm text-neutral font-serif">Fecha:</dt>
+                <dd className="text-sm font-medium text-neutral-dark">
+                  {formatDate(order.createdAt)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-sm text-neutral font-serif">Estado:</dt>
+                <dd className="text-sm font-medium text-neutral-dark">
+                  <StatusBadge status={order.orderStatus} />
+                </dd>
+              </div>
+              {order.paymentIntentId && (
+                <div className="flex justify-between">
+                  <dt className="text-sm text-neutral font-serif">
+                    ID de Pago:
+                  </dt>
+                  <dd className="text-sm font-medium text-neutral-dark font-mono">
+                    {order.paymentIntentId}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
 
           {/* Cost summary (right on desktop) */}
           <div className="bg-neutral-lightest p-4 rounded-lg">
@@ -183,7 +184,9 @@ export default function OrderDetail({ order }: OrderDetailProps) {
               <div className="flex justify-between">
                 <dt className="text-sm text-neutral font-serif">Envío:</dt>
                 <dd className="text-sm font-medium text-neutral-dark">
-                  {order.shipping === 0 ? 'Gratis' : formatPrice(order.shipping)}
+                  {order.shipping === 0
+                    ? 'Gratis'
+                    : formatPrice(order.shipping)}
                 </dd>
               </div>
               <div className="flex justify-between pt-2 border-t border-neutral-light">
@@ -198,7 +201,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
           </div>
         </div>
 
-        {/* 3. PAYMENT INFORMATION */}
+        {/* 3. PAYMENT INFORMATION - [ORD-14] Using formatPaymentMethod */}
         {order.paymentInfo && (
           <div className="border-t border-neutral-light p-6">
             <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
@@ -207,16 +210,9 @@ export default function OrderDetail({ order }: OrderDetailProps) {
             <div className="bg-neutral-lightest p-4 rounded-lg">
               <div className="flex items-center gap-3">
                 <BsCreditCard className="w-6 h-6 text-neutral" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-neutral-dark capitalize">
-                    {order.paymentInfo.brand || order.paymentInfo.method}
-                  </p>
-                  {order.paymentInfo.last4 && (
-                    <p className="text-xs text-neutral font-serif mt-1">
-                      •••• •••• •••• {order.paymentInfo.last4}
-                    </p>
-                  )}
-                </div>
+                <p className="text-sm font-medium text-neutral-dark">
+                  {formatPaymentMethod(order.paymentInfo)}
+                </p>
               </div>
             </div>
           </div>
