@@ -156,9 +156,7 @@ describe('[ORD-12] OrderDetail Component', () => {
     it('should display order number in the header', () => {
       render(<OrderDetail order={mockOrder} />)
 
-      expect(
-        screen.getByText(/Pedido ORD-1234567890-A/i)
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pedido ORD-1234567890-A/i)).toBeInTheDocument()
     })
 
     it('should display order creation date formatted correctly', () => {
@@ -447,9 +445,7 @@ describe('[ORD-12] OrderDetail Component', () => {
       render(<OrderDetail order={mockOrder} />)
 
       // 1. Cabecera con número de pedido
-      expect(
-        screen.getByText(/Pedido ORD-1234567890-A/i)
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pedido ORD-1234567890-A/i)).toBeInTheDocument()
 
       // 2. Información del pedido
       expect(screen.getByText(/Información del Pedido/i)).toBeInTheDocument()
@@ -494,8 +490,9 @@ describe('[ORD-12] OrderDetail Component', () => {
 
   /**
    * Test Suite: Payment Information
+   * [ORD-15] Updated to work with formatPaymentMethod from ORD-14
    */
-  describe('[ORD-12] Payment Information', () => {
+  describe('[ORD-15] Payment Information', () => {
     it('should display payment information section when paymentInfo exists', () => {
       render(<OrderDetail order={mockOrder} />)
 
@@ -508,29 +505,25 @@ describe('[ORD-12] OrderDetail Component', () => {
       expect(screen.getByTestId('credit-card-icon')).toBeInTheDocument()
     })
 
-    it('should display card brand', () => {
+    it('should display formatted payment method with brand and last4', () => {
       render(<OrderDetail order={mockOrder} />)
 
-      expect(screen.getByText('visa')).toBeInTheDocument()
+      // formatPaymentMethod returns "Visa ****4242" for { brand: 'visa', last4: '4242' }
+      expect(screen.getByText('Visa ****4242')).toBeInTheDocument()
     })
 
-    it('should display last 4 digits of card', () => {
-      render(<OrderDetail order={mockOrder} />)
-
-      expect(screen.getByText(/•••• •••• •••• 4242/)).toBeInTheDocument()
-    })
-
-    it('should display payment method when brand is not available', () => {
-      const orderWithoutBrand: OrderData = {
+    it('should display fallback when only method is provided (no brand/last4)', () => {
+      const orderWithoutBrandAndLast4: OrderData = {
         ...mockOrder,
         paymentInfo: {
-          method: 'paypal',
+          method: 'card',
         },
       }
 
-      render(<OrderDetail order={orderWithoutBrand} />)
+      render(<OrderDetail order={orderWithoutBrandAndLast4} />)
 
-      expect(screen.getByText('paypal')).toBeInTheDocument()
+      // formatPaymentMethod returns "Tarjeta de crédito" as fallback
+      expect(screen.getByText('Tarjeta de crédito')).toBeInTheDocument()
     })
 
     it('should not display payment section when paymentInfo is missing', () => {
@@ -541,12 +534,10 @@ describe('[ORD-12] OrderDetail Component', () => {
 
       render(<OrderDetail order={orderWithoutPayment} />)
 
-      expect(
-        screen.queryByText('Información de Pago')
-      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Información de Pago')).not.toBeInTheDocument()
     })
 
-    it('should not display last4 when not provided', () => {
+    it('should display only brand when last4 is not provided', () => {
       const orderWithoutLast4: OrderData = {
         ...mockOrder,
         paymentInfo: {
@@ -557,7 +548,38 @@ describe('[ORD-12] OrderDetail Component', () => {
 
       render(<OrderDetail order={orderWithoutLast4} />)
 
-      expect(screen.queryByText(/••••/)).not.toBeInTheDocument()
+      // formatPaymentMethod returns "Mastercard" when no last4
+      expect(screen.getByText('Mastercard')).toBeInTheDocument()
+      expect(screen.queryByText(/\*\*\*\*/)).not.toBeInTheDocument()
+    })
+
+    it('should display masked card with only last4 (no brand)', () => {
+      const orderWithOnlyLast4: OrderData = {
+        ...mockOrder,
+        paymentInfo: {
+          method: 'card',
+          last4: '1234',
+        },
+      }
+
+      render(<OrderDetail order={orderWithOnlyLast4} />)
+
+      // formatPaymentMethod returns "Tarjeta ****1234" when only last4
+      expect(screen.getByText('Tarjeta ****1234')).toBeInTheDocument()
+    })
+
+    it('should never expose full card number (security)', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      // Verify that the formatted payment method only shows last 4 digits
+      const paymentText = screen.getByText('Visa ****4242')
+
+      // Extract only the digits from the payment text
+      const digitsOnly = paymentText.textContent?.replace(/\D/g, '') || ''
+
+      // Should only have exactly 4 digits (the last4)
+      expect(digitsOnly).toBe('4242')
+      expect(digitsOnly.length).toBe(4)
     })
   })
 
@@ -576,7 +598,8 @@ describe('[ORD-12] OrderDetail Component', () => {
     it('should link first product to correct URL', () => {
       render(<OrderDetail order={mockOrder} />)
 
-      const firstProductLink = screen.getByText('Reloj Casio Clásico')
+      const firstProductLink = screen
+        .getByText('Reloj Casio Clásico')
         .closest('a')
       expect(firstProductLink).toHaveAttribute(
         'href',
@@ -587,7 +610,8 @@ describe('[ORD-12] OrderDetail Component', () => {
     it('should link second product to correct URL', () => {
       render(<OrderDetail order={mockOrder} />)
 
-      const secondProductLink = screen.getByText('Reloj Seiko Automático')
+      const secondProductLink = screen
+        .getByText('Reloj Seiko Automático')
         .closest('a')
       expect(secondProductLink).toHaveAttribute(
         'href',
