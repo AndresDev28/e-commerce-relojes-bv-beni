@@ -115,7 +115,12 @@ export default function CheckoutPage() {
           shipping: shippingCost,
           total,
           orderStatus: 'paid' as const,
-          paymentIntentId: undefined, // TODO: Añadir cuando tengamos Stripe real
+          paymentIntentId: `pi_test_${Date.now()}`, // Simulated Payment Intent ID
+          paymentInfo: {
+            method: 'card',
+            brand: 'visa',
+            last4: '4242',
+          },
         }
 
         await createOrder(orderData, jwt)
