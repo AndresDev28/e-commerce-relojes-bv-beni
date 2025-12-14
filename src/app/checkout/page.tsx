@@ -6,7 +6,7 @@ import { useCart } from '@/context/CartContext'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Button from '@/app/components/ui/Button'
 import Link from 'next/link'
-import { loadStripe } from '@stripe/stripe-js'
+import { loadStripe, PaymentIntent } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import CheckoutForm from '../components/checkout/CheckoutForm'
 import OrderSummary from '../components/checkout/OrderSummary'
@@ -90,8 +90,8 @@ export default function CheckoutPage() {
     return null
   }
 
-  const handleSuccess = async () => {
-    console.log('✅ Pago exitoso!')
+  const handleSuccess = async (paymentIntent: PaymentIntent) => {
+    console.log('✅ Pago exitoso!', paymentIntent.id)
 
     // [PAY-17] Generar ID único del pedido al inicio
     const orderId = generateOrderId()
@@ -108,6 +108,22 @@ export default function CheckoutPage() {
       if (jwt) {
         console.log('💾 Creando orden en Strapi...')
 
+        // Extract payment method details from PaymentIntent
+        // latest_charge is expanded via the /api/create-payment-intent endpoint
+        // TypeScript doesn't know about expanded fields, so we access them safely
+        const expandedPaymentIntent = paymentIntent as PaymentIntent & {
+          latest_charge?: {
+            payment_method_details?: {
+              card?: {
+                brand: string
+                last4: string
+              }
+            }
+          }
+        }
+        const paymentMethodDetails =
+          expandedPaymentIntent.latest_charge?.payment_method_details?.card
+
         const orderData = {
           orderId,
           items: cartItems,
@@ -115,7 +131,12 @@ export default function CheckoutPage() {
           shipping: shippingCost,
           total,
           orderStatus: 'paid' as const,
-          paymentIntentId: undefined, // TODO: Añadir cuando tengamos Stripe real
+          paymentIntentId: paymentIntent.id,
+          paymentInfo: {
+            method: 'card',
+            brand: paymentMethodDetails?.brand || 'unknown',
+            last4: paymentMethodDetails?.last4 || '0000',
+          },
         }
 
         await createOrder(orderData, jwt)
@@ -172,6 +193,7 @@ export default function CheckoutPage() {
               <Elements stripe={stripePromise}>
                 <CheckoutForm
                   amount={total}
+                  cartItems={cartItems}
                   onSuccess={handleSuccess}
                   onError={handleError}
                 />

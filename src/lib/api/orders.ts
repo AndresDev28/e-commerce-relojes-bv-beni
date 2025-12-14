@@ -17,6 +17,7 @@ export interface CreateOrderData {
   total: number
   orderStatus?: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
   paymentIntentId?: string
+  paymentInfo?: PaymentInfo
 }
 
 /**
@@ -99,6 +100,7 @@ export async function createOrder(
           total: orderData.total,
           orderStatus: orderData.orderStatus || 'pending',
           paymentIntentId: orderData.paymentIntentId,
+          paymentInfo: orderData.paymentInfo,
           // Note: user is assigned automatically by Strapi lifecycle hook
         },
       }),

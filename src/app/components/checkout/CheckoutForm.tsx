@@ -8,15 +8,19 @@ import {
 import ErrorMessage from '@/app/components/ui/ErrorMessage'
 import { retryWithBackoff } from '@/lib/stripe/retryHandler'
 import type { RetryResult } from '@/lib/stripe/retryHandler'
+import type { PaymentIntent } from '@stripe/stripe-js'
+import type { CartItem } from '@/types'
 
 interface CheckoutFormProps {
   amount: number
-  onSuccess?: () => void
+  cartItems: CartItem[]
+  onSuccess?: (paymentIntent: PaymentIntent) => void
   onError?: (error: string) => void
 }
 
 export default function CheckoutForm({
   amount,
+  cartItems,
   onSuccess,
   onError,
 }: CheckoutFormProps) {
@@ -28,6 +32,8 @@ export default function CheckoutForm({
   const maxRetries = 3
   const [errorSuggestion, setErrorSuggestion] = useState<string | undefined>()
   const [isMobile, setIsMobile] = useState(false)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [isLoadingIntent, setIsLoadingIntent] = useState(false)
 
   // Stripe Hooks
   const stripe = useStripe()
@@ -44,6 +50,55 @@ export default function CheckoutForm({
 
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // ⭐ NUEVO: Fetch Payment Intent cuando se monta el componente
+  useEffect(() => {
+    const fetchPaymentIntent = async () => {
+      // ⭐ Guard: Don't fetch if there's no cart items
+      if (!cartItems || cartItems.length === 0) {
+        console.log('⏭️ Skipping Payment Intent fetch: cart is empty')
+        return
+      }
+      setIsLoadingIntent(true)
+      try {
+        // Get JWT token from localStorage
+        const jwt = localStorage.getItem('jwt')
+
+        if (!jwt) {
+          throw new Error('No authentication token found')
+        }
+        console.log('🔄 Fetching Payment Intent...')
+
+        const response = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwt}`,
+          },
+          body: JSON.stringify({
+            items: cartItems,
+          }),
+        })
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to create payment intent')
+        }
+        const data = await response.json()
+        setClientSecret(data.clientSecret)
+        console.log('✅ Payment Intent created successfully')
+      } catch (error) {
+        console.error('❌ Error fetching payment intent:', error)
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'No se pudo inicializar el pago. Por favor, recarga la página.'
+        )
+      } finally {
+        setIsLoadingIntent(false)
+      }
+    }
+    fetchPaymentIntent()
+  }, [cartItems, amount])
 
   // ================================================================
   // [PAY-08][PAY-21] PAYMENT PROCESSING FUNCTION
@@ -85,74 +140,41 @@ export default function CheckoutForm({
       throw new Error('Stripe no está listo')
     }
 
+    // Validar que tenemos clientSecret
+    if (!clientSecret) {
+      throw new Error('Payment intent no inicializado')
+    }
     // Get CardElement reference (this is just a reference to Stripe's iframe)
     const cardElement = elements.getElement(CardElement)
     if (!cardElement) {
       throw new Error('Card element no encontrado')
     }
 
-    // ================================================================
-    // TODO: Implementar integración real con Stripe
-    // ================================================================
-    // Cuando estés listo, reemplaza este bloque con:
-    //
-    // 🔒 IMPORTANT: This call handles tokenization automatically
-    // const { error, paymentIntent } = await stripe.confirmCardPayment(
-    //   clientSecret, // Obtained from your backend
-    //   {
-    //     payment_method: {
-    //       card: cardElement, // Stripe handles tokenization internally
-    //     },
-    //   }
-    // )
-    //
-    // if (error) {
-    //   throw error // El catch lo manejará con handleStripeError
-    // }
-    //
-    // return paymentIntent
-    // ================================================================
-
-    // Simular delay de red
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    console.log('💳 Confirmando pago de tarjeta...')
 
     // ================================================================
-    // [PAY-06] [PAY-07] [PAY-08] SIMULACIÓN DE ERRORES PARA TESTING
+    // 🔒 REAL STRIPE PAYMENT - PHASE 2
     // ================================================================
-    // Descomenta UNA de estas líneas para probar diferentes errores:
-    //
-    // throw {
-    //   type: 'card_error',
-    //   code: 'card_declined',
-    //   message: 'Your card was declined.',
-    // }
-    // throw {
-    //   type: 'card_error',
-    //   code: 'expired_card',
-    //   message: 'Your card has expired.',
-    // }
-    // throw {
-    //   type: 'card_error',
-    //   code: 'incorrect_cvc',
-    //   message: "Your card's security code is incorrect.",
-    // }
-    // throw {
-    //   type: 'card_error',
-    //   code: 'insufficient_funds',
-    //   message: 'Your card has insufficient funds.',
-    // }
-    // throw {
-    //   type: 'card_error',
-    //   code: 'processing_error',
-    //   message: 'An error occurred while processing your card.',
-    // }
-    // throw new Error('Network error') // Error de red - RETRY
-    // throw new Error('timeout') // Timeout - RETRY
-    // ================================================================
+    // This call handles tokenization automatically and securely
+    const { error, paymentIntent } = await stripe.confirmCardPayment(
+      clientSecret,
+      {
+        payment_method: {
+          card: cardElement, // Stripe handles tokenization internally
+        },
+      }
+    )
 
-    // Si llegamos aquí, el pago fue exitoso
-    console.log('🎯 performPayment: Pago simulado exitoso')
-    return { success: true }
+    if (error) {
+      throw error // El catch lo manejará con handleStripeError
+    }
+
+    if (!paymentIntent) {
+      throw new Error('Payment intent not returned from Stripe')
+    }
+
+    console.log('✅ Pago confirmado exitosamente:', paymentIntent.id)
+    return paymentIntent
   }
 
   // [PAY-08] handleSubmit con retry logic
@@ -170,7 +192,7 @@ export default function CheckoutForm({
     setIsRetrying(false)
     try {
       // Envolver performPayment con retry logic
-      const result: RetryResult<{ success: boolean }> = await retryWithBackoff(
+      const result: RetryResult<PaymentIntent> = await retryWithBackoff(
         performPayment,
         {
           maxAttempts: maxRetries,
@@ -190,8 +212,10 @@ export default function CheckoutForm({
         // Pago exitoso
         setIsRetrying(false)
         console.log('🎯 Pago exitoso después de', result.attempts, 'intentos')
-        console.log('🎯 CheckoutForm: llamando a onSuccess...')
-        onSuccess?.()
+        console.log(
+          '🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...'
+        )
+        onSuccess?.(result.data)
         console.log('🎯 CheckoutForm: onSuccess ejecutado')
       } else {
         // Todos los reintentos fallaron
@@ -301,14 +325,16 @@ export default function CheckoutForm({
 
       <button
         type="submit"
-        disabled={!stripe || isProcessing}
+        disabled={!stripe || isProcessing || isLoadingIntent || !clientSecret}
         className="w-full px-6 py-3 bg-primary text-white font-sans font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isRetrying
-          ? `Reintentando...(${retryCount}/${maxRetries})`
-          : isProcessing
-            ? 'Procesando...'
-            : `Pagar ${amount.toFixed(2)}€`}
+        {isLoadingIntent
+          ? 'Inicializando pago...'
+          : isRetrying
+            ? `Reintentando...(${retryCount}/${maxRetries})`
+            : isProcessing
+              ? 'Procesando...'
+              : `Pagar ${amount.toFixed(2)}€`}
       </button>
     </form>
   )
