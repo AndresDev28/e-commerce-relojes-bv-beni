@@ -110,8 +110,19 @@ export default function CheckoutPage() {
 
         // Extract payment method details from PaymentIntent
         // latest_charge is expanded via the /api/create-payment-intent endpoint
-        const paymentMethodDetails = (paymentIntent as any).latest_charge
-          ?.payment_method_details?.card
+        // TypeScript doesn't know about expanded fields, so we access them safely
+        const expandedPaymentIntent = paymentIntent as PaymentIntent & {
+          latest_charge?: {
+            payment_method_details?: {
+              card?: {
+                brand: string
+                last4: string
+              }
+            }
+          }
+        }
+        const paymentMethodDetails =
+          expandedPaymentIntent.latest_charge?.payment_method_details?.card
 
         const orderData = {
           orderId,

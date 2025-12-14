@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import CheckoutForm from '../CheckoutForm' // ← Cambiado
 import userEvent from '@testing-library/user-event'
 import type { Stripe, StripeElements } from '@stripe/stripe-js'
+import type { CartItem } from '@/types'
 
 const { mockUseStripe, mockUseElements } = vi.hoisted(() => ({
   mockUseStripe: vi.fn(),
@@ -15,6 +16,20 @@ vi.mock('@stripe/react-stripe-js', () => ({
   useElements: mockUseElements,
   CardElement: () => <div data-testid="card-element">Card Element Mock</div>,
 }))
+
+// Mock cart items for tests - shared across all test suites
+const mockCartItems: CartItem[] = [
+  {
+    id: '1',
+    name: 'Test Product',
+    price: 259.89,
+    quantity: 1,
+    images: ['test.jpg'],
+    href: '/test',
+    description: 'Test description',
+    stock: 10,
+  },
+]
 
 describe('CheckoutForm - [PAY-05]', () => {
   const mockStripe = {
@@ -43,7 +58,7 @@ describe('CheckoutForm - [PAY-05]', () => {
 
   describe('Renderizado', () => {
     it('should render checkout form with all elements', () => {
-      render(<CheckoutForm amount={259.89} />)
+      render(<CheckoutForm amount={259.89} cartItems={mockCartItems} />)
 
       // Form
       expect(screen.getByRole('form')).toBeInTheDocument()
@@ -65,7 +80,13 @@ describe('CheckoutForm - [PAY-05]', () => {
     it('should show loading state diring payment processing', async () => {
       const user = userEvent.setup()
 
-      render(<CheckoutForm amount={100} onSuccess={mockOnSuccess} />)
+      render(
+        <CheckoutForm
+          amount={100}
+          cartItems={mockCartItems}
+          onSuccess={mockOnSuccess}
+        />
+      )
 
       const button = screen.getByRole('button', { name: /pagar 100.00€/i })
 
@@ -80,7 +101,13 @@ describe('CheckoutForm - [PAY-05]', () => {
     it('should restart button state after payment completes', async () => {
       const user = userEvent.setup()
 
-      render(<CheckoutForm amount={100} onSuccess={mockOnSuccess} />)
+      render(
+        <CheckoutForm
+          amount={100}
+          cartItems={mockCartItems}
+          onSuccess={mockOnSuccess}
+        />
+      )
 
       const button = screen.getByRole('button', { name: /pagar 100.00€/i })
       await user.click(button)
@@ -107,7 +134,13 @@ describe('CheckoutForm - [PAY-05]', () => {
     it('should call onSuccess after successful payment', async () => {
       const user = userEvent.setup()
 
-      render(<CheckoutForm amount={100} onSuccess={mockOnSuccess} />)
+      render(
+        <CheckoutForm
+          amount={100}
+          cartItems={mockCartItems}
+          onSuccess={mockOnSuccess}
+        />
+      )
 
       const button = screen.getByRole('button')
       await user.click(button)
@@ -124,7 +157,13 @@ describe('CheckoutForm - [PAY-05]', () => {
       mockUseStripe.mockReturnValue(null)
       const user = userEvent.setup()
 
-      render(<CheckoutForm amount={100} onSuccess={mockOnSuccess} />)
+      render(
+        <CheckoutForm
+          amount={100}
+          cartItems={mockCartItems}
+          onSuccess={mockOnSuccess}
+        />
+      )
 
       const button = screen.getByRole('button')
 
@@ -138,7 +177,13 @@ describe('CheckoutForm - [PAY-05]', () => {
       mockUseElements.mockReturnValue(null)
       const user = userEvent.setup()
 
-      render(<CheckoutForm amount={100} onSuccess={mockOnSuccess} />)
+      render(
+        <CheckoutForm
+          amount={100}
+          cartItems={mockCartItems}
+          onSuccess={mockOnSuccess}
+        />
+      )
 
       const button = screen.getByRole('button')
       await user.click(button)
@@ -154,7 +199,7 @@ describe('CheckoutForm - [PAY-05]', () => {
   })
   describe('Formato de precio', () => {
     it('should display amount with correct format', () => {
-      render(<CheckoutForm amount={259.89} />)
+      render(<CheckoutForm amount={259.89} cartItems={mockCartItems} />)
 
       expect(
         screen.getByRole('button', { name: /pagar 259.89€/i })
@@ -162,10 +207,12 @@ describe('CheckoutForm - [PAY-05]', () => {
     })
 
     it('should handle different amounts', () => {
-      const { rerender } = render(<CheckoutForm amount={100} />)
+      const { rerender } = render(
+        <CheckoutForm amount={100} cartItems={mockCartItems} />
+      )
       expect(screen.getByText(/pagar 100.00€/i)).toBeInTheDocument()
 
-      rerender(<CheckoutForm amount={999.99} />)
+      rerender(<CheckoutForm amount={999.99} cartItems={mockCartItems} />)
       expect(screen.getByText(/pagar 999.99€/i)).toBeInTheDocument()
     })
   })
@@ -175,7 +222,9 @@ describe('Stripe Error Handler - [PAY-09]', () => {
   it('should display error message when payment fails', async () => {
     const user = userEvent.setup()
 
-    render(<CheckoutForm amount={100} onError={vi.fn()} />)
+    render(
+      <CheckoutForm amount={100} cartItems={mockCartItems} onError={vi.fn()} />
+    )
 
     const button = screen.getByRole('button')
 
@@ -195,7 +244,13 @@ describe('Stripe Error Handler - [PAY-09]', () => {
     const user = userEvent.setup()
     const mockOnError = vi.fn()
 
-    render(<CheckoutForm amount={100} onError={mockOnError} />)
+    render(
+      <CheckoutForm
+        amount={100}
+        cartItems={mockCartItems}
+        onError={mockOnError}
+      />
+    )
 
     const button = screen.getByRole('button')
     await user.click(button)
@@ -208,7 +263,7 @@ describe('Stripe Error Handler - [PAY-09]', () => {
   it('should clear error message when form is resubmitted', async () => {
     const user = userEvent.setup()
 
-    render(<CheckoutForm amount={100} />)
+    render(<CheckoutForm amount={100} cartItems={mockCartItems} />)
 
     const button = screen.getByRole('button')
 
@@ -231,7 +286,7 @@ describe('Stripe Error Handler - [PAY-09]', () => {
   it('should display ErrorMessage component when error occurs', async () => {
     const user = userEvent.setup()
 
-    render(<CheckoutForm amount={100} />)
+    render(<CheckoutForm amount={100} cartItems={mockCartItems} />)
 
     const button = screen.getByRole('button')
     await user.click(button)
@@ -247,7 +302,7 @@ describe('Stripe Error Handler - [PAY-09]', () => {
   })
 
   it('should format amount correctly in button text', () => {
-    render(<CheckoutForm amount={259.89} />)
+    render(<CheckoutForm amount={259.89} cartItems={mockCartItems} />)
 
     expect(
       screen.getByRole('button', { name: /pagar 259\.89€/i })
@@ -255,10 +310,12 @@ describe('Stripe Error Handler - [PAY-09]', () => {
   })
 
   it('should handle decimal amounts', () => {
-    const { rerender } = render(<CheckoutForm amount={99.99} />)
+    const { rerender } = render(
+      <CheckoutForm amount={99.99} cartItems={mockCartItems} />
+    )
     expect(screen.getByText(/pagar 99\.99€/i)).toBeInTheDocument()
 
-    rerender(<CheckoutForm amount={1000.5} />)
+    rerender(<CheckoutForm amount={1000.5} cartItems={mockCartItems} />)
     expect(screen.getByText(/pagar 1000\.50€/i)).toBeInTheDocument()
   })
 })
@@ -267,7 +324,7 @@ describe('Integración con ErrorMessage - [PAY-09]', () => {
   it('should use ErrorMessage component for displaying errors', () => {
     // Este test verifica que ErrorMessage existe en el componente
     // Renderizamos y verificamos que la estructura sea correcta
-    render(<CheckoutForm amount={100} />)
+    render(<CheckoutForm amount={100} cartItems={mockCartItems} />)
 
     // El formulario debe tener role="form"
     expect(screen.getByRole('form')).toBeInTheDocument()

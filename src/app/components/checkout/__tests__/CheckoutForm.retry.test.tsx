@@ -12,6 +12,7 @@ import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import CheckoutForm from '../CheckoutForm'
 import * as retryHandler from '@/lib/stripe/retryHandler'
+import type { CartItem } from '@/types'
 
 // Mock Stripe
 const mockStripe = {
@@ -33,6 +34,20 @@ vi.mock('@stripe/react-stripe-js', async () => {
 describe('[PAY-10] Retry Logic Tests', () => {
   const mockOnSuccess = vi.fn()
   const mockOnError = vi.fn()
+
+  // Mock cart items for tests
+  const mockCartItems: CartItem[] = [
+    {
+      id: '1',
+      name: 'Test Product',
+      price: 100,
+      quantity: 1,
+      images: ['test.jpg'],
+      href: '/test',
+      description: 'Test description',
+      stock: 10,
+    },
+  ]
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -74,6 +89,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
@@ -110,6 +126,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
@@ -152,7 +169,9 @@ describe('[PAY-10] Retry Logic Tests', () => {
 
     // Verificar que respeta el máximo
     const largeDelay = retryHandler.calculateBackoffDelay(10, 1000)
-    expect(largeDelay).toBeLessThanOrEqual(retryHandler.RETRY_CONFIG.MAX_DELAY_MS)
+    expect(largeDelay).toBeLessThanOrEqual(
+      retryHandler.RETRY_CONFIG.MAX_DELAY_MS
+    )
   })
 
   // ============================================================================
@@ -174,6 +193,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
@@ -227,6 +247,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
@@ -272,6 +293,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
@@ -302,6 +324,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
@@ -341,6 +364,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       <Elements stripe={null}>
         <CheckoutForm
           amount={100}
+          cartItems={mockCartItems}
           onSuccess={mockOnSuccess}
           onError={mockOnError}
         />
