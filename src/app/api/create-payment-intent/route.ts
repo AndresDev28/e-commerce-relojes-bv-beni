@@ -1,31 +1,27 @@
 /**
  * POST /api/create-payment-intent
- * 
+ *
  * Creates a Stripe Payment Intent for processing payments
- * 
+ *
  * SECURITY:
  * - Uses server-side secret key (never exposed to client)
  * - Validates JWT authentication
  * - Re-calculates cart total on backend (prevents tampering)
  * - Returns client_secret for frontend confirmation
- * 
+ *
  * FLOW:
  * 1. Validate authentication (JWT)
  * 2. Receive cart items from frontend
  * 3. Re-calculate total on backend (security)
  * 4. Create Payment Intent with Stripe
  * 5. Return client_secret to frontend
- * 
+ *
  * Related: FASE 2 - Real Stripe Integration
  */
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { calculateShipping } from '@/lib/constants/shipping'
-// Initialize Stripe with secret key (server-side only)
-// This key has full access to Stripe account - NEVER expose to client
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-11-17.clover',
-})
+
 /**
  * Interface for cart items sent from frontend
  * We re-calculate the total here for security
@@ -39,7 +35,32 @@ interface CartItem {
 interface CreatePaymentIntentBody {
   items: CartItem[]
 }
+
+/**
+ * Get Stripe instance with lazy initialization
+ *
+ * IMPORTANT: Stripe is initialized at request time (not at module load)
+ * to avoid build-time errors in environments like Vercel where
+ * environment variables may not be available during the build phase.
+ *
+ * This pattern ensures:
+ * - Environment variables are read at runtime
+ * - Build succeeds even without env vars
+ * - Follows Next.js best practices for API routes
+ */
+function getStripeInstance(): Stripe {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not configured')
+  }
+
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-11-17.clover',
+  })
+}
+
 export async function POST(request: NextRequest) {
+  // Initialize Stripe at request time (lazy initialization)
+  const stripe = getStripeInstance()
   try {
     // ================================================================
     // STEP 1: Validate Authentication
@@ -80,7 +101,12 @@ export async function POST(request: NextRequest) {
     // Always re-calculate on backend to prevent tampering
     const subtotal = items.reduce((sum, item) => {
       // Validate each item
-      if (!item.price || !item.quantity || item.price <= 0 || item.quantity <= 0) {
+      if (
+        !item.price ||
+        !item.quantity ||
+        item.price <= 0 ||
+        item.quantity <= 0
+      ) {
         throw new Error(`Invalid item: ${item.id}`)
       }
       return sum + item.price * item.quantity
