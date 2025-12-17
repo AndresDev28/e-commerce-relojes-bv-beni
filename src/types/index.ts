@@ -394,3 +394,66 @@ export function isErrorStatus(status: OrderStatus): boolean {
 export function isActiveStatus(status: OrderStatus): boolean {
   return ACTIVE_ORDER_STATUSES.includes(status)
 }
+
+/**
+ * Determina si un estado debe mostrar ícono en StatusBadge
+ * 
+ * REGLAS:
+ * - Muestra ícono SI el estado está en statusHistory (completado)
+ * - Muestra ícono SI el estado está ANTES del actual en la secuencia
+ * - Muestra ícono SI es estado de error y es el estado actual
+ * - Muestra ícono SI es DELIVERED y es el estado actual (estado final exitoso)
+ * - NO muestra ícono para estados futuros o estado actual en progreso
+ * 
+ * @param status - Estado a verificar
+ * @param currentStatus - Estado actual del pedido
+ * @param statusHistory - Historial de estados (opcional)
+ * @returns true si el estado debe mostrar ícono
+ * 
+ * @example
+ * // Pedido en estado SHIPPED
+ * shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.SHIPPED, history) // true (completado)
+ * shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.SHIPPED, history) // false (actual, en progreso)
+ * shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.SHIPPED, history) // false (futuro)
+ * 
+ * // Pedido en estado DELIVERED (estado final exitoso)
+ * shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.DELIVERED) // true (completado exitosamente)
+ * 
+ * // Pedido en estado CANCELLED (estado de error)
+ * shouldShowStatusIcon(OrderStatus.CANCELLED, OrderStatus.CANCELLED) // true (estado final)
+ */
+export function shouldShowStatusIcon(
+  status: OrderStatus,
+  currentStatus: OrderStatus,
+  statusHistory?: StatusHistoryItem[]
+): boolean {
+  // 1. Si está en el historial, definitivamente está completado
+  if (statusHistory?.some((item) => item.status === status)) {
+    return true
+  }
+
+  // 2. Estados de error siempre muestran ícono si son el estado actual
+  if (isErrorStatus(status) && status === currentStatus) {
+    return true
+  }
+
+  // 3. DELIVERED muestra ícono si es el estado actual (completado exitosamente)
+  if (status === OrderStatus.DELIVERED && status === currentStatus) {
+    return true
+  }
+
+  // 4. Si está ANTES del estado actual en la secuencia normal, está completado
+  const TIMELINE_STATES = [
+    OrderStatus.PENDING,
+    OrderStatus.PAID,
+    OrderStatus.PROCESSING,
+    OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED,
+  ]
+
+  const currentIndex = TIMELINE_STATES.findIndex((s) => s === currentStatus)
+  const statusIndex = TIMELINE_STATES.findIndex((s) => s === status)
+
+  // Solo si ambos están en la secuencia Y status está antes que current
+  return statusIndex !== -1 && currentIndex !== -1 && statusIndex < currentIndex
+}

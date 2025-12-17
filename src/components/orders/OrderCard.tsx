@@ -21,6 +21,7 @@
 import Link from 'next/link'
 import type { OrderData } from '@/lib/api/orders'
 import StatusBadge from '@/app/components/ui/StatusBadge'
+import { shouldShowStatusIcon } from '@/types'
 
 interface OrderCardProps {
   order: OrderData
@@ -97,7 +98,14 @@ export default function OrderCard({ order }: OrderCardProps) {
 
         {/* Sección 3: Badge de estado con color */}
         <div className="flex-shrink-0">
-          <StatusBadge status={order.orderStatus} />
+          <StatusBadge
+            status={order.orderStatus}
+            showIcon={shouldShowStatusIcon(
+              order.orderStatus,
+              order.orderStatus,
+              order.statusHistory
+            )}
+          />
         </div>
       </div>
     </Link>
