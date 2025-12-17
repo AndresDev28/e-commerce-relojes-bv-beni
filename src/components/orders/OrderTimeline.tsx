@@ -25,37 +25,29 @@
 'use client'
 
 import { BsCheckCircleFill, BsClock } from 'react-icons/bs'
-
-/**
- * Historial de cambios de estado
- */
-export interface StatusHistoryItem {
-  status: string
-  date: string
-  description?: string
-}
+import {
+  OrderStatus,
+  ORDER_STATUS_CONFIG,
+  isErrorStatus,
+  type StatusHistoryItem,
+} from '@/types'
 
 interface OrderTimelineProps {
-  currentStatus: string
+  currentStatus: OrderStatus
   statusHistory?: StatusHistoryItem[]
 }
 
 /**
- * Configuración de estados del pedido
- * Define el orden y labels de los estados
+ * Orden de los estados en el timeline
+ * Solo muestra los estados del flujo normal (no errores)
  */
-const ORDER_STATES = [
-  { key: 'pending', label: 'Pedido realizado' },
-  { key: 'paid', label: 'Pago confirmado' },
-  { key: 'processing', label: 'En preparación' },
-  { key: 'shipped', label: 'Enviado' },
-  { key: 'delivered', label: 'Entregado' },
+const TIMELINE_STATES = [
+  OrderStatus.PENDING,
+  OrderStatus.PAID,
+  OrderStatus.PROCESSING,
+  OrderStatus.SHIPPED,
+  OrderStatus.DELIVERED,
 ] as const
-
-/**
- * Estados cancelados o con error
- */
-const ERROR_STATES = ['cancelled', 'refunded', 'failed']
 
 export default function OrderTimeline({
   currentStatus,
@@ -80,8 +72,8 @@ export default function OrderTimeline({
   /**
    * Obtener fecha de un estado específico del historial
    */
-  const getStatusDate = (statusKey: string): string | null => {
-    const historyItem = statusHistory.find((item) => item.status === statusKey)
+  const getStatusDate = (status: OrderStatus): string | null => {
+    const historyItem = statusHistory.find((item) => item.status === status)
     return historyItem ? historyItem.date : null
   }
 
@@ -91,31 +83,26 @@ export default function OrderTimeline({
    * 1. Está en el historial, O
    * 2. Es anterior al estado actual en la secuencia (no incluye el estado actual)
    */
-  const isCompleted = (statusKey: string): boolean => {
-    // Buscar en el historial
-    if (statusHistory.some((item) => item.status === statusKey)) {
+  const isCompleted = (status: OrderStatus): boolean => {
+    if (statusHistory.some((item) => item.status === status)) {
       return true
     }
-
-    // Si no hay historial, usar la posición en la secuencia
-    // Solo marca como completado los estados ANTERIORES al actual
-    const currentIndex = ORDER_STATES.findIndex((s) => s.key === currentStatus)
-    const statusIndex = ORDER_STATES.findIndex((s) => s.key === statusKey)
-
+    const currentIndex = TIMELINE_STATES.findIndex((s) => s === currentStatus)
+    const statusIndex = TIMELINE_STATES.findIndex((s) => s === status)
     return statusIndex < currentIndex && currentIndex !== -1
   }
 
   /**
    * Verificar si el estado es el actual
    */
-  const isCurrent = (statusKey: string): boolean => {
-    return statusKey === currentStatus
+  const isCurrent = (status: OrderStatus): boolean => {
+    return status === currentStatus
   }
 
   /**
    * Verificar si el pedido está cancelado o en error
    */
-  const isErrorState = ERROR_STATES.includes(currentStatus)
+  const isErrorState = isErrorStatus(currentStatus)
 
   /**
    * RENDERIZADO
@@ -144,23 +131,22 @@ export default function OrderTimeline({
       {isErrorState && (
         <div className="mb-4 p-3 bg-error-light border border-error rounded-md">
           <p className="text-sm text-error font-medium">
-            {currentStatus === 'cancelled' && 'Este pedido ha sido cancelado'}
-            {currentStatus === 'refunded' && 'Este pedido ha sido reembolsado'}
-            {currentStatus === 'failed' && 'Este pedido ha fallado'}
+            {ORDER_STATUS_CONFIG[currentStatus].description}
           </p>
         </div>
       )}
 
       {/* Timeline de estados */}
       <div className="space-y-6">
-        {ORDER_STATES.map((state, index) => {
-          const completed = isCompleted(state.key)
-          const current = isCurrent(state.key)
-          const statusDate = getStatusDate(state.key)
-          const isLast = index === ORDER_STATES.length - 1
+        {TIMELINE_STATES.map((status, index) => {
+          const completed = isCompleted(status)
+          const current = isCurrent(status)
+          const statusDate = getStatusDate(status)
+          const isLast = index === TIMELINE_STATES.length - 1
+          const config = ORDER_STATUS_CONFIG[status]
 
           return (
-            <div key={state.key} className="relative">
+            <div key={status} className="relative">
               {/* Línea vertical conectando estados (excepto el último) */}
               {!isLast && (
                 <div
@@ -192,11 +178,11 @@ export default function OrderTimeline({
                 <div className="flex-1 min-w-0 pt-1">
                   <p
                     className={`text-base font-medium ${completed || current
-                        ? 'text-neutral-dark font-bold'
-                        : 'text-neutral'
+                      ? 'text-neutral-dark font-bold'
+                      : 'text-neutral'
                       }`}
                   >
-                    {state.label}
+                    {config.label}
                   </p>
 
                   {/* Fecha si el estado está completado */}
