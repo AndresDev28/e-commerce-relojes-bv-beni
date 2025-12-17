@@ -1,6 +1,7 @@
 /**
  * [ORD-09] GET /api/orders/:orderId endpoint
  * [ORD-10] Refactored to use reusable ownership validation middleware
+ * [ORD-16] Security logging for unauthorized access attempts
  *
  * Returns specific order details with ownership validation
  * Requires JWT authentication
@@ -105,17 +106,27 @@ export async function GET(
 
     // 4. Check if user owns this order
     if (!userOrderIds.includes(orderId)) {
-      console.log(`🔒 Order ${orderId} not found in user ${userId}'s orders`)
+      // [ORD-16] Security audit log for unauthorized access attempts
+      console.warn('⚠️ [SECURITY AUDIT] Unauthorized order access attempt:', {
+        event: 'unauthorized_access_attempt',
+        requestingUserId: userId,
+        attemptedOrderId: orderId,
+        timestamp: new Date().toISOString(),
+        // IMPORTANT: We log IDs but NOT sensitive order data
+      })
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    console.log(`✅ Order ${orderId} verified as belonging to user ${userId}`)
+    // [ORD-16] Security audit log for successful access
+    console.log('✅ [SECURITY AUDIT] Authorized order access:', {
+      event: 'authorized_access',
+      userId: userId,
+      orderId: orderId,
+      timestamp: new Date().toISOString(),
+    })
 
     // 5. Find the order in the already-fetched list
     const order = userOrdersData.data.find((o: { orderId: string }) => o.orderId === orderId)
-
-    // DEBUG: Log order structure
-    console.log('📦 Order data:', JSON.stringify(order, null, 2))
 
     // 6. Return complete order details
     return NextResponse.json({
