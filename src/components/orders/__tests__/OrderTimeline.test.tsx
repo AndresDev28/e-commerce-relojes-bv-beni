@@ -15,7 +15,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import OrderTimeline from '../OrderTimeline'
-import type { StatusHistoryItem } from '@/lib/api/orders'
+import { OrderStatus, type StatusHistoryItem } from '@/types'
 
 // Mock react-icons
 vi.mock('react-icons/bs', () => ({
@@ -33,17 +33,17 @@ describe('[ORD-12] OrderTimeline Component', () => {
    */
   const mockStatusHistory: StatusHistoryItem[] = [
     {
-      status: 'pending',
+      status: OrderStatus.PENDING,
       date: '2025-11-20T10:00:00Z',
       description: 'Order created',
     },
     {
-      status: 'paid',
+      status: OrderStatus.PAID,
       date: '2025-11-20T10:05:00Z',
       description: 'Payment confirmed',
     },
     {
-      status: 'processing',
+      status: OrderStatus.PROCESSING,
       date: '2025-11-20T14:00:00Z',
       description: 'Order being prepared',
     },
@@ -51,17 +51,17 @@ describe('[ORD-12] OrderTimeline Component', () => {
 
   describe('Basic Rendering', () => {
     it('renders timeline title', () => {
-      render(<OrderTimeline currentStatus="pending" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PENDING} />)
 
       expect(screen.getByText('Estado del Pedido')).toBeInTheDocument()
     })
 
     it('renders all 5 order states', () => {
-      render(<OrderTimeline currentStatus="pending" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PENDING} />)
 
-      expect(screen.getByText('Pedido realizado')).toBeInTheDocument()
-      expect(screen.getByText('Pago confirmado')).toBeInTheDocument()
-      expect(screen.getByText('En preparación')).toBeInTheDocument()
+      expect(screen.getByText('Pago Pendiente')).toBeInTheDocument()
+      expect(screen.getByText('Pago Confirmado')).toBeInTheDocument()
+      expect(screen.getByText('En Preparación')).toBeInTheDocument()
       expect(screen.getByText('Enviado')).toBeInTheDocument()
       expect(screen.getByText('Entregado')).toBeInTheDocument()
     })
@@ -71,7 +71,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     it('shows check icon for completed states', () => {
       render(
         <OrderTimeline
-          currentStatus="processing"
+          currentStatus={OrderStatus.PROCESSING}
           statusHistory={mockStatusHistory}
         />
       )
@@ -82,7 +82,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     })
 
     it('shows clock icon for pending states', () => {
-      render(<OrderTimeline currentStatus="pending" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PENDING} />)
 
       const clockIcons = screen.getAllByTestId('clock-icon')
       // Should have clock icons for: paid, processing, shipped, delivered
@@ -93,10 +93,10 @@ describe('[ORD-12] OrderTimeline Component', () => {
       // For a current state that is NOT in the history, it should show "Estado actual"
       render(
         <OrderTimeline
-          currentStatus="processing"
+          currentStatus={OrderStatus.PROCESSING}
           statusHistory={[
-            { status: 'pending', date: '2025-11-20T10:00:00Z' },
-            { status: 'paid', date: '2025-11-20T10:05:00Z' },
+            { status: OrderStatus.PENDING, date: '2025-11-20T10:00:00Z' },
+            { status: OrderStatus.PAID, date: '2025-11-20T10:05:00Z' },
           ]}
         />
       )
@@ -108,7 +108,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
       // When the current state is already in the history (completed), don't show "Estado actual"
       render(
         <OrderTimeline
-          currentStatus="processing"
+          currentStatus={OrderStatus.PROCESSING}
           statusHistory={mockStatusHistory} // includes processing
         />
       )
@@ -121,7 +121,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     it('displays dates for completed states in status history', () => {
       render(
         <OrderTimeline
-          currentStatus="processing"
+          currentStatus={OrderStatus.PROCESSING}
           statusHistory={mockStatusHistory}
         />
       )
@@ -133,7 +133,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     })
 
     it('does not display dates for pending states', () => {
-      render(<OrderTimeline currentStatus="pending" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PENDING} />)
 
       // Only "pending" has a date, others don't
       const dateTexts = screen.queryAllByText(/nov\. 2025/)
@@ -144,7 +144,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
   describe('Status Progression', () => {
     it('marks states as completed up to current status (without history)', () => {
       // Without history, only states BEFORE current are marked as completed
-      render(<OrderTimeline currentStatus="shipped" />)
+      render(<OrderTimeline currentStatus={OrderStatus.SHIPPED} />)
 
       const checkIcons = screen.getAllByTestId('check-icon')
       // Should have check for: pending, paid, processing (3 total, not including shipped)
@@ -152,7 +152,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     })
 
     it('marks only states before current as completed (without history)', () => {
-      render(<OrderTimeline currentStatus="paid" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PAID} />)
 
       const checkIcons = screen.getAllByTestId('check-icon')
       // Should have check for: pending only (paid is current, not completed)
@@ -160,7 +160,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     })
 
     it('shows all states as pending/current when current is pending', () => {
-      render(<OrderTimeline currentStatus="pending" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PENDING} />)
 
       const checkIcons = screen.queryAllByTestId('check-icon')
       const clockIcons = screen.getAllByTestId('clock-icon')
@@ -172,7 +172,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     })
 
     it('shows all states as completed when delivered (without history)', () => {
-      render(<OrderTimeline currentStatus="delivered" />)
+      render(<OrderTimeline currentStatus={OrderStatus.DELIVERED} />)
 
       const checkIcons = screen.getAllByTestId('check-icon')
       // All states before delivered should be checked (pending, paid, processing, shipped)
@@ -182,32 +182,22 @@ describe('[ORD-12] OrderTimeline Component', () => {
 
   describe('Error States', () => {
     it('displays cancelled message when order is cancelled', () => {
-      render(<OrderTimeline currentStatus="cancelled" />)
+      render(<OrderTimeline currentStatus={OrderStatus.CANCELLED} />)
 
-      expect(
-        screen.getByText('Este pedido ha sido cancelado')
-      ).toBeInTheDocument()
+      expect(screen.getByText('Pedido cancelado')).toBeInTheDocument()
     })
 
     it('displays refunded message when order is refunded', () => {
-      render(<OrderTimeline currentStatus="refunded" />)
+      render(<OrderTimeline currentStatus={OrderStatus.REFUNDED} />)
 
-      expect(
-        screen.getByText('Este pedido ha sido reembolsado')
-      ).toBeInTheDocument()
-    })
-
-    it('displays failed message when order has failed', () => {
-      render(<OrderTimeline currentStatus="failed" />)
-
-      expect(screen.getByText('Este pedido ha fallado')).toBeInTheDocument()
+      expect(screen.getByText('Dinero devuelto')).toBeInTheDocument()
     })
 
     it('does not display error message for normal states', () => {
-      render(<OrderTimeline currentStatus="delivered" />)
+      render(<OrderTimeline currentStatus={OrderStatus.DELIVERED} />)
 
       expect(
-        screen.queryByText(/cancelado|reembolsado|fallado/)
+        screen.queryByText(/cancelado|reembolsado|devuelto/)
       ).not.toBeInTheDocument()
     })
   })
@@ -216,7 +206,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     it('uses status history dates when available', () => {
       render(
         <OrderTimeline
-          currentStatus="processing"
+          currentStatus={OrderStatus.PROCESSING}
           statusHistory={mockStatusHistory}
         />
       )
@@ -229,7 +219,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
     it('marks states as completed if in status history', () => {
       render(
         <OrderTimeline
-          currentStatus="shipped"
+          currentStatus={OrderStatus.SHIPPED}
           statusHistory={mockStatusHistory}
         />
       )
@@ -242,35 +232,40 @@ describe('[ORD-12] OrderTimeline Component', () => {
 
   describe('Edge Cases', () => {
     it('handles empty status history', () => {
-      render(<OrderTimeline currentStatus="paid" statusHistory={[]} />)
+      render(
+        <OrderTimeline currentStatus={OrderStatus.PAID} statusHistory={[]} />
+      )
 
       // Should still render timeline
-      expect(screen.getByText('Pedido realizado')).toBeInTheDocument()
-      expect(screen.getByText('Pago confirmado')).toBeInTheDocument()
+      expect(screen.getByText('Pago Pendiente')).toBeInTheDocument()
+      expect(screen.getByText('Pago Confirmado')).toBeInTheDocument()
     })
 
     it('handles unknown status gracefully', () => {
-      render(<OrderTimeline currentStatus="unknown" />)
+      render(<OrderTimeline currentStatus={'unknown' as OrderStatus} />)
 
       // Should still render all states
-      expect(screen.getByText('Pedido realizado')).toBeInTheDocument()
+      expect(screen.getByText('Pago Pendiente')).toBeInTheDocument()
       expect(screen.getByText('Entregado')).toBeInTheDocument()
     })
 
     it('handles partial status history', () => {
       const partialHistory: StatusHistoryItem[] = [
         {
-          status: 'pending',
+          status: OrderStatus.PENDING,
           date: '2025-11-20T10:00:00Z',
         },
       ]
 
       render(
-        <OrderTimeline currentStatus="paid" statusHistory={partialHistory} />
+        <OrderTimeline
+          currentStatus={OrderStatus.PAID}
+          statusHistory={partialHistory}
+        />
       )
 
       // Should render without errors
-      expect(screen.getByText('Pedido realizado')).toBeInTheDocument()
+      expect(screen.getByText('Pago Pendiente')).toBeInTheDocument()
       const dates = screen.getAllByText(/20 nov/)
       expect(dates.length).toBeGreaterThanOrEqual(1)
     })
@@ -278,7 +273,7 @@ describe('[ORD-12] OrderTimeline Component', () => {
 
   describe('Accessibility', () => {
     it('provides aria-labels for icons', () => {
-      render(<OrderTimeline currentStatus="processing" />)
+      render(<OrderTimeline currentStatus={OrderStatus.PROCESSING} />)
 
       const checkIcons = screen.getAllByLabelText('Completado')
       const clockIcons = screen.getAllByLabelText('Pendiente')
@@ -288,7 +283,9 @@ describe('[ORD-12] OrderTimeline Component', () => {
     })
 
     it('uses semantic HTML for timeline structure', () => {
-      const { container } = render(<OrderTimeline currentStatus="paid" />)
+      const { container } = render(
+        <OrderTimeline currentStatus={OrderStatus.PAID} />
+      )
 
       // Should have proper heading
       const heading = container.querySelector('h3')

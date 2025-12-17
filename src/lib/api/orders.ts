@@ -3,7 +3,8 @@
  * [PAY-18] Create order in Strapi after successful payment
  */
 
-import type { CartItem } from '@/types'
+import type { CartItem, StatusHistoryItem } from '@/types'
+import { OrderStatus } from '@/types'
 import { API_URL } from '@/lib/constants'
 
 /**
@@ -15,22 +16,9 @@ export interface CreateOrderData {
   subtotal: number
   shipping: number
   total: number
-  orderStatus?: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+  orderStatus?: OrderStatus
   paymentIntentId?: string
   paymentInfo?: PaymentInfo
-}
-
-/**
- * Order response form Strapi
- */
-
-/**
- * Order status history item
- */
-export interface StatusHistoryItem {
-  status: string
-  date: string
-  description?: string
 }
 
 /**
@@ -53,7 +41,7 @@ export interface OrderData {
   subtotal: number
   shipping: number
   total: number
-  orderStatus: string
+  orderStatus: OrderStatus
   paymentIntentId?: string
   paymentInfo?: PaymentInfo
   statusHistory?: StatusHistoryItem[]
@@ -98,7 +86,7 @@ export async function createOrder(
           subtotal: orderData.subtotal,
           shipping: orderData.shipping,
           total: orderData.total,
-          orderStatus: orderData.orderStatus || 'pending',
+          orderStatus: orderData.orderStatus || OrderStatus.PENDING,
           paymentIntentId: orderData.paymentIntentId,
           paymentInfo: orderData.paymentInfo,
           // Note: user is assigned automatically by Strapi lifecycle hook

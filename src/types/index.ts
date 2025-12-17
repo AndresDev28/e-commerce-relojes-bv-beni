@@ -75,11 +75,9 @@ export interface Order {
   user: User
   items: CartItem[]
   total: number
-  status: 'pending' | 'paid' | 'shipped' | 'delivered'
-  createdAt: Date // Corregido el nombre a createdAt
+  status: OrderStatus  // ✅ Usa el enum
+  createdAt: Date
 }
-
-// ... tus tipos existentes ...
 
 // ============================================
 // TIPOS DE STRIPE ([PAY-01])
@@ -203,3 +201,196 @@ export type ErrorSeverity = 'error' | 'warning' | 'info'
  * Se usará en [PAY-07] para el componente reutilizable
  */
 export type ErrorMessageVariant = 'error' | 'warning' | 'info'
+
+// ============================================
+// TIPOS DE ESTADOS DE PEDIDOS ([ORD-17])
+// ============================================
+/**
+ * Estados de un pedido siguiendo el estándar de Stripe y e-commerce
+ * 
+ * FLUJO NORMAL:
+ * pending → paid → processing → shipped → delivered
+ * 
+ * FLUJO CANCELACIÓN:
+ * pending/paid/processing → cancelled
+ * 
+ * FLUJO REEMBOLSO:
+ * cualquier estado → refunded
+ * 
+ * LEARNING: ¿Por qué usar enum en vez de union types?
+ * ================================================
+ * - Autocompletado robusto en el IDE
+ * - Validación en tiempo de compilación
+ * - Fuente única de verdad
+ * - Fácil de refactorizar (cambiar un valor actualiza todo)
+ * - Mejor para iterar (Object.values(OrderStatus))
+ */
+export enum OrderStatus {
+  PENDING = 'pending',      // Orden creada, esperando confirmación de Stripe
+  PAID = 'paid',           // Pago confirmado exitosamente
+  PROCESSING = 'processing', // Preparando el pedido para envío
+  SHIPPED = 'shipped',      // En camino al cliente
+  DELIVERED = 'delivered',  // Entregado exitosamente
+  CANCELLED = 'cancelled',  // Cancelado por cliente o admin
+  REFUNDED = 'refunded',   // Reembolso procesado
+}
+
+/**
+ * Historial de cambios de estado de un pedido
+ * Usado para tracking de transiciones de estado
+ */
+export interface StatusHistoryItem {
+  status: OrderStatus
+  date: string
+  description?: string
+}
+
+/**
+ * Tipo de color para badges de estado
+ */
+export type OrderStatusColor =
+  | 'gray'
+  | 'blue'
+  | 'yellow'
+  | 'orange'
+  | 'green'
+  | 'red'
+  | 'purple'
+/**
+ * Configuración de un estado individual
+ */
+export interface OrderStatusConfig {
+  label: string
+  color: OrderStatusColor
+  description: string
+  icon: string
+}
+/**
+ * Configuración completa de todos los estados
+ * Útil para renderizar badges, tooltips, etc.
+ * 
+ * @example
+ * const config = ORDER_STATUS_CONFIG[OrderStatus.PAID]
+ * console.log(config.label) // "Pago Confirmado"
+ */
+export const ORDER_STATUS_CONFIG: Record<OrderStatus, OrderStatusConfig> = {
+  [OrderStatus.PENDING]: {
+    label: 'Pago Pendiente',
+    color: 'gray',
+    description: 'Esperando confirmación de pago',
+    icon: '⏳',
+  },
+  [OrderStatus.PAID]: {
+    label: 'Pago Confirmado',
+    color: 'blue',
+    description: 'Pago procesado correctamente',
+    icon: '✓',
+  },
+  [OrderStatus.PROCESSING]: {
+    label: 'En Preparación',
+    color: 'yellow',
+    description: 'Preparando tu pedido para envío',
+    icon: '📦',
+  },
+  [OrderStatus.SHIPPED]: {
+    label: 'Enviado',
+    color: 'orange',
+    description: 'Tu pedido está en camino',
+    icon: '🚚',
+  },
+  [OrderStatus.DELIVERED]: {
+    label: 'Entregado',
+    color: 'green',
+    description: 'Pedido recibido exitosamente',
+    icon: '✓',
+  },
+  [OrderStatus.CANCELLED]: {
+    label: 'Cancelado',
+    color: 'red',
+    description: 'Pedido cancelado',
+    icon: '✕',
+  },
+  [OrderStatus.REFUNDED]: {
+    label: 'Reembolsado',
+    color: 'purple',
+    description: 'Dinero devuelto',
+    icon: '↩',
+  },
+} as const
+/**
+ * Transiciones válidas de estado
+ * Previene cambios de estado inválidos (ORD-32)
+ * 
+ * @example
+ * isValidStatusTransition(OrderStatus.PAID, OrderStatus.PROCESSING) // true
+ * isValidStatusTransition(OrderStatus.DELIVERED, OrderStatus.PENDING) // false
+ */
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
+  [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+  [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.REFUNDED],
+  [OrderStatus.DELIVERED]: [OrderStatus.REFUNDED],
+  [OrderStatus.CANCELLED]: [], // Estado final
+  [OrderStatus.REFUNDED]: [],  // Estado final
+}
+/**
+ * Estados que indican que el pedido está activo (no terminado)
+ */
+export const ACTIVE_ORDER_STATUSES: readonly OrderStatus[] = [
+  OrderStatus.PENDING,
+  OrderStatus.PAID,
+  OrderStatus.PROCESSING,
+  OrderStatus.SHIPPED,
+] as const
+/**
+ * Estados que indican error o finalización negativa
+ */
+export const ERROR_ORDER_STATUSES: readonly OrderStatus[] = [
+  OrderStatus.CANCELLED,
+  OrderStatus.REFUNDED,
+] as const
+/**
+ * Estados completados exitosamente
+ */
+export const SUCCESS_ORDER_STATUSES: readonly OrderStatus[] = [
+  OrderStatus.DELIVERED,
+] as const
+/**
+ * Valida si una transición de estado es válida
+ * 
+ * @param from - Estado actual
+ * @param to - Estado destino
+ * @returns true si la transición es permitida
+ * 
+ * @example
+ * isValidStatusTransition(OrderStatus.PAID, OrderStatus.PROCESSING) // true
+ * isValidStatusTransition(OrderStatus.DELIVERED, OrderStatus.PENDING) // false
+ */
+export function isValidStatusTransition(
+  from: OrderStatus,
+  to: OrderStatus
+): boolean {
+  return ORDER_STATUS_TRANSITIONS[from].includes(to)
+}
+/**
+ * Obtiene la configuración de un estado
+ * 
+ * @param status - Estado del pedido
+ * @returns Configuración del estado (label, color, etc.)
+ */
+export function getStatusConfig(status: OrderStatus): OrderStatusConfig {
+  return ORDER_STATUS_CONFIG[status]
+}
+/**
+ * Verifica si un estado es de error
+ */
+export function isErrorStatus(status: OrderStatus): boolean {
+  return ERROR_ORDER_STATUSES.includes(status)
+}
+/**
+ * Verifica si un estado es activo
+ */
+export function isActiveStatus(status: OrderStatus): boolean {
+  return ACTIVE_ORDER_STATUSES.includes(status)
+}

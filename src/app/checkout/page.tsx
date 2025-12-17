@@ -14,6 +14,7 @@ import { getStripePublishableKey } from '@/lib/stripe/config'
 import { generateOrderId } from '@/lib/orders/generateOrderId'
 import { createOrder } from '@/lib/api/orders'
 import { calculateShipping } from '@/lib/constants/shipping'
+import { OrderStatus } from '@/types'
 
 // Inicializar Stripe de forma lazy para evitar errores durante el build
 // La promesa se crea solo cuando se necesita en el cliente
@@ -130,7 +131,7 @@ export default function CheckoutPage() {
           subtotal,
           shipping: shippingCost,
           total,
-          orderStatus: 'paid' as const,
+          orderStatus: OrderStatus.PAID,
           paymentIntentId: paymentIntent.id,
           paymentInfo: {
             method: 'card',
