@@ -1,37 +1,43 @@
 /**
- * [ORD-06] StatusBadge Component
+ * [ORD-18] StatusBadge Component - REFACTORED
  *
- * Componente reutilizable que muestra un badge de estado con colores distintivos
- * según el estado del pedido.
+ * Componente reutilizable que muestra un badge de estado con colores distintivos,
+ * íconos opcionales y tooltips según el estado del pedido.
  *
  * RESPONSABILIDADES:
  * - Mostrar badge visual con color según estado
- * - Traducir estados de inglés a español
+ * - Mostrar label traducido del ORDER_STATUS_CONFIG
+ * - Mostrar íconos opcionales
+ * - Soportar variantes de tamaño (sm, md, lg)
+ * - Mostrar tooltip con descripción al hacer hover
  * - Proporcionar contraste accesible (WCAG AA)
  * - Ser reutilizable en toda la aplicación
  *
- * PALETA DE COLORES:
- * - Pendiente (pending): Gris #6B7280
- * - Pagado (paid): Azul #3B82F6
- * - En preparación (processing): Amarillo #EAB308
- * - Enviado (shipped): Naranja #F97316
- * - Entregado (delivered): Verde #22C55E
- * - Cancelado (cancelled): Rojo #EF4444
- * - Reembolsado (refunded): Morado #A855F7
+ * MEJORAS vs ORD-06:
+ * - ✅ Usa enum OrderStatus (type-safe)
+ * - ✅ Usa ORDER_STATUS_CONFIG centralizado (no duplica mapeos)
+ * - ✅ Soporta íconos opcionales
+ * - ✅ Soporta variantes de tamaño
+ * - ✅ Tooltip con descripción
  *
  * USO:
- * <StatusBadge status="delivered" />
- * <StatusBadge status="pending" />
+ * <StatusBadge status={OrderStatus.DELIVERED} />
+ * <StatusBadge status={OrderStatus.PENDING} showIcon />
+ * <StatusBadge status={OrderStatus.SHIPPED} size="lg" showIcon />
  */
 
 'use client'
 
+import { OrderStatus, ORDER_STATUS_CONFIG, type OrderStatusColor } from '@/types'
+
 interface StatusBadgeProps {
-  status: string
+  status: OrderStatus
+  showIcon?: boolean // Mostrar ícono (default: false)
+  size?: 'sm' | 'md' | 'lg' // Tamaño del badge (default: md)
 }
 
 /**
- * Mapeo de estados a colores Tailwind
+ * Mapeo de colores abstractos del config → clases Tailwind
  *
  * Todos los colores tienen contraste WCAG AA (≥4.5:1) con texto blanco
  *
@@ -44,53 +50,55 @@ interface StatusBadgeProps {
  * - red-600 (#DC2626): 5.13:1 ✅
  * - purple-500 (#A855F7): 5.09:1 ✅
  */
-const getStatusColor = (status: string): string => {
-  const colors: Record<string, string> = {
-    pending: 'bg-gray-500',       // Gris - Pendiente (5.74:1)
-    paid: 'bg-blue-500',          // Azul - Pagado (4.58:1)
-    processing: 'bg-yellow-700',  // Amarillo oscuro - En preparación (5.25:1)
-    shipped: 'bg-orange-600',     // Naranja - Enviado (4.51:1)
-    delivered: 'bg-green-600',    // Verde - Entregado (5.07:1)
-    cancelled: 'bg-red-600',      // Rojo - Cancelado (5.13:1)
-    refunded: 'bg-purple-500',    // Morado - Reembolsado (5.09:1)
-  }
-  return colors[status] || 'bg-gray-500' // Fallback: gris (5.74:1)
+const colorClasses: Record<OrderStatusColor, string> = {
+  gray: 'bg-gray-500',
+  blue: 'bg-blue-500',
+  yellow: 'bg-yellow-700',
+  orange: 'bg-orange-600',
+  green: 'bg-green-600',
+  red: 'bg-red-600',
+  purple: 'bg-purple-500',
 }
 
 /**
- * Mapeo de estados (inglés → español)
- *
- * El backend almacena estados en inglés, mostramos español al usuario
+ * Clases de tamaño para cada variante
  */
-const getStatusText = (status: string): string => {
-  const statusTexts: Record<string, string> = {
-    pending: 'Pendiente',
-    paid: 'Pagado',
-    processing: 'En preparación',
-    shipped: 'Enviado',
-    delivered: 'Entregado',
-    cancelled: 'Cancelado',
-    refunded: 'Reembolsado',
-  }
-  return statusTexts[status] || status // Fallback: mostrar status original
+const sizeClasses = {
+  sm: 'px-2 py-1 text-xs',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-6 py-3 text-base',
 }
 
 /**
  * Componente StatusBadge
  *
- * @param status - Estado del pedido en inglés (pending, paid, processing, etc.)
- * @returns Badge coloreado con texto traducido
+ * @param status - Estado del pedido (enum OrderStatus)
+ * @param showIcon - Mostrar ícono del estado (default: false)
+ * @param size - Tamaño del badge: sm, md, lg (default: md)
+ * @returns Badge coloreado con texto, ícono opcional y tooltip
  */
-export default function StatusBadge({ status }: StatusBadgeProps) {
-  const colorClass = getStatusColor(status)
-  const displayText = getStatusText(status)
+export default function StatusBadge({
+  status,
+  showIcon = false,
+  size = 'md',
+}: StatusBadgeProps) {
+  // Obtener configuración del estado desde ORDER_STATUS_CONFIG
+  const config = ORDER_STATUS_CONFIG[status]
+  const colorClass = colorClasses[config.color]
+  const sizeClass = sizeClasses[size]
 
   return (
     <span
       role="status"
-      className={`inline-block px-4 py-2 rounded-full text-white text-sm font-sans ${colorClass}`}
+      title={config.description} // Tooltip nativo con descripción
+      className={`inline-flex items-center gap-1.5 rounded-full text-white font-sans font-medium ${colorClass} ${sizeClass} cursor-help transition-transform hover:scale-105`}
     >
-      {displayText}
+      {showIcon && (
+        <span className="flex-shrink-0" aria-hidden="true">
+          {config.icon}
+        </span>
+      )}
+      <span>{config.label}</span>
     </span>
   )
 }
