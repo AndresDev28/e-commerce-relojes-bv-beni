@@ -32,6 +32,7 @@ import type { OrderData } from '@/lib/api/orders'
 import StatusBadge from '@/app/components/ui/StatusBadge'
 import OrderTimeline from './OrderTimeline'
 import { formatPaymentMethod } from '@/utils'
+import { shouldShowStatusIcon } from '@/types'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -123,7 +124,14 @@ export default function OrderDetail({ order }: OrderDetailProps) {
               </p>
             </div>
             <div>
-              <StatusBadge status={order.orderStatus} />
+              <StatusBadge
+                status={order.orderStatus}
+                showIcon={shouldShowStatusIcon(
+                  order.orderStatus,
+                  order.orderStatus,
+                  order.statusHistory
+                )}
+              />
             </div>
           </div>
         </div>
@@ -153,7 +161,14 @@ export default function OrderDetail({ order }: OrderDetailProps) {
               <div className="flex justify-between">
                 <dt className="text-sm text-neutral font-serif">Estado:</dt>
                 <dd className="text-sm font-medium text-neutral-dark">
-                  <StatusBadge status={order.orderStatus} />
+                  <StatusBadge
+                    status={order.orderStatus}
+                    showIcon={shouldShowStatusIcon(
+                      order.orderStatus,
+                      order.orderStatus,
+                      order.statusHistory
+                    )}
+                  />
                 </dd>
               </div>
               {order.paymentIntentId && (

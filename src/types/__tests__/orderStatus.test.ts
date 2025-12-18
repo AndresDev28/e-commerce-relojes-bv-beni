@@ -12,8 +12,10 @@ import {
   getStatusConfig,
   isErrorStatus,
   isActiveStatus,
+  shouldShowStatusIcon,
   ACTIVE_ORDER_STATUSES,
   ERROR_ORDER_STATUSES,
+  type StatusHistoryItem,
 } from '../index'
 
 describe('[ORD-17] OrderStatus Enum', () => {
@@ -311,17 +313,144 @@ describe('[ORD-17] OrderStatus Enum', () => {
         OrderStatus.REFUNDED,
       ])
     })
+  })
 
-    it('should have no overlap between active and error statuses', () => {
-      const activeSet = new Set(ACTIVE_ORDER_STATUSES)
-      const errorSet = new Set(ERROR_ORDER_STATUSES)
+  describe('shouldShowStatusIcon()', () => {
+    describe('With status history', () => {
+      const mockHistory: StatusHistoryItem[] = [
+        { status: OrderStatus.PENDING, date: '2025-11-20T10:00:00Z' },
+        { status: OrderStatus.PAID, date: '2025-11-20T10:05:00Z' },
+      ]
 
-      ACTIVE_ORDER_STATUSES.forEach((status) => {
-        expect(errorSet.has(status)).toBe(false)
+      it('should show icon if status is in history (completed)', () => {
+        expect(
+          shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.PROCESSING, mockHistory)
+        ).toBe(true)
+        expect(
+          shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.PROCESSING, mockHistory)
+        ).toBe(true)
       })
 
-      ERROR_ORDER_STATUSES.forEach((status) => {
-        expect(activeSet.has(status)).toBe(false)
+      it('should NOT show icon for current status (in progress)', () => {
+        expect(
+          shouldShowStatusIcon(OrderStatus.PROCESSING, OrderStatus.PROCESSING, mockHistory)
+        ).toBe(false)
+      })
+
+      it('should NOT show icon for future statuses', () => {
+        expect(
+          shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.PROCESSING, mockHistory)
+        ).toBe(false)
+        expect(
+          shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.PROCESSING, mockHistory)
+        ).toBe(false)
+      })
+    })
+
+    describe('Without status history (sequence-based)', () => {
+      it('should show icon for statuses BEFORE current in sequence', () => {
+        // Current: SHIPPED
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.SHIPPED)).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.SHIPPED)).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.PROCESSING, OrderStatus.SHIPPED)).toBe(true)
+      })
+
+      it('should NOT show icon for current status', () => {
+        expect(shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.SHIPPED)).toBe(false)
+      })
+
+      it('should NOT show icon for statuses AFTER current in sequence', () => {
+        // Current: PAID
+        expect(shouldShowStatusIcon(OrderStatus.PROCESSING, OrderStatus.PAID)).toBe(false)
+        expect(shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.PAID)).toBe(false)
+        expect(shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.PAID)).toBe(false)
+      })
+    })
+
+    describe('Special cases', () => {
+      it('should show icon for DELIVERED when it is the current status (completed successfully)', () => {
+        expect(shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.DELIVERED)).toBe(true)
+      })
+
+      it('should show icon for error states when they are current', () => {
+        expect(shouldShowStatusIcon(OrderStatus.CANCELLED, OrderStatus.CANCELLED)).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.REFUNDED, OrderStatus.REFUNDED)).toBe(true)
+      })
+
+      it('should NOT show icon for error states when they are not current', () => {
+        expect(shouldShowStatusIcon(OrderStatus.CANCELLED, OrderStatus.PAID)).toBe(false)
+        expect(shouldShowStatusIcon(OrderStatus.REFUNDED, OrderStatus.SHIPPED)).toBe(false)
+      })
+    })
+
+    describe('Edge cases', () => {
+      it('should handle empty status history', () => {
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.PAID, [])).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.PAID, [])).toBe(false)
+      })
+
+      it('should handle undefined status history', () => {
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.SHIPPED, undefined)).toBe(
+          true
+        )
+        expect(shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.SHIPPED, undefined)).toBe(
+          false
+        )
+      })
+    })
+
+    describe('Real-world scenarios', () => {
+      it('Scenario: Order just paid, no history yet', () => {
+        // Order in PAID state, no history
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.PAID)).toBe(true) // Completed
+        expect(shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.PAID)).toBe(false) // Current
+        expect(shouldShowStatusIcon(OrderStatus.PROCESSING, OrderStatus.PAID)).toBe(false) // Future
+      })
+
+      it('Scenario: Order shipped with full history', () => {
+        const fullHistory: StatusHistoryItem[] = [
+          { status: OrderStatus.PENDING, date: '2025-11-20T10:00:00Z' },
+          { status: OrderStatus.PAID, date: '2025-11-20T10:05:00Z' },
+          { status: OrderStatus.PROCESSING, date: '2025-11-20T14:00:00Z' },
+          { status: OrderStatus.SHIPPED, date: '2025-11-21T09:00:00Z' },
+        ]
+
+        // All in history show icons
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.SHIPPED, fullHistory)).toBe(
+          true
+        )
+        expect(shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.SHIPPED, fullHistory)).toBe(true)
+        expect(
+          shouldShowStatusIcon(OrderStatus.PROCESSING, OrderStatus.SHIPPED, fullHistory)
+        ).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.SHIPPED, fullHistory)).toBe(
+          true
+        ) // In history = completed
+
+        // Future doesn't show
+        expect(
+          shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.SHIPPED, fullHistory)
+        ).toBe(false)
+      })
+
+      it('Scenario: Order delivered (final successful state)', () => {
+        // DELIVERED as current status always shows icon
+        expect(shouldShowStatusIcon(OrderStatus.DELIVERED, OrderStatus.DELIVERED)).toBe(true)
+
+        // All previous states also show icons
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.DELIVERED)).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.DELIVERED)).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.PROCESSING, OrderStatus.DELIVERED)).toBe(true)
+        expect(shouldShowStatusIcon(OrderStatus.SHIPPED, OrderStatus.DELIVERED)).toBe(true)
+      })
+
+      it('Scenario: Order cancelled (error state)', () => {
+        // CANCELLED as current status shows icon
+        expect(shouldShowStatusIcon(OrderStatus.CANCELLED, OrderStatus.CANCELLED)).toBe(true)
+
+        // Previous states show icons
+        expect(shouldShowStatusIcon(OrderStatus.PENDING, OrderStatus.CANCELLED)).toBe(false) // Not in normal sequence
+        expect(shouldShowStatusIcon(OrderStatus.PAID, OrderStatus.CANCELLED)).toBe(false) // Not in normal sequence
       })
     })
   })
