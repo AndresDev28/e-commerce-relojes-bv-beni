@@ -312,3 +312,162 @@ const order = userOrdersData.data.find(o => o.orderId === orderId)
 4. **Seguridad por Diseño:** Las restricciones de Strapi existen por buenas razones - la solución final respeta el modelo de seguridad en lugar de intentar evitarlo
 5. **Documentación:** Cuando un bug toma 7+ horas, **documentarlo** para el "yo del futuro" y otros desarrolladores
 
+---
+
+## Desafío de Workflow: Primera Vez Usando GitHub CLI y Problemática de Branches Anidadas
+
+**Contexto:**
+Al completar ORD-17 (centralización del enum `OrderStatus`) y ORD-18 (refactor del componente `StatusBadge`), surgió la necesidad de crear Pull Requests desde la línea de comandos. Esta fue mi primera experiencia usando **GitHub CLI (`gh`)** y reveló una problemática de gestión de branches que no había anticipado.
+
+**Problema Inicial: Branches Anidadas**
+
+Durante el desarrollo:
+1. Creé la branch `EPIC-15/ORD-17` desde `main`
+2. Hice push: `git push --set-upstream origin EPIC-15/ORD-17`
+3. **Inmediatamente después** creé `EPIC-15/ORD-18` con: `git checkout -b EPIC-15/ORD-18`
+
+**Consecuencia:**
+```
+main (36554ef)
+  │
+  └─── EPIC-15/ORD-17 (commit b6f5d9f)
+         │
+         └─── EPIC-15/ORD-18 (commits 571c13e + 1d4651b)
+                └── Incluye el commit de ORD-17
+```
+
+La branch `ORD-18` **contenía los 3 commits**: 1 de ORD-17 + 2 de ORD-18. Esto significaba que crear un PR de ORD-18 hacia `main` incluiría cambios de ambos tickets.
+
+**Descubrimiento: gh CLI y el Error "No commits between branches"**
+
+Al intentar crear el PR de ORD-17:
+```bash
+gh pr create --base main --head EPIC-15/ORD-17 --title "..." --body "..."
+```
+
+**Error recibido:**
+```
+pull request create failed: GraphQL: No commits between main and EPIC-15/ORD-17
+```
+
+**Investigación:**
+Este error reveló que **ORD-17 ya había sido mergeado a `main`** en una sesión anterior (PR #21, mergeado el 17-dic-2025), pero mi `main` local estaba desactualizado.
+
+**Problema Adicional: Permisos SSH**
+
+Al intentar sincronizar:
+```bash
+git pull origin main
+# Error: git@github.com: Permission denied (publickey)
+```
+
+El repositorio estaba configurado con SSH, pero las claves no estaban disponibles en el entorno actual.
+
+**Solución Implementada:**
+
+### 1. Instalación de GitHub CLI
+```bash
+brew install gh
+gh auth login  # Autenticación vía navegador
+gh auth status # Verificación
+```
+
+### 2. Resolución de Sincronización
+Como SSH fallaba pero `gh` usa HTTPS y funcionaba:
+```bash
+# Cambiar temporalmente a HTTPS
+git remote set-url origin https://github.com/AndresDev28/e-commerce-relojes-bv-beni.git
+
+# Sincronizar main
+git pull origin main
+# Resultado: Actualizó de 36554ef a c1e7a63 (incluye ORD-17)
+
+# Restaurar SSH
+git remote set-url origin git@github.com:AndresDev28/e-commerce-relojes-bv-beni.git
+```
+
+### 3. Rebase de ORD-18 para Limpieza de Commits
+```bash
+git checkout EPIC-15/ORD-18
+git log main..EPIC-15/ORD-18 --oneline
+# Mostraba 2 commits únicos (los de ORD-18)
+
+git rebase main
+# ✅ Rebase exitoso sin conflictos
+
+git push origin EPIC-15/ORD-18 --force-with-lease
+# Force push necesario porque rebase cambió la historia
+```
+
+**Resultado del Rebase:**
+- Los commits de ORD-18 obtuvieron nuevos hashes (ddccaba y 6ff471d)
+- La branch quedó limpia: solo 2 commits de ORD-18 sobre main actualizado
+- Historia lineal y organizada
+
+### 4. Creación y Merge de PR con gh CLI
+```bash
+# Crear PR con descripción completa
+gh pr create --base main --head EPIC-15/ORD-18 \
+  --title "[EPIC-15][ORD-18] Refactor StatusBadge with smart icon display logic" \
+  --body "$(cat <<'EOF'
+[Descripción completa en inglés...]
+EOF
+)"
+# Resultado: https://github.com/AndresDev28/e-commerce-relojes-bv-beni/pull/22
+
+# Mergear con squash (combina commits en uno)
+gh pr merge 22 --squash --delete-branch
+# ✅ PR #22 mergeado exitosamente
+```
+
+**Comandos de GitHub CLI Aprendidos:**
+
+| Comando | Propósito |
+|---------|-----------|
+| `gh auth login` | Autenticar con GitHub (abre navegador) |
+| `gh auth status` | Verificar estado de autenticación |
+| `gh pr create` | Crear PR desde CLI con título y body |
+| `gh pr view [number]` | Ver detalles de un PR |
+| `gh pr list` | Listar PRs (con filtros opcionales) |
+| `gh pr merge` | Mergear PR con opciones (--squash, --merge, --rebase) |
+| `gh repo sync` | Sincronizar branch con remote |
+
+**Ventajas de gh CLI:**
+- ✅ No salir del terminal para crear/mergear PRs
+- ✅ Permite descripciones completas con heredocs
+- ✅ Usa HTTPS (funciona cuando SSH falla)
+- ✅ Integración perfecta con el flujo de Git
+- ✅ Mantiene historial de PRs
+
+**Aprendizajes Clave:**
+
+1. **Branch Strategy:** Siempre crear branches desde `main` actualizado, no desde otras feature branches, a menos que haya dependencia explícita
+2. **Flujo Correcto:**
+   ```bash
+   git checkout main
+   git pull origin main          # Actualizar primero
+   git checkout -b EPIC-15/ORD-XX
+   ```
+3. **Rebase vs Merge:** El `--force-with-lease` es más seguro que `--force` porque verifica que no haya cambios remotos no sincronizados
+4. **gh CLI vs UI:** Para PRs simples, gh CLI es más rápido. Para PRs con revisión de código extensiva, la UI de GitHub sigue siendo mejor
+5. **Troubleshooting:** Cuando Git da errores oscuros, siempre verificar:
+   - ¿Está `main` actualizado?
+   - ¿Qué commits tiene cada branch? (`git log main..feature`)
+   - ¿Hay PRs existentes? (`gh pr list`)
+6. **HTTPS vs SSH:** Tener ambos métodos configurados es útil. gh CLI usa HTTPS y puede servir como fallback cuando SSH falla
+
+**Resultado Final:**
+- ✅ PR #21 (ORD-17) - Mergeado previamente
+- ✅ PR #22 (ORD-18) - Creado y mergeado exitosamente desde CLI
+- ✅ Historia de commits limpia y organizada
+- ✅ Nuevo conocimiento de herramientas para flujo de trabajo más eficiente
+
+**Próximos Pasos:**
+Para evitar el problema de branches anidadas en el futuro, documenté el flujo recomendado:
+1. Mergear ticket anterior primero
+2. Actualizar `main` local
+3. Crear nueva branch desde `main` actualizado
+4. Esto mantiene cada PR independiente y fácil de revisar
+
+---
+
