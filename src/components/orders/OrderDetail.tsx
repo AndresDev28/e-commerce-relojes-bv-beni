@@ -33,10 +33,11 @@ import StatusBadge from '@/app/components/ui/StatusBadge'
 import OrderTimeline from './OrderTimeline'
 import { formatPaymentMethod } from '@/utils'
 import { shouldShowStatusIcon } from '@/types'
+import { getDeliveryEstimate } from '@/lib/utils/delivery'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { BsArrowLeft, BsCreditCard } from 'react-icons/bs'
+import { BsArrowLeft, BsCreditCard, BsClock } from 'react-icons/bs'
 
 interface OrderDetailProps {
   order: OrderData
@@ -74,6 +75,15 @@ export default function OrderDetail({ order }: OrderDetailProps) {
   }
 
   /**
+   * Get delivery estimate for this order
+   * [ORD-19] Calculate estimated or actual delivery date
+   */
+  const deliveryEstimate = getDeliveryEstimate(
+    order.shippedAt,
+    order.deliveredAt
+  )
+
+  /**
    * Navigate back to orders list
    */
   const handleBackClick = () => {
@@ -87,9 +97,10 @@ export default function OrderDetail({ order }: OrderDetailProps) {
    * 0. Back button
    * 1. Header with order number and status
    * 2. General information and cost summary (2 columns on desktop)
-   * 3. Payment information
-   * 4. Order products list (linked to product pages)
-   * 5. Order timeline
+   * 3. Delivery estimate (estimated or actual delivery date) - [ORD-19]
+   * 4. Payment information
+   * 5. Order products list (linked to product pages)
+   * 6. Order timeline
    *
    * LEARNING: Why use grid on desktop?
    * ===================================
@@ -216,7 +227,35 @@ export default function OrderDetail({ order }: OrderDetailProps) {
           </div>
         </div>
 
-        {/* 3. PAYMENT INFORMATION - [ORD-14] Using formatPaymentMethod */}
+        {/* 3. DELIVERY ESTIMATE - [ORD-19] Estimated or actual delivery date */}
+        {deliveryEstimate && (
+          <div className="border-t border-neutral-light p-6">
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <BsClock className="mt-1 text-xl text-blue-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold font-sans text-neutral-dark mb-1">
+                    {deliveryEstimate.status === 'delivered'
+                      ? 'Fecha de entrega'
+                      : 'Entrega estimada'}
+                  </h3>
+                  <p className="text-lg font-bold text-blue-700">
+                    {deliveryEstimate.status === 'delivered'
+                      ? `Entregado el: ${deliveryEstimate.formattedText}`
+                      : deliveryEstimate.formattedText}
+                  </p>
+                  {deliveryEstimate.status === 'estimated' && (
+                    <p className="mt-1 text-sm text-neutral font-serif">
+                      Recibirás tu pedido entre estas fechas
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 4. PAYMENT INFORMATION - [ORD-14] Using formatPaymentMethod */}
         {order.paymentInfo && (
           <div className="border-t border-neutral-light p-6">
             <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
@@ -233,7 +272,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
           </div>
         )}
 
-        {/* 4. ORDER PRODUCTS */}
+        {/* 5. ORDER PRODUCTS */}
         <div className="border-t border-neutral-light p-6">
           <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
             Productos ({order.items.length})
@@ -288,7 +327,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
         </div>
       </div>
 
-      {/* 5. ORDER TIMELINE */}
+      {/* 6. ORDER TIMELINE */}
       <OrderTimeline
         currentStatus={order.orderStatus}
         statusHistory={order.statusHistory}

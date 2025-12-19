@@ -21,7 +21,8 @@
 import Link from 'next/link'
 import type { OrderData } from '@/lib/api/orders'
 import StatusBadge from '@/app/components/ui/StatusBadge'
-import { shouldShowStatusIcon } from '@/types'
+import { shouldShowStatusIcon, OrderStatus } from '@/types'
+import { getDeliveryEstimate } from '@/lib/utils/delivery'
 
 interface OrderCardProps {
   order: OrderData
@@ -56,6 +57,22 @@ export default function OrderCard({ order }: OrderCardProps) {
   }
 
   /**
+   * Get delivery estimate for shipped/delivered orders
+   * [ORD-19] Calculate estimated or actual delivery date
+   */
+  const deliveryEstimate = getDeliveryEstimate(
+    order.shippedAt,
+    order.deliveredAt
+  )
+
+  /**
+   * Show delivery estimate only for shipped/delivered orders
+   */
+  const showDelivery =
+    order.orderStatus === OrderStatus.SHIPPED ||
+    order.orderStatus === OrderStatus.DELIVERED
+
+  /**
    * RENDERIZADO
    *
    * Tarjeta clickeable que enlaza al detalle del pedido.
@@ -84,6 +101,14 @@ export default function OrderCard({ order }: OrderCardProps) {
           <h3 className="text-lg font-bold font-sans text-neutral-dark mb-1">
             {order.orderId}
           </h3>
+          {/* [ORD-19] Delivery estimate - only for shipped/delivered */}
+          {showDelivery && deliveryEstimate && (
+            <p className="text-xs text-blue-600 font-medium mb-1">
+              {deliveryEstimate.status === 'delivered'
+                ? `Entregado: ${deliveryEstimate.formattedText}`
+                : `Entrega estimada: ${deliveryEstimate.formattedText}`}
+            </p>
+          )}
           <p className="text-sm text-neutral font-serif">
             {formatDate(order.createdAt)}
           </p>

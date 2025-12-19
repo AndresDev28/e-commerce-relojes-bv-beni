@@ -45,6 +45,8 @@ export interface OrderData {
   paymentIntentId?: string
   paymentInfo?: PaymentInfo
   statusHistory?: StatusHistoryItem[]
+  shippedAt?: string
+  deliveredAt?: string
   createdAt: string
   updatedAt: string
   publishedAt: string
