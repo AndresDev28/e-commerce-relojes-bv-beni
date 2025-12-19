@@ -457,3 +457,41 @@ export function shouldShowStatusIcon(
   // Solo si ambos están en la secuencia Y status está antes que current
   return statusIndex !== -1 && currentIndex !== -1 && statusIndex < currentIndex
 }
+
+// ============================================
+// FECHA ESTIMADA DE ENTREGA ([ORD-19])
+// ============================================
+/**
+ * Configuración de tiempos de entrega
+ * 
+ * MVP: Fijo 3-4 días para España peninsular
+ * FUTURO: Extender con múltiples zonas y tipos de envío
+ * 
+ * @example
+ * // Post-MVP:
+ * const DELIVERY_CONFIG = {
+ *   standard: { min: 3, max: 4, label: 'España peninsular' },
+ *   islands: { min: 5, max: 7, label: 'Islas Baleares/Canarias' },
+ *   express: { min: 1, max: 2, label: 'Envío express' },
+ * }
+ */
+export const DELIVERY_DAYS_CONFIG = {
+  min: 3,  // Días mínimos para entrega
+  max: 4,  // Días máximos para entrega
+} as const
+/**
+ * Rango de fechas estimadas de entrega
+ */
+export interface DeliveryDateRange {
+  minDate: Date
+  maxDate: Date
+}
+/**
+ * Resultado del cálculo de fecha de entrega
+ * Incluye tanto las fechas como el texto formateado listo para mostrar
+ */
+export interface DeliveryEstimate {
+  range: DeliveryDateRange
+  formattedText: string  // "24-25 Nov 2025"
+  status: 'estimated' | 'delivered' | 'not_shipped'
+}
