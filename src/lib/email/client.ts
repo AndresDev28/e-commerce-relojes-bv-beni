@@ -13,13 +13,16 @@ import { RESEND_CONFIG, isDevelopment, isDevEmailActive } from './config'
 import { validateAndLogResendEnv } from './env-validator'
 
 // Validate environment on module load
-validateAndLogResendEnv(true)
+// Don't throw during build time (allow builds to succeed even without env vars)
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+validateAndLogResendEnv(!isBuildTime)
 
 /**
  * Resend client instance
  * Automatically configured with API key from environment
+ * During build time, uses a dummy key to allow compilation
  */
-export const resend = new Resend(RESEND_CONFIG.apiKey)
+export const resend = new Resend(RESEND_CONFIG.apiKey || 're_build_time_placeholder')
 
 /**
  * Email sending parameters
