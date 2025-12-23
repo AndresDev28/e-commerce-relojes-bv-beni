@@ -471,3 +471,258 @@ Para evitar el problema de branches anidadas en el futuro, documenté el flujo r
 
 ---
 
+## Desafío de Arquitectura: Sistema de Emails con Resend ([ORD-20])
+
+**Contexto:**
+Al implementar el sistema de notificaciones por email para cambios de estado de pedidos, surgieron múltiples decisiones de arquitectura que afectan la seguridad, confiabilidad y mantenibilidad del sistema.
+
+**Problema Principal: ¿Dónde vive la lógica de emails?**
+
+Había tres opciones arquitectónicas principales:
+
+### Opción 1: Todo en Strapi
+```javascript
+// Strapi lifecycle hook
+async afterUpdate(event) {
+  // Enviar email directamente desde Strapi
+  await strapi.plugins['email'].services.email.send({...})
+}
+```
+
+**Pros:**
+- Simple, todo en un lugar
+- Menos moving parts
+
+**Contras:**
+- ❌ Difícil usar React Email para templates
+- ❌ Strapi no es ideal para lógica compleja de emails
+- ❌ Difícil de testear
+
+### Opción 2: Servicio independiente (Email microservice)
+```
+Strapi → Queue (Redis/RabbitMQ) → Email Service → Resend
+```
+
+**Pros:**
+- Máxima escalabilidad
+- Desacoplamiento total
+- Queue garantiza delivery
+
+**Contras:**
+- ❌ Overengineering para MVP
+- ❌ Infraestructura adicional (Redis, otro deploy)
+- ❌ Mayor complejidad operacional
+
+### Opción 3: Strapi → Next.js API Route → Resend ✅
+
+```
+Strapi lifecycle hook → POST /api/send-order-email → Resend
+```
+
+**Pros:**
+- ✅ Balance perfecto para MVP
+- ✅ React Email templates (ORD-21)
+- ✅ Fácil de testear
+- ✅ Control total de retry y error handling
+- ✅ No requiere infra adicional
+
+**Contras:**
+- Acoplamiento medio entre Strapi y Next.js
+
+**Decisión Final: Opción 3**
+
+**Razón:** Para un MVP, la Opción 3 ofrece el mejor balance entre simplicidad y funcionalidad. Permite usar React Email, es fácil de testear, y no requiere infraestructura adicional.
+
+---
+
+### Decisión 2: Error Handling Strategy
+
+**Problema:** ¿Qué hacer si el envío de email falla?
+
+**Opción A: Bloquear actualización del pedido**
+```typescript
+if (!emailSent) {
+  throw new Error('Email failed')
+  // Strapi lifecycle hook falla
+  // Pedido NO se actualiza
+}
+```
+
+**Opción B: Log error pero continuar** ✅
+```typescript
+if (!emailSent) {
+  console.error(`Email failed for order ${orderId}`)
+  return { success: false, error } // 200 status
+  // Pedido SÍ se actualiza
+}
+```
+
+**Decisión Final: Opción B**
+
+**Razón:**
+- Los emails son **notificaciones**, no parte crítica del flujo
+- El pedido debe actualizarse aunque el email falle
+- Mejor UX: cliente puede ver su pedido actualizado aunque no reciba email
+- Futuro: botón "Reenviar email" en admin (ORD-25)
+
+**Implementación:**
+```typescript
+// API route SIEMPRE devuelve 200
+return NextResponse.json({
+  success: false,
+  error: errorMessage,
+  message: 'Email failed, but order was updated successfully'
+}, { status: 200 }) // ⚠️ 200, no 500!
+```
+
+---
+
+### Decisión 3: Webhook Authentication
+
+**Problema:** ¿Cómo autenticar las llamadas de Strapi a Next.js?
+
+**Opción A: Sin autenticación**
+- ❌ Cualquiera puede enviar emails en nombre de la tienda
+
+**Opción B: JWT del sistema**
+- ❌ Más complejo
+- ❌ Require rotación de tokens
+
+**Opción C: Shared Secret en header** ✅
+```typescript
+// Strapi
+headers: { 'X-Webhook-Secret': process.env.WEBHOOK_SECRET }
+
+// Next.js
+if (request.headers.get('x-webhook-secret') !== WEBHOOK_SECRET) {
+  return 401
+}
+```
+
+**Decisión Final: Opción C**
+
+**Razón:**
+- Simple y efectivo
+- Suficiente seguridad para webhook interno
+- Fácil de implementar y mantener
+
+---
+
+### Decisión 4: Retry Logic
+
+**Problema:** ¿Cómo manejar fallos temporales de Resend?
+
+**Implementación:**
+- Max intentos: 3
+- Exponential backoff: 1s, 2s, 5s
+- Log cada intento
+
+```typescript
+async function sendEmail() {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await resend.emails.send(...)
+      return { success: true }
+    } catch (error) {
+      if (attempt === 3) return { success: false, error }
+      await sleep(1000 * Math.pow(2, attempt - 1))
+    }
+  }
+}
+```
+
+**Por qué funciona:**
+- Maneja fallos de red temporales
+- No sobrecarga Resend con retries inmediatos
+- Balance entre confiabilidad y timeout razonable
+
+**Futuro:** Considerar queue system (Bull/BullMQ) si el volumen crece.
+
+---
+
+### Decisión 5: Development Email Override
+
+**Problema:** Evitar enviar emails a clientes reales durante desarrollo.
+
+**Solución:**
+```typescript
+// .env.local
+DEV_EMAIL=andresjpadev@gmail.com
+NODE_ENV=development
+
+// client.ts
+const finalRecipient = isDevelopment && DEV_EMAIL 
+  ? DEV_EMAIL 
+  : customerEmail
+```
+
+**Beneficios:**
+- ✅ Seguro: nunca spam a clientes en dev
+- ✅ Fácil testing: todos los emails van a tu inbox
+- ✅ Autochecks: logs muestran redirection
+
+---
+
+### Decisión 6: Environment Validation
+
+**Problema:** Prevenir errores de configuración (API keys faltantes, secrets expuestos).
+
+**Solución:** Validator que corre al iniciar la app.
+
+```typescript
+// src/lib/email/env-validator.ts
+export function validateResendEnvironment() {
+  if (!RESEND_API_KEY) errors.push('Missing API key')
+  if (NEXT_PUBLIC_RESEND_API_KEY) errors.push('🚨 SECURITY BREACH')
+  if (DEV_EMAIL && env === 'production') warnings.push('DEV_EMAIL in prod!')
+  // ... más validaciones
+}
+```
+
+**Detecta:**
+- ✅ API keys faltantes
+- ✅ Formato inválido (debe empezar con `re_`)
+- ✅ Security breach (`NEXT_PUBLIC_` prefix)
+- ✅ DEV_EMAIL activo en producción
+- ✅ Webhook secret faltante o muy corto
+
+**Pattern aprendido:** Mismo approach usado en Stripe (`src/lib/stripe/env-validator.ts`). Consistencia arquitectónica.
+
+---
+
+## Aprendizajes Clave
+
+1. **MVP First:** Opción 3 (Next.js API Route) es el sweet spot entre simplicidad y funcionalidad. No necesitamos microservicios todavía.
+
+2. **Fail Gracefully:** Emails son notificaciones, no operaciones críticas. Log error pero no bloquees el flujo principal.
+
+3. **Security by Default:** Validación de environment al inicio previene errores costosos en producción.
+
+4. **Developer Experience:** DEV_EMAIL override hace testing seguro y fácil.
+
+5. **Retry Strategy:** Exponential backoff es estándar de la industria por buenas razones.
+
+6. **Documentation is King:** 7+ decisiones de arquitectura merecen documentación detallada (ver `docs/email-system.md`).
+
+---
+
+## Métricas de Implementación
+
+- **Tiempo estimado:** 4 horas
+- **Tiempo real:** ~4 horas (según plan!)
+- **Tests:** 3 suites (env-validator, client, route)
+- **Documentación:** Completa (`docs/email-system.md`)
+- **LOC:** ~800 líneas (código + tests + docs)
+
+---
+
+## Próximos Pasos (Post ORD-20)
+
+- [ ] **[ORD-21]** React Email templates (HTML bonitos)
+- [ ] **[ORD-22]** Strapi lifecycle hooks
+- [ ] **[ORD-24]** Tests E2E de emails
+- [ ] **[ORD-25]** Botón "Reenviar email" en admin
+- [ ] **[ORD-26]** A/B testing de templates (largo plazo)
+
+---
+

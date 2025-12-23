@@ -17,6 +17,7 @@
     "test:storybook": "vitest run --project=storybook"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.2",
     "@stripe/react-stripe-js": "^5.2.0",
     "@stripe/stripe-js": "^8.0.0",
     "@tailwindcss/typography": "^0.5.18",
@@ -25,8 +26,10 @@
     "next": "^15.4.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-email": "^5.1.0",
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
+    "resend": "^6.6.0",
     "stripe": "^20.0.0"
   },
   "devDependencies": {
