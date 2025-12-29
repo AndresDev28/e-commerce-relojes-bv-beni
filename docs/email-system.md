@@ -1,8 +1,9 @@
 # 📧 Sistema de Emails - Relojes BV Beni
 
-**[ORD-20] Configure Resend email system**
+**[ORD-20] Configure Resend email system** ✅  
+**[ORD-21] React Email templates** ✅
 
-Documentación completa del sistema de notificaciones por email implementado con Resend.
+Documentación completa del sistema de notificaciones por email implementado con Resend y React Email.
 
 ---
 
@@ -121,6 +122,21 @@ if (emailFailed) {
 
 ```
 src/
+├── emails/                        # [ORD-21] React Email templates
+│   ├── templates/
+│   │   ├── OrderStatusEmail.tsx   # Template principal de pedidos
+│   │   └── index.ts               # Barrel export
+│   ├── components/                # Componentes reutilizables
+│   │   ├── EmailHeader.tsx
+│   │   ├── EmailFooter.tsx
+│   │   ├── StatusBadge.tsx
+│   │   ├── OrderItems.tsx
+│   │   ├── OrderSummary.tsx
+│   │   └── index.ts
+│   └── utils/
+│       ├── renderEmail.ts         # Renderiza React a HTML
+│       ├── styles.ts              # Estilos compartidos
+│       └── index.ts
 ├── lib/
 │   └── email/
 │       ├── config.ts              # Configuración centralizada
@@ -442,13 +458,178 @@ RESEND_FROM_EMAIL=onboarding@resend.dev
 
 ---
 
+## 🎨 React Email Templates (ORD-21)
+
+### Arquitectura de Templates
+
+Los emails se construyen con **componentes React** usando `@react-email/components`, proporcionando:
+
+✅ **Type-safety** con TypeScript  
+✅ **Componentes reutilizables**  
+✅ **Preview en desarrollo** con hot reload  
+✅ **Compatible con todos los clientes** de email  
+✅ **Fácil mantenimiento** vs HTML strings  
+
+### Componentes Base
+
+```typescript
+// src/emails/components/
+EmailHeader.tsx    // Logo + tagline
+EmailFooter.tsx    // Contacto + copyright
+StatusBadge.tsx    // Badge visual del estado
+OrderItems.tsx     // Tabla de productos
+OrderSummary.tsx   // Totales (subtotal, envío, total)
+```
+
+Todos los componentes están **type-safe** y usan estilos compartidos de `src/emails/utils/styles.ts`.
+
+### Template Principal: OrderStatusEmail
+
+**Ubicación:** `src/emails/templates/OrderStatusEmail.tsx`
+
+**Props:**
+```typescript
+interface OrderStatusEmailProps {
+  orderId: string
+  customerName?: string
+  orderStatus: OrderStatus
+  orderData: {
+    items: CartItem[]
+    subtotal: number
+    shipping: number
+    total: number
+    createdAt?: string
+  }
+}
+```
+
+**Uso en API Route:**
+```typescript
+import { OrderStatusEmail, EMAIL_SUBJECTS } from '@/emails/templates'
+import { renderEmailToHtml } from '@/emails/utils'
+
+// Generar HTML
+const html = await renderEmailToHtml(
+  OrderStatusEmail({
+    orderId: 'ORD-123',
+    customerName: 'Juan',
+    orderStatus: OrderStatus.PAID,
+    orderData: { ... }
+  })
+)
+
+// Enviar
+await sendEmail({
+  to: 'customer@example.com',
+  subject: EMAIL_SUBJECTS[OrderStatus.PAID],
+  html,
+})
+```
+
+### Preview de Emails en Desarrollo
+
+Para ver y editar emails en el navegador:
+
+```bash
+# Iniciar preview server
+npm run email:dev
+
+# Abre automáticamente http://localhost:3001
+```
+
+**Features del preview:**
+- ✅ Hot reload (cambios se reflejan al instante)
+- ✅ Vista mobile/desktop
+- ✅ Código HTML generado
+- ✅ Copiar código
+
+**Cambiar estado de preview:**
+
+Edita `OrderStatusEmail.tsx`:
+```typescript
+OrderStatusEmail.PreviewProps = {
+  orderStatus: OrderStatus.SHIPPED, // Cambia esto
+  // ...
+}
+```
+
+Guarda el archivo y el preview se actualiza automáticamente.
+
+### Estados Soportados
+
+Cada estado tiene su **badge de color**, **icono** y **mensaje personalizado**:
+
+| Estado | Color | Icono | Mensaje |
+|--------|-------|-------|---------|
+| `PENDING` | Amarillo | ⏳ | Esperando confirmación de pago |
+| `PAID` | Verde | ✓ | ¡Tu pago ha sido confirmado! |
+| `PROCESSING` | Azul | 📦 | Tu pedido está siendo preparado |
+| `SHIPPED` | Naranja | 🚚 | ¡Tu pedido está en camino! |
+| `DELIVERED` | Verde | ✓ | ¡Tu pedido ha sido entregado! |
+| `CANCELLED` | Rojo | ✗ | Tu pedido ha sido cancelado |
+| `REFUNDED` | Morado | ↩ | Tu reembolso ha sido procesado |
+
+### Estilos y Diseño
+
+**Colores:** `src/emails/utils/styles.ts`
+```typescript
+export const colors = {
+  primary: '#2563eb',    // Azul
+  success: '#16a34a',    // Verde
+  gray: { ... },
+}
+```
+
+**Compatibilidad:**
+- ✅ Ancho máximo: 600px (estándar de la industria)
+- ✅ Mobile responsive
+- ✅ Compatible con Gmail, Outlook, Apple Mail, etc.
+- ✅ Sin Flexbox/Grid (usa `<table>` internamente)
+- ✅ Estilos inline automáticos
+
+### Crear Nuevo Template
+
+1. **Crear componente:**
+```tsx
+// src/emails/templates/WelcomeEmail.tsx
+export default function WelcomeEmail({ name }: { name: string }) {
+  return (
+    <Html>
+      <Body>
+        <EmailHeader />
+        <Text>Hola {name}!</Text>
+        <EmailFooter />
+      </Body>
+    </Html>
+  )
+}
+
+// Preview props
+WelcomeEmail.PreviewProps = { name: 'Juan' }
+```
+
+2. **Exportar en barrel:**
+```typescript
+// src/emails/templates/index.ts
+export { default as WelcomeEmail } from './WelcomeEmail'
+```
+
+3. **Usar en API:**
+```typescript
+import { WelcomeEmail } from '@/emails/templates'
+import { renderEmailToHtml } from '@/emails/utils'
+
+const html = await renderEmailToHtml(WelcomeEmail({ name: 'Juan' }))
+```
+
+---
+
 ## 🚀 Próximos Pasos
 
-- [ ] **[ORD-21]** Crear React Email templates (HTML mejorado)
+- [x] **[ORD-21]** Crear React Email templates ✅
 - [ ] **[ORD-22]** Implementar lifecycle hooks en Strapi
 - [ ] **[ORD-24]** Tests E2E de emails
 - [ ] **[ORD-25]** Botón "Reenviar email" en admin panel
-- [ ] **[ORD-26]** Email templates para cada estado de orden
 
 ---
 
@@ -461,5 +642,5 @@ RESEND_FROM_EMAIL=onboarding@resend.dev
 
 ---
 
-**Última actualización:** ORD-20 (Diciembre 2025)
+**Última actualización:** ORD-21 (Diciembre 2025)  
 **Autor:** Andrés Pérez (@AndresDev28)
