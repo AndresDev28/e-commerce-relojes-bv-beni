@@ -494,13 +494,16 @@ Scenario: Fecha estimada de entrega
 
 ### Tareas técnicas
 
-- [ ] [ORD-17] Definir enum de estados en backend
-- [ ] [ORD-18] Crear componente StatusBadge.tsx
-- [ ] [ORD-19] Implementar lógica de fecha estimada
-- [ ] [ORD-20] Configurar sistema de emails (Resend/SendGrid)
-- [ ] [ORD-21] Crear templates de email para cada estado
-- [ ] [ORD-22] Hook: Enviar email cuando cambia estado
-- [ ] [ORD-23] Tests: Estados se muestran correctamente
+- [x] [ORD-17] Definir enum de estados en backend
+- [x] [ORD-18] Crear componente StatusBadge.tsx
+- [x] [ORD-19] Implementar lógica de fecha estimada
+- [x] [ORD-20] Configurar sistema de emails (Resend/SendGrid)
+- [x] [ORD-21] Crear templates de email para cada estado
+- [x] [ORD-22] Hook: Enviar email cuando cambia estado
+- [x] [ORD-23] Tests: Estados se muestran correctamente
+- StatusBadge.test.tsx: 40+ tests (colores, íconos, tooltips, accesibilidad)                            
+- OrderCard.test.tsx: 37 tests (labels corregidos + 4 tests integración)                                
+- OrderDetail.test.tsx: 51 tests (StatusBadge sin mock + 4 tests integración)  
 - [ ] [ORD-24] Tests: Emails se envían al cambiar estado
 
 **Prioridad:** Alta  
@@ -705,3 +708,69 @@ interface StatusChange {
 - **EPIC 16:** Sistema de cancelaciones y reembolsos
 - **EPIC 17:** Gestión de envíos e integración con transportistas
 - **EPIC 18:** Dashboard de analytics de pedidos
+
+## Deuda Técnica
+
+  Esta sección documenta deuda técnica identificada durante el desarrollo que debe abordarse antes de producción o en iteraciones futuras.
+
+  ## [TECH-DEBT-001] Reparar tests fallidos del frontend
+
+  **Tipo:** Deuda Técnica
+  **Prioridad:** Media
+  **Severidad:** Baja (no bloquea UX)
+  **Sprint:** Post-MVP
+
+  ### Contexto
+
+  Durante el desarrollo del MVP se acumularon tests fallidos que no fueron priorizados para mantener el ritmo de entrega de features. Los tests no bloquean funcionalidad pero reducen la confianza en el suite de pruebas.
+
+  ### Estado Actual (2026-01-19)
+
+  | Métrica | Valor |
+  |---------|-------|
+  | Test Files Failed | 10 |
+  | Tests Failed | 62 |
+  | Tests Passed | 580 |
+  | Tests Skipped | 11 |
+  | **Tasa de Éxito** | **88.82%** |
+
+  ### Impacto
+
+  - CI/CD muestra warnings en cada build
+  - Nuevos desarrolladores pueden confundirse con tests rotos
+  - Dificulta identificar regresiones reales
+  - Métricas de cobertura no son confiables
+
+  ### Criterios de Aceptación
+
+  ```gherkin
+  Scenario: Todos los tests pasan
+    Given ejecuto npm run test
+    Then 0 tests fallan
+    And la cobertura es >= 80%
+
+  Scenario: Tests skipped son revisados
+    Given hay 11 tests skipped
+    When los reviso
+    Then los reactivo si son válidos
+    Or los elimino si son obsoletos
+
+  Tareas
+
+  - Ejecutar npm run test y documentar errores específicos
+  - Categorizar fallos (mocks desactualizados, cambios de API, snapshots)
+  - Reparar tests por archivo, empezando por los más críticos
+  - Revisar tests skipped y decidir su destino
+  - Verificar cobertura final >= 80%
+  - Configurar CI para fallar si hay tests rotos
+
+  Notas
+
+  - Creado como resultado de priorizar features sobre tests en fase MVP
+  - No afecta usuarios finales actualmente
+  - Abordar antes de añadir nuevos features significativos
+
+  Estimación: 4-6 horas
+  Asignado: Por definir
+
+  ---

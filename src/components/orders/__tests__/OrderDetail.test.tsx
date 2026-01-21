@@ -21,6 +21,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import OrderDetail from '../OrderDetail'
 import type { OrderData } from '@/lib/api/orders'
+import { OrderStatus } from '@/types'
 
 // Mock Next.js Image
 vi.mock('next/image', () => ({
@@ -63,13 +64,6 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
-}))
-
-// Mock StatusBadge
-vi.mock('@/app/components/ui/StatusBadge', () => ({
-  default: ({ status }: { status: string }) => (
-    <span data-testid="status-badge">{status}</span>
-  ),
 }))
 
 // Mock OrderTimeline
@@ -127,7 +121,7 @@ describe('[ORD-12] OrderDetail Component', () => {
     subtotal: 399.97,
     shipping: 0,
     total: 399.97,
-    orderStatus: 'paid',
+    orderStatus: OrderStatus.PAID,
     paymentIntentId: 'pi_123456789',
     paymentInfo: {
       method: 'card',
@@ -136,11 +130,11 @@ describe('[ORD-12] OrderDetail Component', () => {
     },
     statusHistory: [
       {
-        status: 'pending',
+        status: OrderStatus.PENDING,
         date: '2025-11-20T10:00:00Z',
       },
       {
-        status: 'paid',
+        status: OrderStatus.PAID,
         date: '2025-11-20T10:05:00Z',
       },
     ],
@@ -169,13 +163,22 @@ describe('[ORD-12] OrderDetail Component', () => {
       expect(dates.length).toBeGreaterThan(0)
     })
 
-    it('should display order status badge', () => {
+    it('should display order status badge with correct label', () => {
       render(<OrderDetail order={mockOrder} />)
 
-      const badges = screen.getAllByTestId('status-badge')
-      // Hay 2 badges: uno en header, otro en información general
+      // StatusBadge aparece 2 veces: en header y en "Información del Pedido"
+      const badges = screen.getAllByRole('status')
       expect(badges).toHaveLength(2)
-      expect(badges[0]).toHaveTextContent('paid')
+
+      // Verifica label correcto desde ORDER_STATUS_CONFIG
+      expect(screen.getAllByText('Pago Confirmado')).toHaveLength(2)
+    })
+
+    it('should display status badge with correct color class', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      const badge = screen.getAllByRole('status')[0]
+      expect(badge).toHaveClass('bg-blue-500') // paid = blue
     })
 
     it('should display payment intent ID when present', () => {
@@ -659,6 +662,79 @@ describe('[ORD-12] OrderDetail Component', () => {
 
       expect(screen.getByTestId('order-timeline')).toBeInTheDocument()
       expect(screen.queryByText(/History items/)).not.toBeInTheDocument()
+    })
+  })
+
+  /**
+   * Test Suite 8: StatusBadge integration - Colors and icons [ORD-23]
+   */
+  describe('StatusBadge integration - Colors and icons [ORD-23]', () => {
+    it('should display status badge with correct icon when applicable', () => {
+      const orderWithHistory: OrderData = {
+        ...mockOrder,
+        orderStatus: OrderStatus.SHIPPED,
+        statusHistory: [
+          { status: OrderStatus.PAID, date: '2025-11-20T10:00:00Z' },
+          { status: OrderStatus.PROCESSING, date: '2025-11-20T11:00:00Z' },
+          { status: OrderStatus.SHIPPED, date: '2025-11-20T14:00:00Z' },
+        ],
+      }
+
+      const { container } = render(<OrderDetail order={orderWithHistory} />)
+
+      // Verificar ícono de "Enviado" (🚚)
+      const iconSpan = container.querySelector('span[aria-hidden="true"]')
+      expect(iconSpan?.textContent).toBe('🚚')
+    })
+
+    it('should apply correct Tailwind color classes for different statuses', () => {
+      const statuses = [
+        { status: OrderStatus.PROCESSING, color: 'bg-yellow-700', label: 'En Preparación' },
+        { status: OrderStatus.SHIPPED, color: 'bg-orange-600', label: 'Enviado' },
+        { status: OrderStatus.DELIVERED, color: 'bg-green-600', label: 'Entregado' },
+      ]
+
+      statuses.forEach(({ status, color, label }) => {
+        const order: OrderData = { ...mockOrder, orderStatus: status }
+        const { unmount } = render(<OrderDetail order={order} />)
+
+        const badge = screen.getAllByRole('status')[0]
+        expect(badge).toHaveClass(color)
+        expect(screen.getAllByText(label).length).toBeGreaterThan(0)
+
+        unmount()
+      })
+    })
+
+    it('should show tooltips with correct descriptions from ORDER_STATUS_CONFIG', () => {
+      const tooltipTests = [
+        { status: OrderStatus.PAID, description: 'Pago procesado correctamente' },
+        { status: OrderStatus.PROCESSING, description: 'Preparando tu pedido para envío' },
+        { status: OrderStatus.SHIPPED, description: 'Tu pedido está en camino' },
+      ]
+
+      tooltipTests.forEach(({ status, description }) => {
+        const order: OrderData = { ...mockOrder, orderStatus: status }
+        const { unmount } = render(<OrderDetail order={order} />)
+
+        const badges = screen.getAllByRole('status')
+        expect(badges[0]).toHaveAttribute('title', description)
+
+        unmount()
+      })
+    })
+
+    it('should render multiple badges with same color when status appears twice', () => {
+      render(<OrderDetail order={mockOrder} />)
+
+      // StatusBadge con orderStatus PAID aparece 2 veces
+      const badges = screen.getAllByRole('status')
+      expect(badges).toHaveLength(2)
+
+      // Ambos deben tener el mismo color
+      badges.forEach((badge) => {
+        expect(badge).toHaveClass('bg-blue-500')
+      })
     })
   })
 })

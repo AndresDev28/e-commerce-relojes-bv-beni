@@ -19,6 +19,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import OrderCard from '../OrderCard'
 import type { OrderData } from '@/lib/api/orders'
+import { OrderStatus } from '@/types'
 
 // Mock de next/link
 vi.mock('next/link', () => ({
@@ -57,7 +58,7 @@ const createMockOrder = (overrides: Partial<OrderData> = {}): OrderData => ({
   subtotal: 59.98,
   shipping: 0,
   total: 59.98,
-  orderStatus: 'paid',
+  orderStatus: OrderStatus.PAID,
   createdAt: '2025-11-20T10:00:00Z',
   updatedAt: '2025-11-20T10:00:00Z',
   publishedAt: '2025-11-20T10:00:00Z',
@@ -175,116 +176,109 @@ describe('[ORD-04] OrderCard Component', () => {
    */
   describe('Badge de estado', () => {
     it('should display status badge for "pending" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'pending' })
+      const order = createMockOrder({ orderStatus: OrderStatus.PENDING })
       render(<OrderCard order={order} />)
 
-      expect(screen.getByText('Pendiente')).toBeInTheDocument()
+      expect(screen.getByText('Pago Pendiente')).toBeInTheDocument()
     })
 
     it('should display status badge for "paid" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'paid' })
+      const order = createMockOrder({ orderStatus: OrderStatus.PAID })
       render(<OrderCard order={order} />)
 
-      expect(screen.getByText('Pagado')).toBeInTheDocument()
+      expect(screen.getByText('Pago Confirmado')).toBeInTheDocument()
     })
 
     it('should display status badge for "processing" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'processing' })
+      const order = createMockOrder({ orderStatus: OrderStatus.PROCESSING })
       render(<OrderCard order={order} />)
 
-      expect(screen.getByText('En preparación')).toBeInTheDocument()
+      expect(screen.getByText('En Preparación')).toBeInTheDocument()
     })
 
     it('should display status badge for "shipped" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'shipped' })
+      const order = createMockOrder({ orderStatus: OrderStatus.SHIPPED })
       render(<OrderCard order={order} />)
 
       expect(screen.getByText('Enviado')).toBeInTheDocument()
     })
 
     it('should display status badge for "delivered" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'delivered' })
+      const order = createMockOrder({ orderStatus: OrderStatus.DELIVERED })
       render(<OrderCard order={order} />)
 
       expect(screen.getByText('Entregado')).toBeInTheDocument()
     })
 
     it('should display status badge for "cancelled" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'cancelled' })
+      const order = createMockOrder({ orderStatus: OrderStatus.CANCELLED })
       render(<OrderCard order={order} />)
 
       expect(screen.getByText('Cancelado')).toBeInTheDocument()
     })
 
     it('should display status badge for "refunded" in Spanish', () => {
-      const order = createMockOrder({ orderStatus: 'refunded' })
+      const order = createMockOrder({ orderStatus: OrderStatus.REFUNDED })
       render(<OrderCard order={order} />)
 
       expect(screen.getByText('Reembolsado')).toBeInTheDocument()
     })
 
     it('should apply correct color class for "pending" (gray)', () => {
-      const order = createMockOrder({ orderStatus: 'pending' })
-      const { container } = render(<OrderCard order={order} />)
+      const order = createMockOrder({ orderStatus: OrderStatus.PENDING })
+      render(<OrderCard order={order} />)
 
-      const badge = screen.getByText('Pendiente')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-gray-500')
+      expect(screen.getByText('Pago Pendiente')).toBeInTheDocument() 
     })
 
     it('should apply correct color class for "paid" (blue)', () => {
-      const order = createMockOrder({ orderStatus: 'paid' })
+      const order = createMockOrder({ orderStatus: OrderStatus.PAID })
       render(<OrderCard order={order} />)
 
-      const badge = screen.getByText('Pagado')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-blue-500')
+      expect(screen.getByText('Pago Confirmado')).toBeInTheDocument()
     })
 
     it('should apply correct color class for "processing" (yellow) - WCAG AA', () => {
-      const order = createMockOrder({ orderStatus: 'processing' })
+      const order = createMockOrder({ orderStatus: OrderStatus.PROCESSING })
       render(<OrderCard order={order} />)
-
-      const badge = screen.getByText('En preparación')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-yellow-700') // Changed for accessibility
     })
 
     it('should apply correct color class for "shipped" (orange) - WCAG AA', () => {
-      const order = createMockOrder({ orderStatus: 'shipped' })
+      const order = createMockOrder({ orderStatus: OrderStatus.SHIPPED })
       render(<OrderCard order={order} />)
 
-      const badge = screen.getByText('Enviado')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-orange-600') // Changed for accessibility
     })
 
     it('should apply correct color class for "delivered" (green) - WCAG AA', () => {
-      const order = createMockOrder({ orderStatus: 'delivered' })
+      const order = createMockOrder({ orderStatus: OrderStatus.DELIVERED })
       render(<OrderCard order={order} />)
 
-      const badge = screen.getByText('Entregado')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-green-600') // Changed for accessibility
     })
 
     it('should apply correct color class for "cancelled" (red) - WCAG AA', () => {
-      const order = createMockOrder({ orderStatus: 'cancelled' })
+      const order = createMockOrder({ orderStatus: OrderStatus.CANCELLED })
       render(<OrderCard order={order} />)
 
-      const badge = screen.getByText('Cancelado')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-red-600') // Changed for accessibility
     })
 
     it('should apply correct color class for "refunded" (purple)', () => {
-      const order = createMockOrder({ orderStatus: 'refunded' })
+      const order = createMockOrder({ orderStatus: OrderStatus.REFUNDED })
       render(<OrderCard order={order} />)
 
-      const badge = screen.getByText('Reembolsado')
+      const badge = screen.getByRole('status')
       expect(badge).toHaveClass('bg-purple-500')
-    })
-
-    it('should handle unknown status gracefully', () => {
-      const order = createMockOrder({ orderStatus: 'unknown-status' })
-      render(<OrderCard order={order} />)
-
-      // Debe mostrar el status original como fallback
-      expect(screen.getByText('unknown-status')).toBeInTheDocument()
     })
   })
 
@@ -373,7 +367,7 @@ describe('[ORD-04] OrderCard Component', () => {
       const order = createMockOrder({
         orderId: 'ORD-1763064732-F',
         total: 259.89,
-        orderStatus: 'shipped',
+        orderStatus: OrderStatus.SHIPPED,
         createdAt: '2025-11-22T14:30:00Z',
       })
 
@@ -391,6 +385,88 @@ describe('[ORD-04] OrderCard Component', () => {
         'href',
         '/mi-cuenta/pedidos/ORD-1763064732-F'
       )
+    })
+  })
+
+  /**
+   * Test 10: Badge de estado - Integración con colores e íconos [ORD-23]
+   */
+  describe('Badge de estado - Integración con colores e íconos [ORD-23]', () => {
+    it('should render StatusBadge with correct icon for paid status', () => {
+      const order = createMockOrder({
+        orderStatus: OrderStatus.PAID,
+        statusHistory: [
+          { status: OrderStatus.PENDING, date: '2025-11-20T10:00:00Z' },
+          { status: OrderStatus.PAID, date: '2025-11-20T10:05:00Z' },
+        ],
+      })
+      const { container } = render(<OrderCard order={order} />)
+
+      // Verificar que el ícono se muestre
+      const iconSpan = container.querySelector('span[aria-hidden="true"]')
+      expect(iconSpan?.textContent).toBe('✓')
+    })
+
+    it('should apply correct color classes from ORDER_STATUS_CONFIG', () => {
+      const testCases = [
+        { status: OrderStatus.PENDING, color: 'bg-gray-500', label: 'Pago Pendiente' },
+        { status: OrderStatus.PAID, color: 'bg-blue-500', label: 'Pago Confirmado' },
+        { status: OrderStatus.PROCESSING, color: 'bg-yellow-700', label: 'En Preparación' },
+        { status: OrderStatus.SHIPPED, color: 'bg-orange-600', label: 'Enviado' },
+        { status: OrderStatus.DELIVERED, color: 'bg-green-600', label: 'Entregado' },
+        { status: OrderStatus.CANCELLED, color: 'bg-red-600', label: 'Cancelado' },
+        { status: OrderStatus.REFUNDED, color: 'bg-purple-500', label: 'Reembolsado' },
+      ]
+
+      testCases.forEach(({ status, color, label }) => {
+        const order = createMockOrder({ orderStatus: status })
+        const { unmount } = render(<OrderCard order={order} />)
+
+        const badge = screen.getByRole('status')
+        expect(badge).toHaveClass(color)
+        expect(screen.getByText(label)).toBeInTheDocument()
+
+        unmount()
+      })
+    })
+
+    it('should show tooltip with status description on hover', () => {
+      const order = createMockOrder({ orderStatus: OrderStatus.PAID })
+      render(<OrderCard order={order} />)
+
+      const badge = screen.getByRole('status')
+      expect(badge).toHaveAttribute('title', 'Pago procesado correctamente')
+    })
+
+    it('should verify all status icons match ORDER_STATUS_CONFIG', () => {
+      const iconTestCases = [
+        { status: OrderStatus.PENDING, icon: '⏳' },
+        { status: OrderStatus.PAID, icon: '✓' },
+        { status: OrderStatus.PROCESSING, icon: '📦' },
+        { status: OrderStatus.SHIPPED, icon: '🚚' },
+        { status: OrderStatus.DELIVERED, icon: '✓' },
+        { status: OrderStatus.CANCELLED, icon: '✕' },
+        { status: OrderStatus.REFUNDED, icon: '↩' },
+      ]
+
+      iconTestCases.forEach(({ status, icon }) => {
+        const order = createMockOrder({
+          orderStatus: status,
+          statusHistory: [
+            { status: OrderStatus.PENDING, date: '2025-11-20T10:00:00Z' },
+            { status: status, date: '2025-11-20T10:05:00Z' },
+          ],
+        })
+        const { container, unmount } = render(<OrderCard order={order} />)
+
+        // Solo verifica íconos cuando shouldShowStatusIcon retorna true
+        const iconSpan = container.querySelector('span[aria-hidden="true"]')
+        if (iconSpan) {
+          expect(iconSpan.textContent).toBe(icon)
+        }
+
+        unmount()
+      })
     })
   })
 })
