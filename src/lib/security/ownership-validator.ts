@@ -139,7 +139,7 @@ export function validateOrderOwnership(
   // This is the core security check that prevents unauthorized access
 
   // Defensive check: ensure user relation is populated
-  if (!order.user || !order.user.id) {
+  if (!order.user || typeof order.user.id !== 'number') {
     console.error(
       `❌ SECURITY ERROR: Order ${orderId} has no user relation. This should never happen.`
     )

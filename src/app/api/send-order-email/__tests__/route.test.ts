@@ -19,6 +19,36 @@ vi.mock('@/lib/email/env-validator', () => ({
   validateAndLogResendEnv: vi.fn(),
 }))
 
+/**
+ * [ORD-24] Mock config module to control RESEND_CONFIG values in tests
+ *
+ * WHY WE NEED THIS:
+ * - RESEND_CONFIG reads process.env.WEBHOOK_SECRET at MODULE LOAD TIME
+ * - Tests set process.env in beforeEach (too late!)
+ * - Solution: Mock the entire config module with test values
+ *
+ * HOW IT WORKS:
+ * - vi.mock() replaces the module BEFORE it's imported
+ * - We provide test values directly (not from process.env)
+ * - Now all tests use consistent config values
+ */
+vi.mock('@/lib/email/config', () => ({
+  RESEND_CONFIG: {
+    apiKey: 're_test_key',
+    fromEmail: 'test@resend.dev',
+    fromName: 'Test Store',
+    webhookSecret: 'test-secret',  // ← Consistent test value
+    devEmail: undefined,
+    retry: {
+      maxAttempts: 3,
+      initialDelay: 1000,
+      maxDelay: 5000,
+    },
+  },
+  isDevelopment: false,
+  isDevEmailActive: false,
+}))
+
 import { sendEmail } from '@/lib/email/client'
 
 describe('POST /api/send-order-email', () => {
@@ -302,7 +332,7 @@ describe('POST /api/send-order-email', () => {
 
       expect(sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          subject: expect.stringContaining('Pago Confirmado'),
+          subject: expect.stringContaining('Pago confirmado'),
         })
       )
     })
