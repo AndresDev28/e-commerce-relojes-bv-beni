@@ -247,6 +247,131 @@ El test IT-1 valida el flujo completo del webhook:
 
 ---
 
+## 🎯 Test IT-4: All Order Statuses (Parametrized)
+
+### ¿Qué valida?
+
+Test parametrizado usando `it.each` de Vitest para validar que todos los estados importantes de la orden envíen emails correctamente:
+
+- **CANCELLED**: "Pedido cancelado"
+- **DELIVERED**: "¡Pedido entregado!"
+- **REFUNDED**: "Reembolso procesado"
+
+### Assertions del Test
+
+1. **El endpoint responde con status 200**
+2. **La respuesta contiene los campos esperados**
+
+### Código
+
+```typescript
+const orderStatusesToTest = [
+  { status: OrderStatus.CANCELLED, expectedSubject: 'cancelado' },
+  { status: OrderStatus.DELIVERED, expectedSubject: 'entregado' },
+  { status: OrderStatus.REFUNDED, expectedSubject: 'reembolsado' },
+] as const
+
+it.each(orderStatusesToTest)('[IT-4] should send email when order status changes to $status', async ({ status }) => {
+  // Test implementation...
+})
+```
+
+---
+
+## 🎯 Test IT-5: Multiple Sequential Status Changes
+
+### ¿Qué valida?
+
+Que el sistema envíe múltiples emails cuando una orden cambia su estado múltiples veces de forma secuencial.
+
+### Flujo del Test
+
+```
+1. Primera llamada: SHIPPED → Email 1
+2. Pausa de 500ms
+3. Segunda llamada: DELIVERED → Email 2
+4. Verificar: 2 respuestas exitosas
+```
+
+### Assertions del Test
+
+1. **Se reciben tantas respuestas como cambios de estado**
+   ```typescript
+   expect(responses).toHaveLength(statusSequence.length)
+   ```
+
+2. **Cada respuesta tiene la estructura correcta**
+   ```typescript
+   responses.forEach((responseData) => {
+     expect(responseData).toHaveProperty('success')
+     expect(responseData).toHaveProperty('message')
+   })
+   ```
+
+---
+
+## 🎯 Test IT-6: Webhook Retry Logic
+
+### ¿Qué valida?
+
+Que el sistema reintente enviar el email automáticamente si falla, usando exponential backoff.
+
+### Configuración de Retry
+
+| Intento | Delay | Total |
+|---------|-------|-------|
+| 1 | Inmediato | 0ms |
+| 2 | 1000ms | ~1s |
+| 3 | 2000ms | ~3s |
+
+**Tiempo total mínimo**: ~6 segundos + tiempo de requests
+
+### Assertions del Test
+
+1. **El endpoint responde (aunque falle, devuelve 200)**
+2. **La duración total es consistente con los reintentos**
+3. **Si falla, tiene el error descriptivo**
+
+---
+
+## 🎯 Test IT-7: Email Fields Validation
+
+### ¿Qué valida?
+
+Que todos los campos requeridos para generar el email estén presentes y tengan el formato correcto.
+
+### Campos Validados
+
+| Campo | Validación |
+|-------|------------|
+| `orderId` | Formato: `TEST-ORD-VALIDATE-{timestamp}` |
+| `customerEmail` | Regex de email válido |
+| `customerName` | No vacío, longitud > 0 |
+| `orderData.items` | Al menos 1 item con nombre |
+| `orderData.total` | Valor numérico correcto |
+
+### Assertions del Test
+
+```typescript
+// 1. Order ID format
+expect(testOrderId).toMatch(/^TEST-ORD-VALIDATE-\d+$/)
+
+// 2. Email válido
+expect(customerEmail).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+
+// 3. Nombre presente
+expect(customerName).toBeTruthy()
+expect(customerName).length.greaterThan(0)
+
+// 4. Items presentes
+expect(webhookPayload.orderData.items).toHaveLength(1)
+
+// 5. Total correcto
+expect(webhookPayload.orderData.total).toBe(310.0)
+```
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Error: "Cannot connect to Strapi"
@@ -328,13 +453,16 @@ await new Promise(resolve => setTimeout(resolve, 5000)) // 5s en lugar de 2s
 
 ## 🚦 Próximos Pasos
 
-### Tests Faltantes (ORD-24)
+### Tests Completados (ORD-24) ✅
 
-- [ ] IT-4: Email se envía cuando orden es CANCELLED
-- [ ] IT-5: Email se envía cuando orden es DELIVERED
-- [ ] IT-6: Múltiples cambios de estado → Múltiples emails
-- [ ] IT-7: Webhook reintent si falla (retry logic)
-- [ ] IT-8: Validación de campos de email (HTML, subject)
+- [x] IT-1: Order status change (PAID → SHIPPED) → Email sent
+- [x] IT-2: Invalid webhook secret → 401 Unauthorized
+- [x] IT-3: Missing required fields → 400 Validation error
+- [x] IT-4: All order statuses (parametrized with it.each)
+  - cancelled, delivered, refunded
+- [x] IT-5: Multiple sequential status changes → Multiple emails
+- [x] IT-6: Webhook retry logic (3 attempts with exponential backoff)
+- [x] IT-7: Email fields validation (orderId, customerEmail, subject, items, total)
 
 ### Tests Futuros (Otros Epics)
 
