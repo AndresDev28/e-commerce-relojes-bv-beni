@@ -250,4 +250,116 @@ describe('[IT-1] Order Status Change Email Integration', () => {
 
     console.log('  ✅ Validation error returned as expected')
   })
+
+  // ========================================
+  // TEST IT-4: All order statuses (parametrized)
+  // ========================================
+  const orderStatusesToTest = [
+    { status: OrderStatus.CANCELLED, expectedSubject: 'cancelado' },
+    { status: OrderStatus.DELIVERED, expectedSubject: 'entregado' },
+    { status: OrderStatus.REFUNDED, expectedSubject: 'reembolsado' },
+  ] as const
+
+  it.each(orderStatusesToTest)('[IT-4] should send email when order status changes to $status', async ({ status, expectedSubject }) => {
+    console.log(`\n📋 [IT-4] Starting test: Order status → ${status}`)
+
+    // Preparar datos de prueba
+    const testOrderId = `TEST-ORD-${Date.now()}`
+
+    const webhookPayload = {
+      orderId: testOrderId,
+      customerEmail: 'test@example.com',
+      customerName: 'testuser',
+      orderStatus: status,
+      orderData: {
+        items: [{ id: '1', name: 'Casio G-SHOCK', price: 150.0, quantity: 1 }],
+        subtotal: 150.0,
+        shipping: 5.95,
+        total: 155.95,
+        createdAt: new Date().toISOString(),
+      },
+    }
+
+    // Llamar al endpoint
+    const response = await fetch(`${testServer.getUrl()}/api/send-order-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Secret': webhookSecret,
+      },
+      body: JSON.stringify(webhookPayload),
+    })
+
+    // Verificar respuesta
+    expect(response.status).toBe(200)
+
+    const responseData = await response.json()
+    expect(responseData).toHaveProperty('success')
+    expect(responseData).toHaveProperty('message')
+
+    console.log(`  ✅ Email sent for status ${status}`)
+  })
+
+  // ========================================
+  // TEST IT-5: Multiple sequential status changes
+  // ========================================
+  it('[IT-5] should send multiple emails for multiple status changes', async () => {
+    console.log('\n📋 [IT-5] Starting test: Multiple status changes → Multiple emails')
+
+    const testOrderId = `TEST-ORD-MULTI-${Date.now()}`
+
+    // Secuencia de cambios de estado
+    const statusSequence: OrderStatus[] = [
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+    ]
+
+    const responses = []
+
+    // Simular cada cambio de estado
+    for (const status of statusSequence) {
+      console.log(`\n  🔄 Changing status to: ${status}`)
+
+      const webhookPayload = {
+        orderId: testOrderId,
+        customerEmail: 'test@example.com',
+        customerName: 'testuser',
+        orderStatus: status,
+        orderData: {
+          items: [{ id: '1', name: 'Casio G-SHOCK', price: 150.0, quantity: 1 }],
+          subtotal: 150.0,
+          shipping: 5.95,
+          total: 155.95,
+          createdAt: new Date().toISOString(),
+        },
+      }
+
+      const response = await fetch(`${testServer.getUrl()}/api/send-order-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': webhookSecret,
+        },
+        body: JSON.stringify(webhookPayload),
+      })
+
+      expect(response.status).toBe(200)
+      responses.push(await response.json())
+
+      // Pequeña pausa entre requests para simular cambios reales
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+
+    // Verificar que recibimos respuestas para todos los cambios
+    expect(responses).toHaveLength(statusSequence.length)
+
+    // Verificar que cada respuesta tiene la estructura correcta
+    responses.forEach((responseData, index) => {
+      expect(responseData).toHaveProperty('success')
+      expect(responseData).toHaveProperty('message')
+      console.log(`  ✅ Email ${index + 1}/${statusSequence.length} sent for status ${statusSequence[index]}`)
+    })
+
+    console.log('\n  ✅ All emails sent correctly')
+  })
 })
