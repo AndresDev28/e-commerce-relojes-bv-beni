@@ -16,9 +16,13 @@ describe('validateResendEnvironment', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
-    // Reset environment before each test
-    vi.resetModules()
-    process.env = { ...originalEnv }
+    // Eliminar variables específicas antes de cada test                                                                                
+    delete process.env.RESEND_API_KEY                                                                                                   
+    delete process.env.RESEND_FROM_EMAIL                                                                                                
+    delete process.env.WEBHOOK_SECRET                                                                                                   
+    delete process.env.DEV_EMAIL                                                                                                        
+    delete process.env.NEXT_PUBLIC_RESEND_API_KEY                                                                                       
+    delete process.env.NEXT_PUBLIC_WEBHOOK_SECRET
   })
 
   afterEach(() => {
@@ -33,9 +37,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('RESEND_API_KEY is not set')
-      )
+      expect(result.errors.some(e => e.includes('RESEND_API_KEY is not set'))).toBe(true)
     })
 
     it('should return error when API key is placeholder', () => {
@@ -44,9 +46,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('placeholder value')
-      )
+      expect(result.errors.some(e => e.includes('placeholder value'))).toBe(true)
     })
 
     it('should return error when API key format is invalid', () => {
@@ -55,9 +55,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('Invalid Resend API key format')
-      )
+      expect(result.errors.some(e => e.includes('Invalid Resend API key format'))).toBe(true)
     })
 
     it('should pass when API key is valid', () => {
@@ -84,9 +82,7 @@ describe('validateResendEnvironment', () => {
 
       const result = validateResendEnvironment()
 
-      expect(result.warnings).toContain(
-        expect.stringContaining('RESEND_FROM_EMAIL is not set')
-      )
+      expect(result.warnings.some(e => e.includes('RESEND_FROM_EMAIL is not set'))).toBe(true)
     })
 
     it('should return error when FROM email format is invalid', () => {
@@ -95,9 +91,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('Invalid email format for RESEND_FROM_EMAIL')
-      )
+      expect(result.errors.some(e => e.includes('Invalid email format for RESEND_FROM_EMAIL'))).toBe(true)
     })
 
     it('should warn when using test domain in production', () => {
@@ -106,9 +100,7 @@ describe('validateResendEnvironment', () => {
 
       const result = validateResendEnvironment()
 
-      expect(result.warnings).toContain(
-        expect.stringContaining('Using Resend test domain')
-      )
+      expect(result.warnings.some(e => e.includes('Using Resend test domain'))).toBe(true)
     })
 
     it('should warn when using custom domain in development', () => {
@@ -117,9 +109,7 @@ describe('validateResendEnvironment', () => {
 
       const result = validateResendEnvironment()
 
-      expect(result.warnings).toContain(
-        expect.stringContaining('Using custom domain in development')
-      )
+      expect(result.warnings.some(e => e.includes('Using custom domain in development'))).toBe(true)
     })
 
     it('should pass with valid email', () => {
@@ -144,9 +134,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('WEBHOOK_SECRET is not set')
-      )
+      expect(result.errors.some(e => e.includes('WEBHOOK_SECRET is not set'))).toBe(true)
     })
 
     it('should return error when webhook secret is placeholder', () => {
@@ -155,9 +143,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('placeholder value')
-      )
+      expect(result.errors.some(e => e.includes('placeholder value'))).toBe(true)
     })
 
     it('should warn when webhook secret is too short', () => {
@@ -165,9 +151,7 @@ describe('validateResendEnvironment', () => {
 
       const result = validateResendEnvironment()
 
-      expect(result.warnings).toContain(
-        expect.stringContaining('shorter than recommended')
-      )
+      expect(result.warnings.some(e => e.includes('shorter than recommended'))).toBe(true)
     })
 
     it('should pass with valid webhook secret', () => {
@@ -193,9 +177,7 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('Invalid email format for DEV_EMAIL')
-      )
+      expect(result.errors.some(e => e.includes('Invalid email format for DEV_EMAIL'))).toBe(true)
     })
 
     it('should warn when DEV_EMAIL is set in production', () => {
@@ -204,9 +186,7 @@ describe('validateResendEnvironment', () => {
 
       const result = validateResendEnvironment()
 
-      expect(result.warnings).toContain(
-        expect.stringContaining('DEV_EMAIL is set in production')
-      )
+      expect(result.warnings.some(e => e.includes('DEV_EMAIL is set in production'))).toBe(true)
     })
 
     it('should allow valid DEV_EMAIL in development', () => {
@@ -233,12 +213,8 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('SECURITY BREACH')
-      )
-      expect(result.errors).toContain(
-        expect.stringContaining('RESEND_API_KEY has NEXT_PUBLIC_ prefix')
-      )
+      expect(result.errors.some(e => e.includes('SECURITY BREACH'))).toBe(true)
+      expect(result.errors.some(e => e.includes('RESEND_API_KEY has NEXT_PUBLIC_ prefix'))).toBe(true)
     })
 
     it('should error when WEBHOOK_SECRET has NEXT_PUBLIC_ prefix', () => {
@@ -247,12 +223,8 @@ describe('validateResendEnvironment', () => {
       const result = validateResendEnvironment()
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain(
-        expect.stringContaining('SECURITY BREACH')
-      )
-      expect(result.errors).toContain(
-        expect.stringContaining('WEBHOOK_SECRET has NEXT_PUBLIC_ prefix')
-      )
+      expect(result.errors.some(e => e.includes('SECURITY BREACH'))).toBe(true)
+      expect(result.errors.some(e => e.includes('WEBHOOK_SECRET has NEXT_PUBLIC_ prefix'))).toBe(true)
     })
   })
 

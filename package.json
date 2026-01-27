@@ -15,7 +15,10 @@
     "test:watch": "vitest --project=unit",
     "test:ui": "vitest --ui --project=unit",
     "test:coverage": "vitest run --coverage --project=unit",
-    "test:storybook": "vitest run --project=storybook"
+    "test:storybook": "vitest run --project=storybook",
+    "test:integration": "vitest run --project=integration",
+    "test:integration:watch": "vitest --project=integration",
+    "test:all": "npm run test && npm run test:integration"
   },
   "dependencies": {
     "@react-email/components": "^1.0.2",

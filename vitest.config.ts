@@ -44,7 +44,7 @@ export default defineConfig({
           setupFiles: ['.storybook/vitest.setup.ts'],
         },
       },
-      // Proyecto 2: Tests unitarios y de integración (NUEVO)
+      // Proyecto 2: Tests unitarios (existente)
       {
         extends: true,
         test: {
@@ -53,6 +53,20 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
           globals: true,
           css: true,
+          include: ['src/**/__tests__/**/*.{test,spec}.{js,ts,tsx}'],
+        },
+      },
+      // Proyecto 3: Tests de integración (NUEVO)
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          environment: 'node',
+          setupFiles: ['./test/integration/helpers/setup.ts'],
+          globals: true,
+          include: ['test/integration/**/*.{test,spec}.{js,ts}'],
+          testTimeout: 30000, // 30s para tests de integración
+          hookTimeout: 60000, // 60s para beforeAll/afterAll
         },
       },
     ],
