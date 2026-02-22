@@ -21,7 +21,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { calculateShipping } from '@/lib/constants/shipping'
-
+import { getStripeServer } from '@/lib/stripe/server'
 /**
  * Interface for cart items sent from frontend
  * We re-calculate the total here for security
@@ -36,31 +36,9 @@ interface CreatePaymentIntentBody {
   items: CartItem[]
 }
 
-/**
- * Get Stripe instance with lazy initialization
- *
- * IMPORTANT: Stripe is initialized at request time (not at module load)
- * to avoid build-time errors in environments like Vercel where
- * environment variables may not be available during the build phase.
- *
- * This pattern ensures:
- * - Environment variables are read at runtime
- * - Build succeeds even without env vars
- * - Follows Next.js best practices for API routes
- */
-function getStripeInstance(): Stripe {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY is not configured')
-  }
-
-  return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-11-17.clover',
-  })
-}
-
 export async function POST(request: NextRequest) {
   // Initialize Stripe at request time (lazy initialization)
-  const stripe = getStripeInstance()
+  const stripe = getStripeServer()
   try {
     // ================================================================
     // STEP 1: Validate Authentication
