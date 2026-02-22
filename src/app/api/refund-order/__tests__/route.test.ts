@@ -29,10 +29,10 @@ vi.mock('stripe', () => {
                 StripeError: class StripeError extends Error {
                     statusCode?: number
                     code?: string
-                    constructor(message: string, statusCode = 500, code = 'unknown') {
-                        super(message)
-                        this.statusCode = statusCode
-                        this.code = code
+                    constructor(raw: any) {
+                        super(raw.message)
+                        this.statusCode = raw.statusCode || 500
+                        this.code = raw.code || 'unknown'
                     }
                 },
             }
@@ -176,7 +176,12 @@ describe('POST /api/refund-order', () => {
         it('handles Stripe errors gracefully', async () => {
             const Stripe = await import('stripe')
             mockRefundCreate.mockRejectedValue(
-                new Stripe.default.errors.StripeError('Refund failed', 402, 'charge_already_refunded')
+                new Stripe.default.errors.StripeError({
+                    type: 'api_error',
+                    message: 'Refund failed',
+                    statusCode: 402,
+                    code: 'charge_already_refunded'
+                })
             )
 
             const request = new NextRequest('http://localhost:3000/api/refund-order', {
