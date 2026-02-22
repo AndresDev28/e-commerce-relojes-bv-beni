@@ -25,13 +25,13 @@ export default function CancelOrderModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validation
     if (!reason.trim()) {
       setError('Por favor, proporciona un motivo para la cancelación.')
       return
     }
-    
+
     if (!jwt) {
       setError('Error de autenticación. Por favor, inicia sesión de nuevo.')
       return
@@ -40,7 +40,7 @@ export default function CancelOrderModal({
     try {
       setIsSubmitting(true)
       setError(null)
-      
+
       const response = await fetch(`/api/orders/${orderId}/request-cancellation`, {
         method: 'POST',
         headers: {
@@ -65,8 +65,9 @@ export default function CancelOrderModal({
       // Success
       setReason('') // Limpiar el estado o mantenerlo, depende si el modal se destruye
       onSuccess()
-    } catch (err: any) {
-      setError(err.message || 'Error al conectar con el servidor.')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al conectar con el servidor.'
+      setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -90,9 +91,9 @@ export default function CancelOrderModal({
           <p className="text-sm text-neutral font-serif mb-4">
             Lamentamos saber que deseas cancelar tu pedido. Por favor, indícanos el motivo para ayudarnos a mejorar.
           </p>
-          
-          <label 
-            htmlFor="cancellationReason" 
+
+          <label
+            htmlFor="cancellationReason"
             className="block text-sm font-semibold font-sans text-neutral-dark mb-1"
           >
             Motivo de la cancelación <span className="text-red-500">*</span>
@@ -105,9 +106,8 @@ export default function CancelOrderModal({
               if (error) setError(null) // Clear error on typing
             }}
             placeholder="Ej: He cambiado de opinión, me he equivocado de producto..."
-            className={`w-full p-3 border rounded-md font-serif text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors ${
-              error ? 'border-red-500 focus:ring-red-500/50' : 'border-neutral-light'
-            }`}
+            className={`w-full p-3 border rounded-md font-serif text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors ${error ? 'border-red-500 focus:ring-red-500/50' : 'border-neutral-light'
+              }`}
             disabled={isSubmitting}
             required
           />

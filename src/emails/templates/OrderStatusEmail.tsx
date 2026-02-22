@@ -14,7 +14,7 @@
 │           └── <EmailFooter />
  */
 
-import { 
+import {
   Body,
   Container,
   Head,
@@ -81,6 +81,8 @@ const STATUS_MESSAGES: Record<OrderStatus, string> = {
     'Tu pedido ha sido cancelado. Si tienes preguntas, no dudes en contactarnos.',
   [OrderStatus.REFUNDED]:
     'Tu reembolso ha sido procesado. El dinero debería aparecer en tu cuenta en 5-10 días hábiles.',
+  [OrderStatus.CANCELLATION_REQUESTED]:
+    'Hemos recibido tu solicitud de cancelación. Nuestro equipo la revisará en breve.',
 };
 
 /**
@@ -95,6 +97,7 @@ export const EMAIL_SUBJECTS: Record<OrderStatus, string> = {
   [OrderStatus.DELIVERED]: '¡Pedido entregado!',
   [OrderStatus.CANCELLED]: 'Pedido cancelado',
   [OrderStatus.REFUNDED]: 'Reembolso procesado',
+  [OrderStatus.CANCELLATION_REQUESTED]: 'Solicitud de cancelación recibida',
 };
 
 /**
@@ -208,7 +211,7 @@ export default function OrderStatusEmail({
               total={orderData.total}
             />
           </Section>
-          
+
           {/* Footer */}
           <EmailFooter />
         </Container>

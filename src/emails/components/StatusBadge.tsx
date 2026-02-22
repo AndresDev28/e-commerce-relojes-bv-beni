@@ -62,6 +62,12 @@ const STATUS_CONFIG: Record<
     backgroundColor: '#f3e8ff', // purple-100
     icon: '↩',
   },
+  [OrderStatus.CANCELLATION_REQUESTED]: {
+    label: 'Cancelación Solicitada',
+    color: '#b45309', // amber-700
+    backgroundColor: '#fef3c7', // amber-100
+    icon: '⚠️',
+  },
 };
 /**
  * Badge que muestra el estado del pedido con color e ícono

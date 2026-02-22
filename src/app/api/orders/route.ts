@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
 
     // 5. Unwrap attributes if present and return orders with pagination metadata
-    const unwrappedData = data.data.map((item: any) => item.attributes ? item.attributes : item)
+    const unwrappedData = data.data.map((item: Record<string, unknown>) => item.attributes ? item.attributes : item)
 
     return NextResponse.json({
       data: unwrappedData,
