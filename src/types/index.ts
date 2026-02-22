@@ -233,6 +233,7 @@ export enum OrderStatus {
   DELIVERED = 'delivered',  // Entregado exitosamente
   CANCELLED = 'cancelled',  // Cancelado por cliente o admin
   REFUNDED = 'refunded',   // Reembolso procesado
+  CANCELLATION_REQUESTED = 'cancellation_requested', // Cliente solicitó cancelación
 }
 
 /**
@@ -316,6 +317,12 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, OrderStatusConfig> = {
     description: 'Dinero devuelto',
     icon: '↩',
   },
+  [OrderStatus.CANCELLATION_REQUESTED]: {
+    label: 'Cancelación Solicitada',
+    color: 'orange',
+    description: 'Solicitud de cancelación en revisión',
+    icon: '⏳',
+  },
 } as const
 /**
  * Transiciones válidas de estado
@@ -326,13 +333,14 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, OrderStatusConfig> = {
  * isValidStatusTransition(OrderStatus.DELIVERED, OrderStatus.PENDING) // false
  */
 export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
-  [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED, OrderStatus.CANCELLATION_REQUESTED],
+  [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED, OrderStatus.CANCELLATION_REQUESTED],
+  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED, OrderStatus.CANCELLATION_REQUESTED],
   [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.REFUNDED],
   [OrderStatus.DELIVERED]: [OrderStatus.REFUNDED],
   [OrderStatus.CANCELLED]: [], // Estado final
   [OrderStatus.REFUNDED]: [],  // Estado final
+  [OrderStatus.CANCELLATION_REQUESTED]: [OrderStatus.CANCELLED, OrderStatus.PROCESSING], // En espera de resolución por parte del administrador
 }
 /**
  * Estados que indican que el pedido está activo (no terminado)
@@ -342,6 +350,7 @@ export const ACTIVE_ORDER_STATUSES: readonly OrderStatus[] = [
   OrderStatus.PAID,
   OrderStatus.PROCESSING,
   OrderStatus.SHIPPED,
+  OrderStatus.CANCELLATION_REQUESTED,
 ] as const
 /**
  * Estados que indican error o finalización negativa

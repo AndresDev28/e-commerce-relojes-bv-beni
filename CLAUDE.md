@@ -20,6 +20,8 @@ npm run test:watch       # Watch mode
 npm run test:ui          # Interactive Vitest UI
 npm run test:coverage    # Generate coverage report
 npm run test:storybook   # Storybook component tests
+npm run test:integration # Integration tests
+npm run test:all         # Run all test suites
 
 # Build & Quality
 npm run build            # Production build
@@ -65,20 +67,27 @@ React Context API for global state (no Redux). Three main contexts:
 
 ## Testing
 
-Two Vitest projects configured:
+Three Vitest projects configured:
 1. **Unit tests** (`npm test`): jsdom environment for component/logic tests
 2. **Storybook tests** (`npm run test:storybook`): Playwright browser testing
+3. **Integration tests** (`npm run test:integration`): Node environment for API/e2e tests
 
-Test files location: `src/__tests__/` or `__tests__/` folders adjacent to tested code.
+Test files location:
+- Unit: `src/__tests__/` or `__tests__/` adjacent to tested code
+- Integration: `test/integration/` directory
+
+Run all tests: `npm run test:all`
 
 ## Environment Variables
 
 Required in `.env.local` (see `.env.example`):
 - `NEXT_PUBLIC_STRAPI_API_URL` - Strapi backend URL
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe public key
-- `STRIPE_SECRET_KEY` - Stripe secret key
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe public key (pk_test_/pk_live_)
+- `STRIPE_SECRET_KEY` - Stripe secret key (sk_test_/sk_live_)
 - `RESEND_API_KEY` - Email service key
 - `RESEND_FROM_EMAIL` - Sender email address
+- `WEBHOOK_SECRET` - Shared secret for Strapi webhook authentication
+- `DEV_EMAIL` - Development email override (prevents spamming real customers)
 
 ## Documentation
 

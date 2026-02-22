@@ -2,6 +2,7 @@
 import { useAuth } from '@/context/AuthContext'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
+import Link from 'next/link'
 
 export default function MyAccountPage() {
   // Obtenemos el usuario e isLoading
@@ -20,7 +21,14 @@ export default function MyAccountPage() {
       </p>
       <p className="text-neutral-dark font-serif">Email: {user.email}</p>
 
-      {/* Aqui incluiremos historial de pedidos, etc */}
+      {/* Enlace al historial de pedidos */}
+      <div className="mt-6 mb-8">
+        <Link href="/mi-cuenta/pedidos">
+          <Button variant="primary" className="font-sans mr-4">
+            Ver mis pedidos
+          </Button>
+        </Link>
+      </div>
 
       <Button onClick={logout} variant="secondary" className="font-sans">
         Cerrar sesión

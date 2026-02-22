@@ -82,6 +82,13 @@ vi.mock('../OrderTimeline', () => ({
   ),
 }))
 
+// Mock CancelOrderModal
+vi.mock('../CancelOrderModal', () => ({
+  default: ({ isOpen, orderId }: { isOpen: boolean; orderId: string }) => (
+    isOpen ? <div data-testid="cancel-order-modal">Modal open for {orderId}</div> : null
+  ),
+}))
+
 // Mock react-icons
 vi.mock('react-icons/bs', () => ({
   BsArrowLeft: () => <svg data-testid="arrow-left-icon" />,
@@ -734,6 +741,65 @@ describe('[ORD-12] OrderDetail Component', () => {
       // Ambos deben tener el mismo color
       badges.forEach((badge) => {
         expect(badge).toHaveClass('bg-blue-500')
+      })
+    })
+  })
+
+  /**
+   * Test Suite 9: Acciones del Pedido [FRONT-01]
+   */
+  describe('[FRONT-01] Cancelación de Pedido', () => {
+    it('should display "Solicitar cancelación" button for PENDING, PAID, and PROCESSING states', () => {
+      const cancellableStates = [
+        OrderStatus.PENDING,
+        OrderStatus.PAID,
+        OrderStatus.PROCESSING,
+      ]
+
+      cancellableStates.forEach((status) => {
+        const order: OrderData = { ...mockOrder, orderStatus: status }
+        const { unmount } = render(<OrderDetail order={order} />)
+
+        expect(screen.getByRole('button', { name: /solicitar cancelación/i })).toBeInTheDocument()
+        expect(screen.queryByText(/Para devoluciones, por favor contacta con soporte/i)).not.toBeInTheDocument()
+
+        unmount()
+      })
+    })
+
+    it('should display support contact message for SHIPPED and DELIVERED states', () => {
+      const nonCancellableStates = [
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+      ]
+
+      nonCancellableStates.forEach((status) => {
+        const order: OrderData = { ...mockOrder, orderStatus: status }
+        const { unmount } = render(<OrderDetail order={order} />)
+
+        expect(screen.queryByRole('button', { name: /solicitar cancelación/i })).not.toBeInTheDocument()
+        expect(screen.getByText(/Para devoluciones, por favor/i)).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: /contacta con soporte/i })).toBeInTheDocument()
+
+        unmount()
+      })
+    })
+
+    it('should not display cancellation button or support message for CANCELLED or REFUNDED states', () => {
+      const finalStates = [
+        OrderStatus.CANCELLED,
+        OrderStatus.REFUNDED,
+      ]
+
+      finalStates.forEach((status) => {
+        const order: OrderData = { ...mockOrder, orderStatus: status }
+        const { unmount } = render(<OrderDetail order={order} />)
+
+        expect(screen.queryByText(/¿Necesitas ayuda con tu pedido\?/i)).not.toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: /solicitar cancelación/i })).not.toBeInTheDocument()
+        expect(screen.queryByText(/Para devoluciones, por favor/i)).not.toBeInTheDocument()
+
+        unmount()
       })
     })
   })

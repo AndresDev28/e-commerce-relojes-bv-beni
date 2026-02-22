@@ -28,11 +28,13 @@
 
 'use client'
 
+import { useState } from 'react'
 import type { OrderData } from '@/lib/api/orders'
 import StatusBadge from '@/app/components/ui/StatusBadge'
 import OrderTimeline from './OrderTimeline'
+import CancelOrderModal from './CancelOrderModal'
 import { formatPaymentMethod } from '@/utils'
-import { shouldShowStatusIcon } from '@/types'
+import { shouldShowStatusIcon, OrderStatus } from '@/types'
 import { getDeliveryEstimate } from '@/lib/utils/delivery'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -45,6 +47,7 @@ interface OrderDetailProps {
 
 export default function OrderDetail({ order }: OrderDetailProps) {
   const router = useRouter()
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
 
   /**
    * Format date to Spanish format
@@ -325,12 +328,48 @@ export default function OrderDetail({ order }: OrderDetailProps) {
             ))}
           </div>
         </div>
+
+        {/* 6. ACCIONES DEL PEDIDO - [FRONT-01] */}
+        {[OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED].includes(order.orderStatus as OrderStatus) && (
+          <div className="border-t border-neutral-light p-6 bg-red-50/20 rounded-b-lg">
+            <h3 className="text-lg font-bold font-sans text-neutral-dark mb-4">
+              ¿Necesitas ayuda con tu pedido?
+            </h3>
+            {[OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.PROCESSING].includes(order.orderStatus as OrderStatus) ? (
+              <button
+                onClick={() => setIsCancelModalOpen(true)}
+                className="px-4 py-2 border border-red-200 text-red-600 bg-white rounded-md hover:bg-red-50 font-medium transition-colors text-sm"
+              >
+                Solicitar cancelación
+              </button>
+            ) : (
+              <p className="text-sm text-neutral-dark font-serif">
+                El pedido ya ha sido procesado para envío o entregado. Para devoluciones, por favor{' '}
+                <Link href="/contacto" className="text-primary hover:underline font-medium">
+                  contacta con soporte
+                </Link>
+                .
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 6. ORDER TIMELINE */}
+      {/* 7. ORDER TIMELINE */}
       <OrderTimeline
         currentStatus={order.orderStatus}
         statusHistory={order.statusHistory}
+      />
+
+      {/* 8. MODAL DE CANCELACIÓN - [FRONT-02] */}
+      <CancelOrderModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        orderId={order.orderId}
+        onSuccess={() => {
+          setIsCancelModalOpen(false)
+          window.location.reload()
+        }}
       />
     </div>
   )

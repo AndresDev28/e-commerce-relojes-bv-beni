@@ -84,6 +84,21 @@ export default function StatusBadge({
 }: StatusBadgeProps) {
   // Obtener configuración del estado desde ORDER_STATUS_CONFIG
   const config = ORDER_STATUS_CONFIG[status]
+
+  // Fallback si el estado viene del backend y no está configurado en el frontend
+  if (!config) {
+    const sizeClass = sizeClasses[size]
+    return (
+      <span
+        role="status"
+        title="Estado no reconocido"
+        className={`inline-flex items-center gap-1.5 rounded-full text-white font-sans font-medium bg-gray-500 ${sizeClass} cursor-help transition-transform hover:scale-105`}
+      >
+        <span>{status || 'Desconocido'}</span>
+      </span>
+    )
+  }
+
   const colorClass = colorClasses[config.color]
   const sizeClass = sizeClasses[size]
 

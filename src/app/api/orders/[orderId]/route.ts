@@ -102,7 +102,7 @@ export async function GET(
     }
 
     const userOrdersData = await userOrdersResponse.json()
-    const userOrderIds = (userOrdersData.data || []).map((o: { orderId: string }) => o.orderId)
+    const userOrderIds = (userOrdersData.data || []).map((o: Record<string, unknown>) => o.attributes ? (o.attributes as Record<string, unknown>).orderId : o.orderId)
 
     // 4. Check if user owns this order
     if (!userOrderIds.includes(orderId)) {
@@ -126,11 +126,12 @@ export async function GET(
     })
 
     // 5. Find the order in the already-fetched list
-    const order = userOrdersData.data.find((o: { orderId: string }) => o.orderId === orderId)
+    const order = userOrdersData.data.find((o: Record<string, unknown>) => (o.attributes ? (o.attributes as Record<string, unknown>).orderId : o.orderId) === orderId)
 
-    // 6. Return complete order details
+    const unwrappedOrder = order?.attributes ? order.attributes : order
+
     return NextResponse.json({
-      data: order,
+      data: unwrappedOrder,
     })
   } catch (error) {
     console.error('❌ Error in GET /api/orders/:orderId:', error)
