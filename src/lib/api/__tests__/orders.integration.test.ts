@@ -1,3 +1,4 @@
+import { OrderStatus } from '@/types'
 /**
  * Integration tests para Orders API con Strapi real
  * [PAY-20] Tests: Orden se guarda en backend
@@ -94,7 +95,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 99.99,
         shipping: 0,
         total: 99.99,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
         paymentIntentId: 'pi_test_integration',
       }
 
@@ -124,7 +125,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 99.99,
         shipping: 5.95,
         total: 105.94,
-        orderStatus: 'pending',
+        orderStatus: OrderStatus.PENDING,
       }
 
       // ACT
@@ -155,7 +156,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 99.99,
         shipping: 0,
         total: 99.99,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
       }
 
       const orderData2: CreateOrderData = {
@@ -164,7 +165,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 149.99,
         shipping: 5.95,
         total: 155.94,
-        orderStatus: 'pending',
+        orderStatus: OrderStatus.PENDING,
       }
 
       // ACT
@@ -184,10 +185,10 @@ describe('[PAY-20] Orders Integration Tests', () => {
      */
     it('should save different order statuses correctly', async () => {
       const statuses: Array<'pending' | 'paid' | 'shipped' | 'delivered'> = [
-        'pending',
-        'paid',
-        'shipped',
-        'delivered',
+        OrderStatus.PENDING,
+        OrderStatus.PAID,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
       ]
 
       for (const status of statuses) {
@@ -198,7 +199,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
           subtotal: 99.99,
           shipping: 0,
           total: 99.99,
-          orderStatus: status,
+          orderStatus: status as OrderStatus,
         }
 
         const result = await createOrder(orderData, authToken)
@@ -222,7 +223,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 99.99,
         shipping: 0,
         total: 99.99,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
       }
 
       // ACT
@@ -251,7 +252,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 99.99,
         shipping: 0,
         total: 99.99,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
       }
 
       // ACT & ASSERT
@@ -272,7 +273,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 150.0, // Sobre el umbral
         shipping: 0,
         total: 150.0,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
       }
 
       // ACT
@@ -299,7 +300,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 99.99,
         shipping: 0,
         total: 99.99,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
       }
 
       await createOrder(orderData, authToken)
@@ -364,7 +365,7 @@ describe('[PAY-20] Orders Integration Tests', () => {
         subtotal: 199.99,
         shipping: 5.95,
         total: 205.94,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
         paymentIntentId: 'pi_test_e2e',
       }
 
