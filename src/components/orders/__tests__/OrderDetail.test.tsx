@@ -802,5 +802,21 @@ describe('[ORD-12] OrderDetail Component', () => {
         unmount()
       })
     })
+
+    it('should open CancelOrderModal when clicking "Solicitar cancelación"', async () => {
+      const user = userEvent.setup()
+      // Use a cancellable state
+      const order: OrderData = { ...mockOrder, orderStatus: OrderStatus.PAID }
+      render(<OrderDetail order={order} />)
+
+      // Ensure modal is not initially open (mock renders null)
+      expect(screen.queryByTestId('cancel-order-modal')).not.toBeInTheDocument()
+
+      const cancelButton = screen.getByRole('button', { name: /solicitar cancelación/i })
+      await user.click(cancelButton)
+
+      // Our mock returns "Modal open for {orderId}" when isOpen is true
+      expect(screen.getByTestId('cancel-order-modal')).toHaveTextContent(`Modal open for ${order.orderId}`)
+    })
   })
 })
