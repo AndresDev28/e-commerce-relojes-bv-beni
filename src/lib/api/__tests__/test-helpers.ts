@@ -3,7 +3,7 @@
  * [PAY-19] [PAY-20] - Centralized test utilities
  */
 
-import type { CartItem } from '@/types'
+import { type CartItem, OrderStatus } from '@/types'
 import type { OrderData } from '../orders'
 
 /**
@@ -48,7 +48,7 @@ export function createMockOrderData(
     subtotal: 104.98,
     shipping: 0,
     total: 104.98,
-    orderStatus: 'paid',
+    orderStatus: OrderStatus.PAID,
     paymentIntentId: 'pi_test_123456',
     createdAt: '2025-11-07T10:00:00.000Z',
     updatedAt: '2025-11-07T10:00:00.000Z',

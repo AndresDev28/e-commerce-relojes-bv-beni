@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { CartItem } from '@/types'
+import { type CartItem, OrderStatus } from '@/types'
 
 // Mock de API_URL antes de importar el módulo
 // IMPORTANTE: No se pueden usar variables aquí porque vi.mock se hace hoisting
@@ -59,7 +59,7 @@ describe('[PAY-19] Orders API', () => {
       subtotal: 104.98,
       shipping: 0,
       total: 104.98,
-      orderStatus: 'paid',
+      orderStatus: OrderStatus.PAID,
       paymentIntentId: 'pi_test_123456',
     }
 
@@ -72,7 +72,7 @@ describe('[PAY-19] Orders API', () => {
         subtotal: 104.98,
         shipping: 0,
         total: 104.98,
-        orderStatus: 'paid',
+        orderStatus: OrderStatus.PAID,
         paymentIntentId: 'pi_test_123456',
         createdAt: '2025-11-07T10:00:00.000Z',
         updatedAt: '2025-11-07T10:00:00.000Z',
@@ -248,7 +248,7 @@ describe('[PAY-19] Orders API', () => {
       // ARRANGE
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
-        .mockImplementation(() => {})
+        .mockImplementation(() => { })
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
@@ -300,17 +300,17 @@ describe('[PAY-19] Orders API', () => {
      */
     it('should handle different order statuses', async () => {
       const statuses: Array<CreateOrderData['orderStatus']> = [
-        'pending',
-        'paid',
-        'shipped',
-        'delivered',
-        'cancelled',
+        OrderStatus.PENDING,
+        OrderStatus.PAID,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+        OrderStatus.CANCELLED,
       ]
 
       for (const status of statuses) {
         const orderData: CreateOrderData = {
           ...mockOrderData,
-          orderStatus: status,
+          orderStatus: status as OrderStatus,
         }
 
         const mockFetch = vi.mocked(fetch)
@@ -340,7 +340,7 @@ describe('[PAY-19] Orders API', () => {
           subtotal: 104.98,
           shipping: 0,
           total: 104.98,
-          orderStatus: 'paid',
+          orderStatus: OrderStatus.PAID,
           paymentIntentId: 'pi_test_123',
           createdAt: '2025-11-07T10:00:00.000Z',
           updatedAt: '2025-11-07T10:00:00.000Z',
@@ -353,7 +353,7 @@ describe('[PAY-19] Orders API', () => {
           subtotal: 50.0,
           shipping: 5.95,
           total: 55.95,
-          orderStatus: 'shipped',
+          orderStatus: OrderStatus.SHIPPED,
           createdAt: '2025-11-06T10:00:00.000Z',
           updatedAt: '2025-11-06T10:00:00.000Z',
           publishedAt: '2025-11-06T10:00:00.000Z',
@@ -467,7 +467,7 @@ describe('[PAY-19] Orders API', () => {
       // ARRANGE
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
-        .mockImplementation(() => {})
+        .mockImplementation(() => { })
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
@@ -518,7 +518,7 @@ describe('[PAY-19] Orders API', () => {
           subtotal: 100,
           shipping: 0,
           total: 100,
-          orderStatus: 'pending',
+          orderStatus: OrderStatus.PENDING,
           createdAt: '2025-11-07T10:00:00.000Z',
           updatedAt: '2025-11-07T10:00:00.000Z',
           publishedAt: '2025-11-07T10:00:00.000Z',

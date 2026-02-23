@@ -1,3 +1,4 @@
+import { OrderStatus } from '@/types'
 /**
  * [ORD-07] Tests: OrderHistory renderiza lista correctamente
  *
@@ -72,7 +73,7 @@ const createMockOrder = (overrides: Partial<OrderData> = {}): OrderData => ({
   subtotal: 59.98,
   shipping: 0,
   total: 59.98,
-  orderStatus: 'paid',
+  orderStatus: OrderStatus.PAID,
   createdAt: '2025-11-20T10:00:00Z',
   updatedAt: '2025-11-20T10:00:00Z',
   publishedAt: '2025-11-20T10:00:00Z',
@@ -201,7 +202,7 @@ describe('[ORD-07] OrderHistory Component', () => {
         createMockOrder({
           orderId: 'ORD-1700000001-A',
           total: 99.99,
-          orderStatus: 'paid',
+          orderStatus: OrderStatus.PAID,
           createdAt: '2025-11-20T10:00:00Z',
         }),
         createMockOrder({
@@ -209,7 +210,7 @@ describe('[ORD-07] OrderHistory Component', () => {
           documentId: 'doc-002',
           orderId: 'ORD-1700000002-B',
           total: 149.99,
-          orderStatus: 'shipped',
+          orderStatus: OrderStatus.SHIPPED,
           createdAt: '2025-11-19T10:00:00Z',
         }),
       ]
@@ -569,7 +570,7 @@ describe('[ORD-07] OrderHistory Component', () => {
         createMockOrder({
           orderId: 'ORD-1700000001-A',
           total: 99.99,
-          orderStatus: 'delivered',
+          orderStatus: OrderStatus.DELIVERED,
           createdAt: '2025-11-20T10:00:00Z',
         }),
         createMockOrder({
@@ -577,7 +578,7 @@ describe('[ORD-07] OrderHistory Component', () => {
           documentId: 'doc-002',
           orderId: 'ORD-1700000002-B',
           total: 149.99,
-          orderStatus: 'shipped',
+          orderStatus: OrderStatus.SHIPPED,
           createdAt: '2025-11-19T10:00:00Z',
         }),
       ]
