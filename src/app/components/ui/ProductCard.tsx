@@ -5,18 +5,19 @@ import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
 import { Product } from '@/types'
 import { useFavorites } from '@/context/FavoritesContext'
+import { useCart } from '@/context/CartContext'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
 type ProductCardProps =
   | {
-      product: Product
-    }
+    product: Product
+  }
   | {
-      href: string
-      imageUrl: string | string[]
-      name: string
-      price: number
-    }
+    href: string
+    imageUrl: string | string[]
+    name: string
+    price: number
+  }
 
 const ProductCard = (props: ProductCardProps) => {
   // Normaliza props para soportar ambas firmas
@@ -27,8 +28,20 @@ const ProductCard = (props: ProductCardProps) => {
 
   // Usa la primera imagen disponible; admite string o array
   const mainImageUrl = Array.isArray(rawImages) ? rawImages[0] : rawImages
+
+  const { addToCart } = useCart()
+  const isOutOfStock = 'product' in props ? props.product.stock === 0 : false
+
   const handleAddToCart = () => {
-    console.log(`Producto ${name} agregado al carrito!`)
+    if ('product' in props) {
+      if (props.product.stock > 0) {
+        addToCart(props.product, 1)
+      } else {
+        console.warn(`[AND-99] No stock for ${name}`)
+      }
+    } else {
+      console.warn('Real add to cart limited to product objects')
+    }
   }
 
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
@@ -81,8 +94,9 @@ const ProductCard = (props: ProductCardProps) => {
         <div className="border-r h-8 border-neutral-light"></div>
         <ProductActionIcon
           icon={ShoppingCart}
-          label="Carrito"
+          label={isOutOfStock ? 'Agotado' : 'Carrito'}
           onClick={handleAddToCart}
+          disabled={isOutOfStock}
         />
         <div className="border-r h-8 border-neutral-light"></div>
         <ProductActionIcon

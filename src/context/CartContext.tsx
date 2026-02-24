@@ -10,7 +10,7 @@ export interface CartItem extends Product {
 // Contrato principal del Contexto
 interface CartContextType {
   cartItems: CartItem[]; // El estado: un array de nuestros items de carrito.
-  addToCart: (product: Product, quantity: number) => void; 
+  addToCart: (product: Product, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, newQuantity: number) => void;
   clearCart: () => void
@@ -24,26 +24,33 @@ interface CartProviderProps {
   children: ReactNode
 }
 
-export const CartProvider = ({children}: CartProviderProps) => {
+export const CartProvider = ({ children }: CartProviderProps) => {
   // 1. Creamos un estado usando 'useState' para guardar la lista de 'CartItem'.
   // Lo inicializamos como un array vacío.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   // 2. Creamos la función 'addToCart'. Esta función:
-  
+
   const addToCart = (product: Product, quantity: number) => {
     setCartItems(prevItems => {
-      //  - Revisa si el producto ya está en el carrito.
       const existingItem = prevItems.find(item => item.id === product.id);
 
-      if(existingItem) {
-        // Si existe, actualizamos su cantidad
+      if (existingItem) {
+        // [AND-99] Validar contra el stock disponible
+        const newTotalQuantity = existingItem.quantity + quantity;
+        const finalQuantity = Math.min(newTotalQuantity, product.stock);
+
+        if (newTotalQuantity > product.stock) {
+          console.warn(`[AND-99] No hay suficiente stock para ${product.name}. Limitando a ${product.stock}.`);
+        }
+
         return prevItems.map(item =>
-          item.id === product.id ? {...item, quantity: item.quantity + quantity}
-          : item
+          item.id === product.id ? { ...item, quantity: finalQuantity }
+            : item
         );
       } else {
-        // Si no existe, lo agregamos al array
-        return [...prevItems, {...product, quantity}];
+        // [AND-99] Asegurar que no agregamos más del stock inicial (aunque el botón lo bloquee)
+        const finalQuantity = Math.min(quantity, product.stock);
+        return [...prevItems, { ...product, quantity: finalQuantity }];
       }
     });
   };
@@ -57,18 +64,22 @@ export const CartProvider = ({children}: CartProviderProps) => {
   const updateQuantity = (productId: string, newQuantity: number) => {
     setCartItems(prevItems => {
       // Caso 1: Si la cantidad es 0 eliminamos el producto
-      if(newQuantity <= 0) {
+      if (newQuantity <= 0) {
         return prevItems.filter(item => item.id !== productId)
       }
+
       // Caso 2: Si la cantidad es mayor que 0, actualizamos el producto.
-      // Usamos .map() para crear un nuevo array.
       return prevItems.map(item => {
-        // Si es el producto que buscamos
-        if(item.id === productId) {
-          // Lo devolvemos con la cantidad actualizada (un nuevo Objeto)
-          return { ...item, quantity: newQuantity }
+        if (item.id === productId) {
+          // [AND-99] Validar contra el stock del producto guardado en el item
+          const finalQuantity = Math.min(newQuantity, item.stock);
+
+          if (newQuantity > item.stock) {
+            console.warn(`[AND-99] Cantidad solicitada supera stock (${item.stock}) para ${item.name}`);
+          }
+
+          return { ...item, quantity: finalQuantity }
         }
-        // Sino lo devolvemos sin cambios
         return item;
       })
     })
@@ -79,7 +90,7 @@ export const CartProvider = ({children}: CartProviderProps) => {
   }
 
   return (
-    <CartContext.Provider value={{cartItems, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   )
