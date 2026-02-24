@@ -31,6 +31,7 @@ export default function CheckoutPage() {
   const { cartItems, clearCart } = useCart()
   const [paymentSuccessful, setPaymentSuccessful] = useState(false)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
   const [stripePromise] = useState(getStripePromise)
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
@@ -58,8 +59,8 @@ export default function CheckoutPage() {
     }
 
     // Validación 2: Carrito no debe estar vacío
-    // IMPORTANTE: No redirigir si el pago fue exitoso
-    if (cartItems.length === 0 && !paymentSuccessful) {
+    // IMPORTANTE: No redirigir si el pago fue exitoso o hay error de orden
+    if (cartItems.length === 0 && !paymentSuccessful && !orderError) {
       console.log(
         '🔍 [useEffect] Carrito vacío y pago NO exitoso, redirigiendo a /tienda'
       )
@@ -68,7 +69,7 @@ export default function CheckoutPage() {
     }
 
     console.log('🔍 [useEffect] Todo OK, no se redirige')
-  }, [authLoading, user, cartItems, router, paymentSuccessful])
+  }, [authLoading, user, cartItems, router, paymentSuccessful, orderError])
 
   // Mostrar loading mientras se valida la autenticación
   if (authLoading) {
@@ -85,9 +86,8 @@ export default function CheckoutPage() {
   }
 
   // No renderizar contenido si no está autenticado o carrito vacío
-  // (el useEffect manejará la redirección)
-  // IMPORTANTE: Permitir renderizado si el pago fue exitoso
-  if (!user || (cartItems.length === 0 && !paymentSuccessful)) {
+  // IMPORTANTE: Permitir renderizado si hay un error de orden
+  if (!user || (cartItems.length === 0 && !paymentSuccessful && !orderError)) {
     return null
   }
 
@@ -101,6 +101,7 @@ export default function CheckoutPage() {
     try {
       // Activar estado de carga
       setIsCreatingOrder(true)
+      setOrderError(null)
 
       // Marcar pago como exitoso ANTES de vaciar el carrito
       setPaymentSuccessful(true)
@@ -109,9 +110,6 @@ export default function CheckoutPage() {
       if (jwt) {
         console.log('💾 Creando orden en Strapi...')
 
-        // Extract payment method details from PaymentIntent
-        // latest_charge is expanded via the /api/create-payment-intent endpoint
-        // TypeScript doesn't know about expanded fields, so we access them safely
         const expandedPaymentIntent = paymentIntent as PaymentIntent & {
           latest_charge?: {
             payment_method_details?: {
@@ -153,11 +151,18 @@ export default function CheckoutPage() {
       router.push(`/order-confirmation?orderId=${orderId}`)
     } catch (error) {
       console.error('❌ Error al crear la orden:', error)
-      // Aún así redirigir usando el mismo orderId
-      clearCart()
-      router.push(`/order-confirmation?orderId=${orderId}`)
+
+      // [AND-99] NO redirigir a la página de éxito si la orden falló
+      const errorMsg = error instanceof Error
+        ? error.message
+        : 'Error al crear la orden'
+
+      setOrderError(
+        `Tu pago fue procesado, pero hubo un problema al registrar tu pedido: ${errorMsg}. ` +
+        `Por favor, contacta con soporte indicando tu ID de pago: ${paymentIntent.id}`
+      )
+      setPaymentSuccessful(false)
     } finally {
-      // Desactivar estado de carga
       setIsCreatingOrder(false)
     }
   }
@@ -182,6 +187,32 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-sans font-bold text-dark mb-8">
           Finalizar Compra
         </h1>
+
+        {/* [AND-99] Error al registrar el pedido */}
+        {orderError && (
+          <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-lg font-sans font-semibold text-red-800 mb-2">
+                  Error al registrar el pedido
+                </h3>
+                <p className="text-sm text-red-700 font-sans">
+                  {orderError}
+                </p>
+                <div className="mt-4 flex gap-3">
+                  <Link href="/tienda">
+                    <Button variant="outline">
+                      Volver a la Tienda
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Columna Izquierda - Formulario de Pago */}
@@ -258,3 +289,4 @@ export default function CheckoutPage() {
     </div>
   )
 }
+

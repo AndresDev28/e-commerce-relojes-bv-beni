@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import QuantitySelector from '@/app/components/ui/QuantitySelector'
 import Button from '@/app/components/ui/Button'
-import { CheckSquare } from 'lucide-react'
+import { CheckSquare, XCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useFavorites } from '@/context/FavoritesContext'
 import { Heart } from 'lucide-react'
@@ -34,12 +34,18 @@ export default function ProductDetailClient({
       : ['/images/empty-cart.png']
   const [activeImage, setActiveImage] = useState(validImages[0])
   const [quantity, setQuantity] = useState(1)
+  const isOutOfStock = product.stock === 0
   const { addToCart } = useCart()
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
   const favorite = isFavorite(product.id)
 
   const handleIncrement = () => {
-    setQuantity(prev => prev + 1)
+    setQuantity(prev => {
+      if (prev < product.stock) {
+        return prev + 1
+      }
+      return prev
+    })
   }
 
   const handleDecrement = () => {
@@ -158,10 +164,21 @@ export default function ProductDetailClient({
           <div className="mt-8">
             {/* Disponibilidad */}
             <div className="flex items-center gap-2 mb-4">
-              <CheckSquare size={20} className="text-green-600" />
-              <span className="font-semibold text-neutral-medium">
-                Hay existencias
-              </span>
+              {isOutOfStock ? (
+                <>
+                  <XCircle size={20} className="text-secondary" />
+                  <span className="font-semibold text-secondary">
+                    Sin existencias (Agotado)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CheckSquare size={20} className="text-green-600" />
+                  <span className="font-semibold text-neutral-medium">
+                    Hay existencias ({product.stock} disponibles)
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Selector y Botón Principal */}
@@ -170,24 +187,25 @@ export default function ProductDetailClient({
                 quantity={quantity}
                 onIncrement={handleIncrement}
                 onDecrement={handleDecrement}
+                disabled={isOutOfStock}
               />
               <Button
                 variant="secondary" // Tu botón rojo
                 className="flex-grow py-3 text-lg" // Hacemos el botón más grande
                 onClick={handleAddToCart}
+                disabled={isOutOfStock}
               >
-                Añadir al Carrito
+                {isOutOfStock ? 'Agotado' : 'Añadir al Carrito'}
               </Button>
               <button
                 onClick={toggleFavorite}
                 aria-label={
                   favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'
                 }
-                className={`p-3 rounded-md border transition-colors ${
-                  favorite
-                    ? 'border-primary text-primary'
-                    : 'border-neutral-light text-neutral-medium hover:text-primary hover:border-primary'
-                }`}
+                className={`p-3 rounded-md border transition-colors ${favorite
+                  ? 'border-primary text-primary'
+                  : 'border-neutral-light text-neutral-medium hover:text-primary hover:border-primary'
+                  }`}
                 title={favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
               >
                 <Heart className={favorite ? 'fill-current' : ''} />

@@ -104,6 +104,52 @@ export async function POST(request: NextRequest) {
       total,
       items: items.length,
     })
+
+    // ================================================================
+    // STEP 3.5: [AND-99] Pre-validate stock availability
+    // ================================================================
+    // Check stock BEFORE creating the Payment Intent to prevent charging
+    // customers for products that are out of stock.
+    const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL
+    if (STRAPI_URL) {
+      for (const item of items) {
+        try {
+          const productRes = await fetch(
+            `${STRAPI_URL}/api/products?filters[id][$eq]=${item.id}&fields[0]=stock&fields[1]=name`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+
+          if (productRes.ok) {
+            const productData = await productRes.json()
+            const product = productData.data?.[0]
+
+            if (product) {
+              const availableStock = product.stock ?? 0
+              if (availableStock < item.quantity) {
+                console.warn(
+                  `[AND-99] Stock check failed for "${item.name}": Available=${availableStock}, Requested=${item.quantity}`
+                )
+                return NextResponse.json(
+                  {
+                    error: `No hay suficiente stock para "${item.name}". Disponible: ${availableStock}, Solicitado: ${item.quantity}`,
+                    code: 'INSUFFICIENT_STOCK',
+                  },
+                  { status: 400 }
+                )
+              }
+            }
+          }
+        } catch (stockError) {
+          // If stock check fails, log but don't block (fail-open for resilience)
+          console.warn(`[AND-99] Stock check failed for item ${item.id}:`, stockError)
+        }
+      }
+      console.log('✅ [AND-99] Stock pre-validation passed for all items')
+    }
     // ================================================================
     // STEP 4: Create Payment Intent with Stripe
     // ================================================================
