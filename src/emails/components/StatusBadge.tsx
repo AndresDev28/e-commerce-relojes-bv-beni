@@ -6,6 +6,10 @@ interface StatusBadgeProps {
    * Estado del pedido
    */
   status: OrderStatus;
+  /**
+   * Si true, muestra badge de "Cancelación Rechazada" en vez del estado actual
+   */
+  isCancellationRejection?: boolean;
 }
 /**
  * Configuración visual de cada estado
@@ -77,8 +81,15 @@ const STATUS_CONFIG: Record<
  * @example
  * <StatusBadge status={OrderStatus.PAID} />
  */
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
+export function StatusBadge({ status, isCancellationRejection }: StatusBadgeProps) {
+  const REJECTION_CONFIG = {
+    label: 'Cancelación Rechazada',
+    color: '#991b1b',           // red-800
+    backgroundColor: '#fee2e2', // red-100
+    icon: '❌',
+  };
+
+  const config = isCancellationRejection ? REJECTION_CONFIG : STATUS_CONFIG[status];
   return (
     <Section
       style={{
