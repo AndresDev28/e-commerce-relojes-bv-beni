@@ -47,6 +47,8 @@ interface SendOrderEmailRequest {
     total: number
     createdAt?: string
   }
+  previousOrderStatus?: OrderStatus
+  statusChangeNote?: string | null
 }
 
 /**
@@ -55,7 +57,7 @@ interface SendOrderEmailRequest {
  */
 function validateWebhookSecret(request: NextRequest): boolean {
   const webhookSecret = request.headers.get('x-webhook-secret')
-  
+
   if (!webhookSecret) {
     console.error('❌ Missing X-Webhook-Secret header')
     return false
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Validate required fields
-    const { orderId, customerEmail, orderStatus, orderData } = body
+    const { orderId, customerEmail, orderStatus, orderData, previousOrderStatus, statusChangeNote } = body
 
     if (!orderId || !customerEmail || !orderStatus || !orderData) {
       console.error('❌ Missing required fields:', { orderId, customerEmail, orderStatus, hasOrderData: !!orderData })
@@ -139,14 +141,22 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Request validated for order ${orderId}`)
 
+    const isCancellationRejection = previousOrderStatus === 'cancellation_requested' &&
+      (orderStatus === 'processing' || orderStatus === 'paid' || orderStatus === 'pending')
+
     // 6. Generate email content
-    const subject = getEmailSubject(orderId, orderStatus)
+    const subject = isCancellationRejection
+      ? `Solicitud de cancelación rechazada - ${orderId}`
+      : getEmailSubject(orderId, orderStatus)
+
     const html = await renderEmailToHtml(
       OrderStatusEmail({
         orderId,
         customerName: body.customerName,
         orderStatus,
         orderData,
+        isCancellationRejection,
+        statusChangeNote,
       })
     )
 
@@ -176,7 +186,7 @@ export async function POST(request: NextRequest) {
       // This prevents Strapi lifecycle hook from failing
       console.error(`❌ Email sending failed for order ${orderId}:`, result.error)
       console.log('⚠️  Returning success to Strapi (order update should not be blocked)')
-      
+
       return NextResponse.json({
         success: false,
         error: result.error,
@@ -188,7 +198,7 @@ export async function POST(request: NextRequest) {
     // Unexpected error
     console.error('❌ Unexpected error in send-order-email:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    
+
     // Return 200 to prevent blocking Strapi
     return NextResponse.json({
       success: false,

@@ -81,7 +81,7 @@ describe('POST /api/send-order-email', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    
+
     // Setup environment
     process.env.WEBHOOK_SECRET = validWebhookSecret
     process.env.RESEND_API_KEY = 're_test_key'
@@ -424,5 +424,37 @@ describe('POST /api/send-order-email', () => {
       expect(callArgs.html).toContain('Casio G-SHOCK')
       expect(callArgs.html).toContain('Casio Edifice')
     })
+
+    it('should handle cancellation rejections properly (REF-12)', async () => {
+      vi.mocked(sendEmail).mockResolvedValueOnce({
+        success: true,
+        emailId: 'email_cancellation_rejection',
+        attempt: 1,
+      })
+
+      const rejectionBody = {
+        ...validRequestBody,
+        previousOrderStatus: OrderStatus.CANCELLATION_REQUESTED,
+        orderStatus: OrderStatus.PROCESSING,
+        statusChangeNote: 'No podemos cancelar porque ya se estampó el nombre.',
+      }
+
+      const request = new Request('http://localhost:3000/api/send-order-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': validWebhookSecret,
+        },
+        body: JSON.stringify(rejectionBody),
+      })
+
+      await POST(request as any)
+
+      const callArgs = vi.mocked(sendEmail).mock.calls[0][0]
+      expect(callArgs.subject).toContain('Solicitud de cancelación rechazada')
+      expect(callArgs.html).toContain('ya se estampó el nombre')
+      expect(callArgs.html).toContain('Lamentamos informarte que tu solicitud de cancelación no ha podido ser aceptada')
+    })
   })
 })
+
