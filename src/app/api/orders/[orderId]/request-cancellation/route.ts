@@ -81,7 +81,9 @@ export async function POST(
             body: JSON.stringify({
                 data: {
                     orderStatus: 'cancellation_requested',
-                    statusChangeNote: reason
+                    cancellationReason: reason.substring(0, 1000),
+                    cancellationDate: new Date().toISOString(),
+                    statusChangeNote: `El cliente ha solicitado la cancelación del pedido. Motivo: ${reason}`,
                 }
             })
         })

@@ -175,7 +175,7 @@ export default function OrderStatusEmail({
           <EmailHeader />
 
           {/* Badge de estado */}
-          <StatusBadge status={orderStatus} />
+          <StatusBadge status={orderStatus} isCancellationRejection={isCancellationRejection} />
 
           {/* Contenido principal */}
           <Section
