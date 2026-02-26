@@ -61,6 +61,14 @@ export interface OrderStatusEmailProps {
     total: number;
     createdAt?: string;
   };
+  /**
+   * Indica si el correo es una notificación de rechazo de cancelación
+   */
+  isCancellationRejection?: boolean;
+  /**
+   * Nota opcional del administrador (ej. motivo de rechazo)
+   */
+  statusChangeNote?: string | null;
 }
 
 /**
@@ -124,21 +132,30 @@ export default function OrderStatusEmail({
   customerName,
   orderStatus,
   orderData,
+  isCancellationRejection,
+  statusChangeNote,
 }: OrderStatusEmailProps) {
-  const message = STATUS_MESSAGES[orderStatus]
+  const message = isCancellationRejection
+    ? `Lamentamos informarte que tu solicitud de cancelación no ha podido ser aceptada. ${statusChangeNote ? `Motivo: ${statusChangeNote}` : 'Tu pedido continuará su procesamiento normal.'}`
+    : STATUS_MESSAGES[orderStatus]
+
+  const subjectTitle = isCancellationRejection
+    ? 'Solicitud de cancelación rechazada'
+    : EMAIL_SUBJECTS[orderStatus]
+
   const greetings = customerName || 'Cliente'
 
   return (
     <Html>
       <Head>
         <title>
-          {EMAIL_SUBJECTS[orderStatus]} - {orderId}
+          {`${subjectTitle} - ${orderId}`}
         </title>
       </Head>
 
       {/* Preview text (aparece en inbox antes de abrir) */}
       <Preview>
-        {EMAIL_SUBJECTS[orderStatus]} - {orderId}
+        {`${subjectTitle} - ${orderId}`}
       </Preview>
 
       <Body
