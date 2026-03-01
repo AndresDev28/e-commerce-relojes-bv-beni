@@ -39,7 +39,7 @@ import { useRouter } from 'next/navigation'
 import Head from 'next/head'
 import { useAuth } from '@/context/AuthContext'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
-import OrderDetail from '@/components/orders/OrderDetail'
+import OrderDetail from '@/features/orders/components/OrderDetail'
 import type { OrderData } from '@/lib/api/orders'
 
 /**
