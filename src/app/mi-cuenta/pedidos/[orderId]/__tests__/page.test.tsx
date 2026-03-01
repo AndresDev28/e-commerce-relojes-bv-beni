@@ -45,7 +45,7 @@ vi.mock('@/app/components/ui/Breadcrumbs', () => ({
   ),
 }))
 
-vi.mock('@/components/orders/OrderDetail', () => ({
+vi.mock('@/features/orders/components/OrderDetail', () => ({
   default: ({ order }: { order: { orderId: string } }) => (
     <div data-testid="order-detail">Order: {order.orderId}</div>
   ),
