@@ -7,7 +7,7 @@ import type { CartItem } from '@/types'
 const mockCartItems: CartItem[] = []
 const mockUseCart = vi.fn()
 
-vi.mock('@/context/CartContext', () => ({
+vi.mock('@/features/cart', () => ({
   useCart: () => mockUseCart(),
 }))
 

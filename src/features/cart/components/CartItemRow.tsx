@@ -1,9 +1,9 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCart } from '@/context/CartContext'
+import { useCart } from '@/features/cart'
 import { CartItem } from '@/types'
-import QuantitySelector from './QuantitySelector'
+import QuantitySelector from '@/app/components/ui/QuantitySelector'
 import { Trash2 } from 'lucide-react'
 
 interface CartItemProps {

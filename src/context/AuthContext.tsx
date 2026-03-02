@@ -12,7 +12,7 @@ import {
   AUTH_LOGIN_ENDPOINT,
   AUTH_REGISTER_ENDPOINT,
 } from '@/lib/constants'
-import { useCart } from './CartContext'
+import { useCart } from '@/features/cart'
 
 /**
  * ===================================================
@@ -347,7 +347,7 @@ export const useAuth = () => {
   if (context === undefined) {
     throw new Error(
       'useAuth debe ser usado dentro de un AuthProvider. ' +
-        'Asegúrate de envolver tu aplicación con <AuthProvider>'
+      'Asegúrate de envolver tu aplicación con <AuthProvider>'
     )
   }
 

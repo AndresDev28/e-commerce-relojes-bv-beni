@@ -1,4 +1,4 @@
-import CategoryCard from './ui/CategoryCard'
+import CategoryCard from './CategoryCard'
 import { CategoryItem, StrapiCategory, StrapiImage } from '@/types'
 
 interface CategoryGridProps {

@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
 import { Product } from '@/types'
-import { useFavorites } from '@/context/FavoritesContext'
-import { useCart } from '@/context/CartContext'
+import { useFavorites } from '@/features/favorites'
+import { useCart } from '@/features/cart'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
 type ProductCardProps =

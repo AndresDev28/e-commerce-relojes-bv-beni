@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { CartProvider, useCart } from '@/context/CartContext'
+import { CartProvider, useCart } from '@/features/cart/context/CartContext'
 import { Product } from '@/types'
 
 // ============================================

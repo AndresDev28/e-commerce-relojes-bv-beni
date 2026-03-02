@@ -1,10 +1,9 @@
 'use client'
-import { useFavorites } from '@/context/FavoritesContext'
+import { useFavorites, FavoriteItemRow } from '@/features/favorites'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/app/components/ui/Button'
-import FavoriteItemRow from '@/app/components/ui/FavoriteItemRow'
 
 export default function FavoritesPage() {
   // Extraemos del contexto lo que necesitamos

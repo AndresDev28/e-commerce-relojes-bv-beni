@@ -2,10 +2,9 @@
 export const dynamic = 'force-dynamic'
 import React from 'react'
 import HeroSection from '@/app/components/HeroSection'
-import FeaturedProducts from '@/app/components/FeaturedProducts'
+import { FeaturedProducts, CategoryGrid } from '@/features/catalog'
 import TrustSection from '@/app/components/TrustSection'
 import { getProducts, getCategories } from '@/lib/api'
-import CategoryGrid from '@/app/components/CategoryGrid'
 
 // 1. Agregamos async
 export default async function Home() {

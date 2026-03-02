@@ -1,4 +1,4 @@
-import ProductCard from '@/app/components/ui/ProductCard'
+import ProductCard from './ProductCard'
 import { Product, StrapiImage, StrapiProduct } from '@/types'
 
 interface FeaturedProductsProps {

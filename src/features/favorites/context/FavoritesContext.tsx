@@ -6,7 +6,7 @@ import {
   useContext,
   useEffect,
 } from 'react'
-import { useAuth } from './AuthContext'
+import { useAuth } from '@/context/AuthContext'
 import { Product, StrapiProduct, StrapiImage } from '@/types'
 import { API_URL } from '@/lib/constants'
 

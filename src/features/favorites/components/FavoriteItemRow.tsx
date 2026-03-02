@@ -1,11 +1,11 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useFavorites } from '@/context/FavoritesContext'
-import { useCart } from '@/context/CartContext'
+import { useFavorites } from '@/features/favorites'
+import { useCart } from '@/features/cart'
 import { Product } from '@/types'
 import { Heart, ShoppingCart } from 'lucide-react'
-import Button from './Button'
+import Button from '@/app/components/ui/Button'
 
 interface FavoriteItemProps {
   product: Product

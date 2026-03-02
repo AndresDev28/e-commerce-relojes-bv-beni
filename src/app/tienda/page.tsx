@@ -1,8 +1,7 @@
 'use client'
 import React from 'react'
 import { useState, useMemo, useEffect } from 'react'
-import ProductCard from '@/app/components/ui/ProductCard'
-import ShopLoopHead from '@/app/components/ui/ShopLoopHead'
+import { ProductCard, ShopLoopHead } from '@/features/catalog'
 import { Product, StrapiProduct, StrapiImage } from '@/types'
 import { getProducts, getCategories } from '@/lib/api'
 

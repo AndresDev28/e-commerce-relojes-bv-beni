@@ -140,7 +140,17 @@ export async function getUserOrders(
     }
 
     const data = await response.json()
-    return data.data
+    // Flatten the attributes if Strapi returns the wrapped format
+    return data.data.map((item: { id?: number; documentId?: string; attributes?: Record<string, unknown>;[key: string]: unknown }) => {
+      if (item.attributes) {
+        return {
+          id: item.id,
+          documentId: item.documentId || item.attributes.documentId,
+          ...item.attributes
+        }
+      }
+      return item
+    }) as OrderData[]
   } catch (error) {
     console.error('❌ Error fetching orders:', error)
     throw error

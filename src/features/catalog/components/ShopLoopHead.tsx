@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { ArrowUpDown, ChevronDown } from 'lucide-react'
-import Button from './Button'
-import Breadcrumbs from './Breadcrumbs'
+import Button from '@/app/components/ui/Button'
+import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 
 // Define la estructura de un solo breadcrumb, asegurando que cada uno tenga un nombre visible y una URL de destino.
 interface Breadcrumb {

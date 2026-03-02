@@ -18,7 +18,7 @@
 
 'use client'
 
-import { useCart } from '@/context/CartContext'
+import { useCart } from '@/features/cart'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ShoppingCart, Edit } from 'lucide-react'

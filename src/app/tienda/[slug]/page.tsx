@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
-import ProductDetailClient from './ProductDetailClient'
+import { ProductDetailClient } from '@/features/catalog'
 import { Product, StrapiImage } from '@/types'
 import { getProductBySlug } from '@/lib/api'
 

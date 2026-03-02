@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Button from './ui/Button'
 import { Heart, ShoppingCart, User } from 'lucide-react'
-import { useCart } from '@/context/CartContext'
+import { useCart } from '@/features/cart'
 import { useAuth } from '@/context/AuthContext'
 
 const Navbar = () => {

@@ -1,5 +1,5 @@
 'use client'
-import { useCart } from '@/context/CartContext'
+import { useCart } from '@/features/cart'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
@@ -7,7 +7,7 @@ import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/app/components/ui/Button'
-import CartItemRow from '@/app/components/ui/CartItemRow'
+import { CartItemRow } from '@/features/cart'
 
 export default function CartPage() {
   const router = useRouter()
