@@ -1,0 +1,457 @@
+info Using tsconfig paths for react-docgen
+info Using tsconfig paths for react-docgen
+info Using tsconfig paths for react-docgen
+info Using tsconfig paths for react-docgen
+
+ RUN  v3.2.4 /home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni
+
+info Using tsconfig paths for react-docgen
+stdout | test/integration/email/order-status-change.integration.test.ts
+
+🧪 [Integration Tests] Setting up test environment...
+
+stdout | test/integration/email/order-status-change.integration.test.ts
+
+🧹 [Integration Tests] Cleanup complete
+
+ ❯ |integration| test/integration/email/order-status-change.integration.test.ts (9 tests | 9 skipped) 13ms
+   ↓ [IT-1] Order Status Change Email Integration > [IT-1] should send email when order status changes from PAID to SHIPPED
+   ↓ [IT-1] Order Status Change Email Integration > [IT-2] should reject request with invalid webhook secret
+   ↓ [IT-1] Order Status Change Email Integration > [IT-3] should reject request with missing fields
+   ↓ [IT-1] Order Status Change Email Integration > [IT-4] should send email when order status changes to 'cancelled'
+   ↓ [IT-1] Order Status Change Email Integration > [IT-4] should send email when order status changes to 'delivered'
+   ↓ [IT-1] Order Status Change Email Integration > [IT-4] should send email when order status changes to 'refunded'
+   ↓ [IT-1] Order Status Change Email Integration > [IT-5] should send multiple emails for multiple status changes
+   ↓ [IT-1] Order Status Change Email Integration > [IT-6] should retry failed email attempts
+   ↓ [IT-1] Order Status Change Email Integration > [IT-7] should validate email fields (orderId, customerEmail, subject)
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should send a basic email successfully
+
+📧 Sending email:
+  To: customer@example.com
+  Subject: Test Email
+  From: Relojes BV Beni <test@resend.dev>
+  📤 Attempt 1/3...
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should send a basic email successfully
+  ✅ Email sent successfully (ID: email_123)
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+
+📧 Sending email:
+  To: customer@example.com
+  Subject: Test Email
+  From: Relojes BV Beni <test@resend.dev>
+  📤 Attempt 1/3...
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+  ⏳ Retrying in 1000ms...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Pedido no encontrado > should return 404 if order does not exist
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Validación de propiedad > should return 404 if order belongs to another user (security: do not reveal existence)
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return order details if user owns the order
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return order details if user owns the order
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m1[39m,
+  orderId: [32m'ORD-1234567890-A'[39m,
+  timestamp: [32m'2026-03-02T11:59:30.738Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return complete order data including items details
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return complete order data including items details
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m1[39m,
+  orderId: [32m'ORD-1234567890-A'[39m,
+  timestamp: [32m'2026-03-02T11:59:30.740Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Manejo de errores > should return 500 if Strapi orders fetch fails
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should return 404 when user tries to access another user's order
+🔍 Fetching user orders to validate ownership...
+
+ ✓ |unit| src/app/api/orders/__tests__/route.test.ts (10 tests) 29ms
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should NOT expose order information in 404 error response
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should return 404 for non-existent order
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should only return order data when user is the owner
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should only return order data when user is the owner
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m42[39m,
+  orderId: [32m'ORD-OWNER-123'[39m,
+  timestamp: [32m'2026-03-02T11:59:30.756Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return complete and safe order structure on success
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return complete and safe order structure on success
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m1[39m,
+  orderId: [32m'ORD-STRUCTURE-TEST'[39m,
+  timestamp: [32m'2026-03-02T11:59:30.767Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return consistent error structure for all error types
+🔍 Fetching user orders to validate ownership...
+
+ ✓ |unit| src/app/api/orders/[orderId]/__tests__/route.test.ts (19 tests) 44ms
+ ✓ |unit| src/__tests__/context/CartContext.test.tsx (17 tests) 37ms
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+ ✓ |unit| src/features/orders/components/__tests__/OrderTimeline.test.tsx (22 tests) 164ms
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+💰 Payment Intent - Calculated total: { subtotal: [33m50[39m, shipping: [33m5.99[39m, total: [33m55.99[39m, items: [33m1[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+💰 Payment Intent - Calculated total: { subtotal: [33m100[39m, shipping: [33m0[39m, total: [33m100[39m, items: [33m1[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+✅ Payment Intent created: pi_test_123
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should succeed on first attempt
+🔄 [Retry] Attempt 1/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should succeed on first attempt
+✅ [Retry] Success on attempt 1 (1ms)
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+🔄 [Retry] Attempt 1/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+❌ [Retry] Attempt 1 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+⏳ [Retry] Waiting 10ms before next attempt...
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+🔄 [Retry] Attempt 2/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+✅ [Retry] Success on attempt 2 (11ms)
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+🔄 [Retry] Attempt 1/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+❌ [Retry] Attempt 1 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+⏳ [Retry] Waiting 10ms before next attempt...
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+🔄 [Retry] Attempt 2/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+❌ [Retry] Attempt 2 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+⏳ [Retry] Waiting 20ms before next attempt...
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+🔄 [Retry] Attempt 3/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+❌ [Retry] Attempt 3 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+🚫 [Retry] Max attempts reached
+
+ ✓ |unit| src/app/api/create-payment-intent/__tests__/route.test.ts (13 tests) 68ms
+ ✓ |unit| src/lib/stripe/__tests__/retryHandler.test.ts (5 tests) 49ms
+ ✓ |unit| src/__tests__/components/Button.test.tsx (7 tests) 176ms
+ ✓ |unit| src/app/order-confirmation/__tests__/page.test.tsx (18 tests) 321ms
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should retry automatically after timeout error
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should retry automatically after timeout error
+✅ Payment Intent created successfully
+
+ ✓ |unit| src/app/components/ui/__tests__/ErrorMessage.test.tsx (16 tests) 309ms
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should retry automatically after timeout error
+🔄 Reintentando pago... (1/3) timeout
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should retry automatically after timeout error
+🎯 Pago exitoso después de [33m2[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Renderizado > should render checkout form with all elements
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Renderizado > should render checkout form with all elements
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should stop after max retry attempts
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should stop after max retry attempts
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should show loading state diring payment processing
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should show loading state diring payment processing
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should not retry non-recoverable errors (card_declined)
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should not retry non-recoverable errors (card_declined)
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should show loading state diring payment processing
+🔄 [Retry] Attempt 1/3
+💳 Confirmando pago de tarjeta...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should show loading state diring payment processing
+✅ Pago confirmado exitosamente: pi_test_123
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should show loading state diring payment processing
+✅ [Retry] Success on attempt 1 (3ms)
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should show loading state diring payment processing
+🎯 Pago exitoso después de [33m1[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should restart button state after payment completes
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should restart button state after payment completes
+✅ Payment Intent created successfully
+
+ ✓ |unit| src/features/orders/components/__tests__/OrderHistory.test.tsx (19 tests) 535ms
+ ✓ |unit| src/app/components/ui/__tests__/StatusBadge.test.tsx (40 tests) 767ms
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should display retry counter in UI
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should display retry counter in UI
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should restart button state after payment completes
+🔄 [Retry] Attempt 1/3
+💳 Confirmando pago de tarjeta...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should restart button state after payment completes
+✅ Pago confirmado exitosamente: pi_test_123
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should restart button state after payment completes
+✅ [Retry] Success on attempt 1 (1ms)
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Estados de loading > should restart button state after payment completes
+🎯 Pago exitoso después de [33m1[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should call onSuccess after successful payment
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should call onSuccess after successful payment
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should call onSuccess after successful payment
+🔄 [Retry] Attempt 1/3
+💳 Confirmando pago de tarjeta...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should call onSuccess after successful payment
+✅ Pago confirmado exitosamente: pi_test_123
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should call onSuccess after successful payment
+✅ [Retry] Success on attempt 1 (1ms)
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should call onSuccess after successful payment
+🎯 Pago exitoso después de [33m1[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should display retry counter in UI
+🔄 Reintentando pago... (1/3) timeout
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should display retry counter in UI
+🔄 Reintentando pago... (2/3) timeout
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should display retry counter in UI
+🎯 Pago exitoso después de [33m3[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+  📤 Attempt 2/3...
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+  ⏳ Retrying in 2000ms...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should not submit if Stripe is not loaded
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should not submit if Stripe is not loaded
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should reset retry state after successful payment
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should reset retry state after successful payment
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should reset retry state after successful payment
+🎯 Pago exitoso después de [33m2[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should not submit if Elements is not loaded
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Callbacks > should not submit if Elements is not loaded
+✅ Payment Intent created successfully
+
+stdout | src/lib/api/__tests__/orders.integration.test.ts > [PAY-20] Orders Integration Tests
+🔐 Autenticando usuario de prueba...
+
+stdout | src/lib/api/__tests__/orders.integration.test.ts > [PAY-20] Orders Integration Tests
+✅ No hay órdenes para limpiar
+
+ ❯ |unit| src/lib/api/__tests__/orders.integration.test.ts (11 tests | 11 skipped) 38ms
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create order in Strapi successfully
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should save cart items as JSON correctly
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create multiple orders with unique IDs
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should save different order statuses correctly
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create order with valid timestamps
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should fail with invalid JWT token
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create order with free shipping
+   ↓ [PAY-20] Orders Integration Tests > getUserOrders - Integration > should fetch orders for authenticated user
+   ↓ [PAY-20] Orders Integration Tests > getUserOrders - Integration > should return orders with correct structure
+   ↓ [PAY-20] Orders Integration Tests > getUserOrders - Integration > should fail to fetch orders with invalid token
+   ↓ [PAY-20] Orders Integration Tests > End-to-End Order Flow > should complete full order creation and retrieval flow
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should reset retry state after successful payment
+🎯 Pago exitoso después de [33m1[39m intentos
+🎯 CheckoutForm: llamando a onSuccess con PaymentIntent...
+🎯 CheckoutForm: onSuccess ejecutado
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Formato de precio > should display amount with correct format
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Formato de precio > should display amount with correct format
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should allow manual retry after max attempts
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should allow manual retry after max attempts
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Formato de precio > should handle different amounts
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Formato de precio > should handle different amounts
+✅ Payment Intent created successfully
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Formato de precio > should handle different amounts
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.test.tsx > CheckoutForm - [PAY-05] > Formato de precio > should handle different amounts
+✅ Payment Intent created successfully
+

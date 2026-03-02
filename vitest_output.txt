@@ -1,0 +1,694 @@
+info Using tsconfig paths for react-docgen
+info Using tsconfig paths for react-docgen
+info Using tsconfig paths for react-docgen
+info Using tsconfig paths for react-docgen
+
+ RUN  v3.2.4 /home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni
+
+info Using tsconfig paths for react-docgen
+Failed to resolve dependency: markdown-to-jsx, present in client 'optimizeDeps.include'
+stdout | test/integration/email/order-status-change.integration.test.ts
+
+🧪 [Integration Tests] Setting up test environment...
+
+stderr | test/integration/email/order-status-change.integration.test.ts
+  ❌ Cannot connect to Strapi at http://localhost:1337
+  Make sure Docker Desktop is running and Strapi is started
+  Run: cd ../relojes-bv-beni-api && npm run dev
+
+stdout | test/integration/email/order-status-change.integration.test.ts
+
+🧹 [Integration Tests] Cleanup complete
+
+ ❯ |integration| test/integration/email/order-status-change.integration.test.ts (9 tests | 9 skipped) 17ms
+   ↓ [IT-1] Order Status Change Email Integration > [IT-1] should send email when order status changes from PAID to SHIPPED
+   ↓ [IT-1] Order Status Change Email Integration > [IT-2] should reject request with invalid webhook secret
+   ↓ [IT-1] Order Status Change Email Integration > [IT-3] should reject request with missing fields
+   ↓ [IT-1] Order Status Change Email Integration > [IT-4] should send email when order status changes to 'cancelled'
+   ↓ [IT-1] Order Status Change Email Integration > [IT-4] should send email when order status changes to 'delivered'
+   ↓ [IT-1] Order Status Change Email Integration > [IT-4] should send email when order status changes to 'refunded'
+   ↓ [IT-1] Order Status Change Email Integration > [IT-5] should send multiple emails for multiple status changes
+   ↓ [IT-1] Order Status Change Email Integration > [IT-6] should retry failed email attempts
+   ↓ [IT-1] Order Status Change Email Integration > [IT-7] should validate email fields (orderId, customerEmail, subject)
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should send a basic email successfully
+
+📧 Sending email:
+  To: customer@example.com
+  Subject: Test Email
+  From: Relojes BV Beni <test@resend.dev>
+  📤 Attempt 1/3...
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should send a basic email successfully
+  ✅ Email sent successfully (ID: email_123)
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+
+📧 Sending email:
+  To: customer@example.com
+  Subject: Test Email
+  From: Relojes BV Beni <test@resend.dev>
+  📤 Attempt 1/3...
+
+stdout | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+  ⏳ Retrying in 1000ms...
+
+stderr | src/lib/email/__tests__/client.test.ts > sendEmail > should fail after max retries
+  ❌ Attempt 1 failed: API Error
+
+ ✓ |unit| src/lib/security/__tests__/ownership-validator.test.ts (26 tests) 11ms
+stderr | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Webhook Security > returns 500 if STRAPI_WEBHOOK_SECRET is not configured
+[b44cf749-5f47-4809-8388-024949d1a614] ❌ STRAPI_WEBHOOK_SECRET not configured
+
+stderr | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Webhook Security > returns 401 if secret header is missing
+[7e52bae7-43ff-4c4e-9241-2ac16e3f7f14] ⚠️ Unauthorized refund attempt. Secret mismatch.
+
+stderr | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Webhook Security > returns 401 if secret header is invalid
+[9385b065-7963-4605-86a0-05038022bb9c] ⚠️ Unauthorized refund attempt. Secret mismatch.
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Pedido no encontrado > should return 404 if order does not exist
+🔍 Fetching user orders to validate ownership...
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Pedido no encontrado > should return 404 if order does not exist
+⚠️ [SECURITY AUDIT] Unauthorized order access attempt: {
+  event: [32m'unauthorized_access_attempt'[39m,
+  requestingUserId: [33m1[39m,
+  attemptedOrderId: [32m'ORD-NONEXISTENT'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.555Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Validación de propiedad > should return 404 if order belongs to another user (security: do not reveal existence)
+🔍 Fetching user orders to validate ownership...
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Validación de propiedad > should return 404 if order belongs to another user (security: do not reveal existence)
+⚠️ [SECURITY AUDIT] Unauthorized order access attempt: {
+  event: [32m'unauthorized_access_attempt'[39m,
+  requestingUserId: [33m1[39m,
+  attemptedOrderId: [32m'ORD-1234567890-A'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.556Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return order details if user owns the order
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return order details if user owns the order
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m1[39m,
+  orderId: [32m'ORD-1234567890-A'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.558Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return complete order data including items details
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Acceso exitoso > should return complete order data including items details
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m1[39m,
+  orderId: [32m'ORD-1234567890-A'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.560Z'[39m
+}
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Manejo de errores > should return 500 if Strapi users/me fails
+Strapi users/me error: 500 Internal Server Error
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Manejo de errores > should return 500 if Strapi orders fetch fails
+🔍 Fetching user orders to validate ownership...
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Manejo de errores > should return 500 if Strapi orders fetch fails
+Strapi error fetching user orders: 500
+Strapi error body: Internal Server Error
+
+stdout | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Stripe Refund Execution > calls Stripe with correct parameters and returns success
+[82598f13-f619-4ab7-afa9-ef4e97fd75d6] 🔄 Processing refund for order ORD-123, Amount: 100€
+
+stdout | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Stripe Refund Execution > calls Stripe with correct parameters and returns success
+[82598f13-f619-4ab7-afa9-ef4e97fd75d6] ✅ Refund processed successfully: re_test_123
+
+stdout | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Stripe Refund Execution > handles Stripe errors gracefully
+[2d84e700-c10c-4abd-84bc-6da4e8368b7d] 🔄 Processing refund for order ORD-123, Amount: 100€
+
+stderr | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Stripe Refund Execution > handles Stripe errors gracefully
+[2d84e700-c10c-4abd-84bc-6da4e8368b7d] ❌ Error processing refund: StripeError: Refund failed
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/refund-order/__tests__/route.test.ts:179:17
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  statusCode: [33m402[39m,
+  code: [32m'charge_already_refunded'[39m
+}
+
+stdout | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Stripe Refund Execution > handles unexpected internal errors
+[d89d1eb1-0ba9-4bb5-b8a9-c93f7f589a61] 🔄 Processing refund for order ORD-123, Amount: 100€
+
+stderr | src/app/api/refund-order/__tests__/route.test.ts > POST /api/refund-order > Stripe Refund Execution > handles unexpected internal errors
+[d89d1eb1-0ba9-4bb5-b8a9-c93f7f589a61] ❌ Error processing refund: Error: Unexpected system error
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/refund-order/__tests__/route.test.ts:203:48
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > Manejo de errores > should handle unexpected errors gracefully
+❌ Error in GET /api/orders/:orderId: Error: Network failure
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/orders/[orderId]/__tests__/route.test.ts:368:9
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should return 404 when user tries to access another user's order
+🔍 Fetching user orders to validate ownership...
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should return 401 for invalid/expired JWT token
+Strapi users/me error: 401 Unauthorized
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should NOT expose order information in 404 error response
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should return 404 for non-existent order
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should only return order data when user is the owner
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Unauthorized Access > should only return order data when user is the owner
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m42[39m,
+  orderId: [32m'ORD-OWNER-123'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.575Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle malicious orderId patterns safely
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should consistently reject multiple unauthorized access attempts
+🔍 Fetching user orders to validate ownership...
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Attack Scenarios > should handle deleted/invalid user gracefully
+Strapi users/me error: 404 Not Found
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return complete and safe order structure on success
+🔍 Fetching user orders to validate ownership...
+
+ ✓ |unit| src/app/api/refund-order/__tests__/route.test.ts (9 tests) 30ms
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return complete and safe order structure on success
+✅ [SECURITY AUDIT] Authorized order access: {
+  event: [32m'authorized_access'[39m,
+  userId: [33m1[39m,
+  orderId: [32m'ORD-STRUCTURE-TEST'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.584Z'[39m
+}
+
+stdout | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return consistent error structure for all error types
+🔍 Fetching user orders to validate ownership...
+
+stderr | src/app/api/orders/[orderId]/__tests__/route.test.ts > [ORD-09] GET /api/orders/:orderId > [ORD-16] Security - Response Structure > should return consistent error structure for all error types
+⚠️ [SECURITY AUDIT] Unauthorized order access attempt: {
+  event: [32m'unauthorized_access_attempt'[39m,
+  requestingUserId: [33m1[39m,
+  attemptedOrderId: [32m'ORD-NOT-FOUND'[39m,
+  timestamp: [32m'2026-03-02T11:43:22.586Z'[39m
+}
+
+ ✓ |unit| src/app/api/orders/[orderId]/__tests__/route.test.ts (19 tests) 42ms
+stderr | src/app/mi-cuenta/pedidos/[orderId]/__tests__/page.test.tsx > [ORD-11] Order Detail Page > Route Protection > should redirect to login when user is not authenticated
+A component suspended inside an `act` scope, but the `act` call was not awaited. When testing React components that depend on asynchronous data, you must await the result:
+
+await act(() => ...)
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should succeed on first attempt
+🔄 [Retry] Attempt 1/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should succeed on first attempt
+✅ [Retry] Success on attempt 1 (1ms)
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+🔄 [Retry] Attempt 1/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+❌ [Retry] Attempt 1 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+⏳ [Retry] Waiting 10ms before next attempt...
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:101:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+✅ [AND-99] Stock pre-validation passed for all items
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+[AND-99] Stock check failed for item 2: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:101:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Authentication > accepts request with valid Bearer token
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+💰 Payment Intent - Calculated total: { subtotal: [33m50[39m, shipping: [33m5.99[39m, total: [33m55.99[39m, items: [33m1[39m }
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+🔄 [Retry] Attempt 2/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should retry on recoverable error
+✅ [Retry] Success on attempt 2 (11ms)
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+🔄 [Retry] Attempt 1/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+❌ [Retry] Attempt 1 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+⏳ [Retry] Waiting 10ms before next attempt...
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:145:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with shipping
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+💰 Payment Intent - Calculated total: { subtotal: [33m100[39m, shipping: [33m0[39m, total: [33m100[39m, items: [33m1[39m }
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:165:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+✅ [AND-99] Stock pre-validation passed for all items
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total correctly with free shipping
+✅ Payment Intent created: pi_test_123
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+🔄 [Retry] Attempt 2/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+❌ [Retry] Attempt 2 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+⏳ [Retry] Waiting 20ms before next attempt...
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:181:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+✅ [AND-99] Stock pre-validation passed for all items
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+[AND-99] Stock check failed for item 2: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:181:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Amount Calculation > calculates total for multiple items
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+🔄 [Retry] Attempt 3/3
+
+stdout | src/lib/stripe/__tests__/retryHandler.test.ts > [PAY-08] Retry Handler > retryWithBackoff > should respect maxAttempts
+❌ [Retry] Attempt 3 failed: Tiempo de espera agotado. Por favor, intenta de nuevo.
+🚫 [Retry] Max attempts reached
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:199:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+✅ [AND-99] Stock pre-validation passed for all items
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+[AND-99] Stock check failed for item 2: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:199:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > creates payment intent successfully
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+ ✓ |unit| src/lib/stripe/__tests__/retryHandler.test.ts (5 tests) 51ms
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:213:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+✅ [AND-99] Stock pre-validation passed for all items
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+[AND-99] Stock check failed for item 2: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:213:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > expands latest_charge for payment details
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:228:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+✅ [AND-99] Stock pre-validation passed for all items
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+[AND-99] Stock check failed for item 2: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:228:7
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Payment Intent Creation > includes metadata in payment intent
+✅ Payment Intent created: pi_test_123
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+💰 Payment Intent - Calculated total: { subtotal: [33m130[39m, shipping: [33m0[39m, total: [33m130[39m, items: [33m2[39m }
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+[AND-99] Stock check failed for item 1: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:256:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stdout | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+✅ [AND-99] Stock pre-validation passed for all items
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+[AND-99] Stock check failed for item 2: TypeError: fetch failed
+[90m    at node:internal/deps/undici/undici:16416:13[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:117:30[90m)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:256:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  [cause]: AggregateError: 
+  [90m    at internalConnectMultiple (node:net:1134:18)[39m
+  [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+    code: [32m'ECONNREFUSED'[39m,
+    [errors]: [ [36m[Error][39m, [36m[Error][39m ]
+  }
+}
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles Stripe errors gracefully
+❌ Error creating payment intent: MockStripeError2: Test error
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:244:9
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20 {
+  type: [32m'api_error'[39m
+}
+
+stderr | src/app/api/create-payment-intent/__tests__/route.test.ts > POST /api/create-payment-intent > Error Handling > handles invalid item data
+❌ Error creating payment intent: Error: Invalid item: 1
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:88:15
+    at Array.reduce (<anonymous>)
+    at Module.POST [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/route.ts:80:28[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/app/api/create-payment-intent/__tests__/route.test.ts:272:24
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+ ✓ |unit| src/app/api/create-payment-intent/__tests__/route.test.ts (13 tests) 112ms
+stdout | src/lib/api/__tests__/orders.integration.test.ts > [PAY-20] Orders Integration Tests
+🔐 Autenticando usuario de prueba...
+
+stdout | src/lib/api/__tests__/orders.integration.test.ts > [PAY-20] Orders Integration Tests
+✅ No hay órdenes para limpiar
+
+stderr | src/app/order-confirmation/__tests__/page.test.tsx > OrderConfirmationPage - [PAY-19] > Protección de ruta sin orderId > should redirect to home when no orderId
+⚠️ Acceso directo a order-confirmation sin orderId
+
+stderr | src/app/order-confirmation/__tests__/page.test.tsx > OrderConfirmationPage - [PAY-19] > Protección de ruta sin orderId > should not render content when orderId is missing
+⚠️ Acceso directo a order-confirmation sin orderId
+
+ ❯ |unit| src/lib/api/__tests__/orders.integration.test.ts (11 tests | 11 skipped) 38ms
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create order in Strapi successfully
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should save cart items as JSON correctly
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create multiple orders with unique IDs
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should save different order statuses correctly
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create order with valid timestamps
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should fail with invalid JWT token
+   ↓ [PAY-20] Orders Integration Tests > createOrder - Integration > should create order with free shipping
+   ↓ [PAY-20] Orders Integration Tests > getUserOrders - Integration > should fetch orders for authenticated user
+   ↓ [PAY-20] Orders Integration Tests > getUserOrders - Integration > should return orders with correct structure
+   ↓ [PAY-20] Orders Integration Tests > getUserOrders - Integration > should fail to fetch orders with invalid token
+   ↓ [PAY-20] Orders Integration Tests > End-to-End Order Flow > should complete full order creation and retrieval flow
+stderr | src/app/order-confirmation/__tests__/page.test.tsx > OrderConfirmationPage - [PAY-19] > Loading state > should show loading spinner when orderId is not set
+⚠️ Acceso directo a order-confirmation sin orderId
+
+ ✓ |unit| src/__tests__/components/Button.test.tsx (7 tests) 252ms
+stderr | src/features/orders/components/__tests__/OrderHistory.test.tsx > [ORD-07] OrderHistory Component > Manejo de errores > should show error message when API fails
+Error fetching orders: Error: Network error
+    at [90m/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/features/orders/components/__tests__/OrderHistory.test.tsx:290:46
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | src/features/orders/components/__tests__/OrderHistory.test.tsx > [ORD-07] OrderHistory Component > Manejo de errores > should show error when response is not ok
+Error fetching orders: Error: Failed to fetch orders
+    at fetchOrders [90m(/home/andresjpadev/code/github/personal-projects/e-commerce-relojes-bv-beni/[39msrc/features/orders/components/OrderHistory.tsx:114:17[90m)[39m
+
+stderr | src/features/orders/components/__tests__/OrderDetail.test.tsx > [ORD-12] OrderDetail Component > Información General > should display order number in the header
+Received `true` for a non-boolean attribute `fill`.
+
+If you want to write it to the DOM, pass a string instead: fill="true" or fill={value.toString()}.
+
+ ✓ |unit| src/features/orders/components/__tests__/OrderTimeline.test.tsx (22 tests) 357ms
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should retry automatically after timeout error
+🔄 Fetching Payment Intent...
+
+stdout | src/features/checkout/components/__tests__/CheckoutForm.retry.test.tsx > [PAY-10] Retry Logic Tests > should retry automatically after timeout error
+✅ Payment Intent created successfully
+
+✘ [ERROR] No matching export in "node_modules/storybook/dist/preview-api/index.js" for import "definePreview"
+
+    node_modules/@storybook/addon-docs/dist/index.mjs:3:9:
+      3 │ import { definePreview } from 'storybook/preview-api';
+        ╵          ~~~~~~~~~~~~~
+
+✘ [ERROR] No matching export in "node_modules/storybook/dist/preview-api/index.js" for import "getCoreAnnotations"
+
+    node_modules/@storybook/react/dist/chunk-XBCHTE6T.mjs:4:54:
+      4 │ ...tions, composeConfigs, getCoreAnnotations } from 'storybook/prev...
+        ╵                           ~~~~~~~~~~~~~~~~~~
+
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Error during dependency optimization:
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNo matching export in "node_modules/storybook/dist/preview-api/index.js" for import "definePreview"[0m
+
+    node_modules/@storybook/addon-docs/dist/index.mjs:3:9:
+[37m      3 │ import { [32mdefinePreview[37m } from 'storybook/preview-api';
+        ╵          [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNo matching export in "node_modules/storybook/dist/preview-api/index.js" for import "getCoreAnnotations"[0m
+
+    node_modules/@storybook/react/dist/chunk-XBCHTE6T.mjs:4:54:
+[37m      4 │ ...tions, composeConfigs, [32mgetCoreAnnotations[37m } from 'storybook/prev...
+        ╵                           [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+ ❯ failureErrorWithLog node_modules/esbuild/lib/main.js:1465:15
+ ❯ node_modules/esbuild/lib/main.js:924:25
+ ❯ node_modules/esbuild/lib/main.js:1343:9
+ ❯ process.processTicksAndRejections node:internal/process/task_queues:103:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { errors: [ { detail: undefined, id: '', location: { column: 9, file: 'node_modules/@storybook/addon-docs/dist/index.mjs', length: 13, line: 3, lineText: 'import { definePreview } from \'storybook/preview-api\';', namespace: '', suggestion: '' }, notes: [], pluginName: '', text: 'No matching export in "node_modules/storybook/dist/preview-api/index.js" for import "definePreview"' }, { detail: undefined, id: '', location: { column: 54, file: 'node_modules/@storybook/react/dist/chunk-XBCHTE6T.mjs', length: 18, line: 4, lineText: 'import { normalizeProjectAnnotations, composeConfigs, getCoreAnnotations } from \'storybook/preview-api\';', namespace: '', suggestion: '' }, notes: [], pluginName: '', text: 'No matching export in "node_modules/storybook/dist/preview-api/index.js" for import "getCoreAnnotations"' } ], warnings: [] }
+
+
+

@@ -11,17 +11,37 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { POST } from '../route'
 import { NextRequest } from 'next/server'
-// Mock Stripe
-const mockCreate = vi.fn()
+
+// HOISTED: MockStripeError and mockCreate must be defined before vi.mock() hoisting
+const { mockCreate, MockStripeError } = vi.hoisted(() => {
+  const mockCreate = vi.fn()
+  class MockStripeError extends Error {
+    type: string
+    constructor(params: { type: string; message: string }) {
+      super(params.message)
+      this.type = params.type
+      this.name = 'StripeError'
+    }
+  }
+  return { mockCreate, MockStripeError }
+})
+
 vi.mock('stripe', () => {
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      paymentIntents: {
-        create: mockCreate,
-      },
-    })),
+  const StripeMock = vi.fn().mockImplementation(() => ({
+    paymentIntents: {
+      create: mockCreate,
+    },
+  }))
+  // Add errors as static property on the constructor so Stripe.default.errors works
+  Object.assign(StripeMock, {
     errors: {
-      StripeError: class StripeError extends Error { },
+      StripeError: MockStripeError,
+    },
+  })
+  return {
+    default: StripeMock,
+    errors: {
+      StripeError: MockStripeError,
     },
   }
 })

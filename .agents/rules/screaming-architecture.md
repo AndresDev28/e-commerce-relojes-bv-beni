@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Antigravity Workspace Rule: Pragmatic Screaming Architecture Standard
 
 ## 1. Principio fundamental
