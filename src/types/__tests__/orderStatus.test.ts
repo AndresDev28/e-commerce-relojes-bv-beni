@@ -30,9 +30,9 @@ describe('[ORD-17] OrderStatus Enum', () => {
       expect(OrderStatus.REFUNDED).toBe('refunded')
     })
 
-    it('should have exactly 7 status values', () => {
+    it('should have exactly 8 status values', () => {
       const values = Object.values(OrderStatus)
-      expect(values).toHaveLength(7)
+      expect(values).toHaveLength(8)
     })
   })
 
@@ -304,6 +304,7 @@ describe('[ORD-17] OrderStatus Enum', () => {
         OrderStatus.PAID,
         OrderStatus.PROCESSING,
         OrderStatus.SHIPPED,
+        OrderStatus.CANCELLATION_REQUESTED,
       ])
     })
 

@@ -1,7 +1,7 @@
 /**
- * [PAY-10] Tests: Retry funciona despu�s de error
+ * [PAY-10] Tests: Retry funciona después de error
  *
- * Este archivo contiene tests espec�ficos para verificar
+ * Este archivo contiene tests específicos para verificar
  * que el retry logic implementado en CheckoutForm funciona correctamente
  */
 
@@ -13,6 +13,10 @@ import { loadStripe } from '@stripe/stripe-js'
 import CheckoutForm from '../CheckoutForm'
 import * as retryHandler from '@/lib/stripe/retryHandler'
 import type { CartItem } from '@/types'
+
+// Mock fetch globally to simulate payment intent creation
+const mockFetch = vi.fn()
+vi.stubGlobal('fetch', mockFetch)
 
 // Mock Stripe
 const mockStripe = {
@@ -54,18 +58,48 @@ describe('[PAY-10] Retry Logic Tests', () => {
     vi.clearAllTimers()
     // Reset real timers para cada test
     vi.useRealTimers()
+
+    // Mock localStorage to provide a valid JWT
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
+
+    // Mock fetch to return a valid payment intent
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ clientSecret: 'pi_test_secret_mock', amount: 100 }),
+    })
   })
 
+  /**
+   * Helper: renders form in Elements wrapper and waits for the button to be ready
+   */
+  async function renderAndWaitForButton(props: Record<string, unknown> = {}) {
+    render(
+      <Elements stripe={null}>
+        <CheckoutForm
+          amount={100}
+          cartItems={mockCartItems}
+          {...props}
+        />
+      </Elements>
+    )
+    let button: HTMLElement | null = null
+    await waitFor(() => {
+      button = screen.getByRole('button', { name: /pagar/i })
+      expect(button).toBeInTheDocument()
+    }, { timeout: 3000 })
+    return button as unknown as HTMLElement
+  }
+
   // ============================================================================
-  // TEST 1: Retry autom�tico despu�s de timeout
+  // TEST 1: Retry automático después de timeout
   // ============================================================================
   it('should retry automatically after timeout error', async () => {
     const user = userEvent.setup()
 
-    // Mock: primer intento timeout, segundo �xito
+    // Mock: primer intento timeout, segundo éxito
     const mockRetryWithBackoff = vi.spyOn(retryHandler, 'retryWithBackoff')
     mockRetryWithBackoff.mockImplementationOnce(async (operation, options) => {
-      // Simular un timeout en el primer intento, luego �xito
+      // Simular un timeout en el primer intento, luego éxito
       let attempts = 0
       try {
         attempts++
@@ -85,18 +119,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       }
     })
 
-    render(
-      <Elements stripe={null}>
-        <CheckoutForm
-          amount={100}
-          cartItems={mockCartItems}
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
-      </Elements>
-    )
-
-    const submitButton = screen.getByRole('button', { name: /pagar/i })
+    const submitButton = await renderAndWaitForButton({ onSuccess: mockOnSuccess, onError: mockOnError })
     await user.click(submitButton)
 
     await waitFor(() => {
@@ -108,7 +131,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
   })
 
   // ============================================================================
-  // TEST 2: Respeta m�ximo de intentos
+  // TEST 2: Respeta máximo de intentos
   // ============================================================================
   it('should stop after max retry attempts', async () => {
     const user = userEvent.setup()
@@ -118,22 +141,11 @@ describe('[PAY-10] Retry Logic Tests', () => {
     mockRetryWithBackoff.mockResolvedValueOnce({
       success: false,
       error: new Error('timeout'),
-      attempts: 3, // M�ximo de intentos alcanzado
+      attempts: 3, // Máximo de intentos alcanzado
       totalTime: 5000,
     })
 
-    render(
-      <Elements stripe={null}>
-        <CheckoutForm
-          amount={100}
-          cartItems={mockCartItems}
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
-      </Elements>
-    )
-
-    const submitButton = screen.getByRole('button', { name: /pagar/i })
+    const submitButton = await renderAndWaitForButton({ onSuccess: mockOnSuccess, onError: mockOnError })
     await user.click(submitButton)
 
     await waitFor(() => {
@@ -189,25 +201,14 @@ describe('[PAY-10] Retry Logic Tests', () => {
       totalTime: 500,
     })
 
-    render(
-      <Elements stripe={null}>
-        <CheckoutForm
-          amount={100}
-          cartItems={mockCartItems}
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
-      </Elements>
-    )
-
-    const submitButton = screen.getByRole('button', { name: /pagar/i })
+    const submitButton = await renderAndWaitForButton({ onSuccess: mockOnSuccess, onError: mockOnError })
     await user.click(submitButton)
 
     await waitFor(() => {
       expect(mockOnError).toHaveBeenCalled()
     })
 
-    // Verificar que solo se intent� 1 vez
+    // Verificar que solo se intentó 1 vez
     const callArgs = mockRetryWithBackoff.mock.results[0].value
     await waitFor(async () => {
       const result = await callArgs
@@ -224,7 +225,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
     // Mock: simular reintentos con callback
     const mockRetryWithBackoff = vi.spyOn(retryHandler, 'retryWithBackoff')
     mockRetryWithBackoff.mockImplementationOnce(async (operation, options) => {
-      // Simular 2 reintentos antes del �xito
+      // Simular 2 reintentos antes del éxito
       if (options?.onRetry) {
         // Primer reintento
         options.onRetry(1, new Error('timeout'))
@@ -243,23 +244,12 @@ describe('[PAY-10] Retry Logic Tests', () => {
       }
     })
 
-    render(
-      <Elements stripe={null}>
-        <CheckoutForm
-          amount={100}
-          cartItems={mockCartItems}
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
-      </Elements>
-    )
-
-    const submitButton = screen.getByRole('button', { name: /pagar/i })
+    const submitButton = await renderAndWaitForButton({ onSuccess: mockOnSuccess, onError: mockOnError })
     await user.click(submitButton)
 
     // Verificar que se muestra el contador
     await waitFor(() => {
-      const retryMessage = screen.queryByText(/reintentando conexi�n/i)
+      const retryMessage = screen.queryByText(/reintentando conexi/i)
       if (retryMessage) {
         expect(retryMessage).toBeInTheDocument()
       }
@@ -268,13 +258,13 @@ describe('[PAY-10] Retry Logic Tests', () => {
     // Al final debe desaparecer el mensaje de retry
     await waitFor(() => {
       expect(
-        screen.queryByText(/reintentando conexi�n/i)
+        screen.queryByText(/reintentando conexi/i)
       ).not.toBeInTheDocument()
     })
   })
 
   // ============================================================================
-  // TEST 6: Estados se resetean despu�s de pago exitoso
+  // TEST 6: Estados se resetean después de pago exitoso
   // ============================================================================
   it('should reset retry state after successful payment', async () => {
     const user = userEvent.setup()
@@ -300,7 +290,10 @@ describe('[PAY-10] Retry Logic Tests', () => {
       </Elements>
     )
 
-    const submitButton = screen.getByRole('button', { name: /pagar/i })
+    const submitButton = await waitFor(() =>
+      screen.getByRole('button', { name: /pagar/i }),
+      { timeout: 3000 }
+    )
     await user.click(submitButton)
 
     await waitFor(() => {
@@ -312,6 +305,14 @@ describe('[PAY-10] Retry Logic Tests', () => {
 
     // Reset mocks para segundo intento
     vi.clearAllMocks()
+
+    // Re-mock fetch y localStorage para el rerender
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ clientSecret: 'pi_test_secret_mock_2', amount: 100 }),
+    })
+
     mockRetryWithBackoff.mockResolvedValueOnce({
       success: true,
       data: { success: true },
@@ -331,7 +332,10 @@ describe('[PAY-10] Retry Logic Tests', () => {
       </Elements>
     )
 
-    const newSubmitButton = screen.getByRole('button', { name: /pagar/i })
+    const newSubmitButton = await waitFor(() =>
+      screen.getByRole('button', { name: /pagar/i }),
+      { timeout: 3000 }
+    )
     await user.click(newSubmitButton)
 
     await waitFor(() => {
@@ -343,13 +347,12 @@ describe('[PAY-10] Retry Logic Tests', () => {
   })
 
   // ============================================================================
-  // TEST 7: Bot�n manual de retry funciona
+  // TEST 7: Botón manual de retry funciona
   // ============================================================================
   it('should allow manual retry after max attempts', async () => {
     const user = userEvent.setup()
 
-    // Primer intento: falla despu�s de 3 intentos
-    const attemptCount = 0
+    // Primer intento: falla después de 3 intentos
     const mockRetryWithBackoff = vi.spyOn(retryHandler, 'retryWithBackoff')
 
     // Primera llamada: falla
@@ -360,18 +363,7 @@ describe('[PAY-10] Retry Logic Tests', () => {
       totalTime: 5000,
     })
 
-    render(
-      <Elements stripe={null}>
-        <CheckoutForm
-          amount={100}
-          cartItems={mockCartItems}
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
-      </Elements>
-    )
-
-    const submitButton = screen.getByRole('button', { name: /pagar/i })
+    const submitButton = await renderAndWaitForButton({ onSuccess: mockOnSuccess, onError: mockOnError })
     await user.click(submitButton)
 
     await waitFor(() => {
@@ -388,14 +380,17 @@ describe('[PAY-10] Retry Logic Tests', () => {
     })
 
     // Hacer click nuevamente (retry manual)
-    const retryButton = screen.getByRole('button', { name: /pagar/i })
+    const retryButton = await waitFor(() =>
+      screen.getByRole('button', { name: /pagar/i }),
+      { timeout: 3000 }
+    )
     await user.click(retryButton)
 
     await waitFor(() => {
       expect(mockOnSuccess).toHaveBeenCalled()
     })
 
-    // Verificar que el retry manual funcion�
+    // Verificar que el retry manual funcionó
     expect(mockRetryWithBackoff).toHaveBeenCalledTimes(1)
   })
 })

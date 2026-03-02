@@ -703,11 +703,394 @@ interface StatusChange {
 
 ---
 
-## Próximos EPICs (después del 15)
+## Próximos EPICs (después del 16)
 
-- **EPIC 16:** Sistema de cancelaciones y reembolsos
-- **EPIC 17:** Gestión de envíos e integración con transportistas
-- **EPIC 18:** Dashboard de analytics de pedidos
+- **EPIC 17:** Sistema de envíos y hardening (simplificado MVP)
+- **EPIC 18:** Dashboard de analytics (v2.0 - post-lanzamiento)
+
+---
+
+## EPIC 17: Sistema de Envíos y Hardening
+
+### Contexto
+
+Después de completar el sistema de cancelaciones y reembolsos (EPIC 16), se necesita un sistema básico de envíos para que el administrador pueda registrar tracking numbers y que los clientes puedan consultar el estado de envío de sus pedidos. Además, se deben implementar medidas de seguridad obligatorias para producción (rate limiting, headers de seguridad, cumplimiento GDPR).
+
+> **Nota MVP:** La integración automática con APIs de transportistas (Correos, SEUR, etc.) queda diferida a v2.0. Para MVP todo el tracking es manual.
+
+---
+
+## User Story 1: Registro de envío por administrador
+
+**Como** administrador de la tienda  
+**Quiero** poder registrar la información de envío de un pedido  
+**Para** que el cliente pueda rastrear su paquete y el sistema refleje el progreso del fulfillment
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Registro de envío por administrador
+
+Scenario: Admin registra envío de un pedido en preparación
+  Given que soy un administrador autenticado en Strapi
+  And hay un pedido "ORD-123" en estado "processing"
+  When cambio el estado del pedido a "shipped"
+  And completo los campos de envío:
+    | Campo               | Valor                    |
+    | Tracking Number     | ES2026ABC123456          |
+    | Carrier             | SEUR                     |
+    | Estimated Delivery  | 2026-03-05               |
+  Then se crea un registro Shipment asociado al pedido
+  And el pedido cambia a estado "shipped"
+  And el campo shipped_at registra la fecha y hora actual
+  And el cliente recibe un email de notificación con el tracking
+
+Scenario: No se puede enviar un pedido que no está en preparación
+  Given que soy un administrador en Strapi
+  And hay un pedido "ORD-456" en estado "pending"
+  When intento cambiar el estado a "shipped"
+  Then veo un error "Solo pedidos en estado 'processing' pueden ser enviados"
+  And el estado permanece como "pending"
+
+Scenario: Pedido entregado actualiza el estado automáticamente
+  Given hay un pedido "ORD-789" en estado "shipped"
+  And tiene un Shipment con tracking "ES2026DEF789012"
+  When el administrador cambia el estado del Shipment a "delivered"
+  Then el pedido pasa automáticamente a estado "delivered"
+  And se registra actual_delivery con la fecha actual
+  And el cliente recibe email de confirmación de entrega
+
+Scenario: Entrega fallida devuelve pedido a processing
+  Given hay un pedido "ORD-101" en estado "shipped"
+  And tiene un Shipment con tracking "ES2026GHI345678"
+  When el administrador marca el Shipment como "failed"
+  Then el pedido vuelve a estado "processing"
+  And el administrador puede registrar un nuevo envío
+```
+
+### Tareas técnicas
+
+- [ ] [SHIP-01] Crear content-type Shipment en Strapi (tracking_number, carrier, status, shipped_at, estimated_delivery, actual_delivery)
+- [ ] [SHIP-02] Lifecycle hook: crear Shipment automáticamente al pasar Order a "shipped"
+- [ ] [SHIP-03] Transición automática Order→delivered cuando Shipment es "delivered"
+- [ ] [SHIP-04] Tests: modelo Shipment, transiciones de estado y lifecycle hooks
+
+**Prioridad:** Alta  
+**Estimación:** 6-8 horas
+
+---
+
+## User Story 2: Tracking de envío para cliente
+
+**Como** cliente registrado  
+**Quiero** ver el estado de envío de mi pedido desde mi historial  
+**Para** saber cuándo llegará mi reloj
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Tracking de envío para cliente
+
+Scenario: Cliente ve el estado de envío de un pedido enviado
+  Given que soy un cliente autenticado con un pedido en estado "shipped"
+  And el pedido tiene tracking number "ES2026ABC123456"
+  When accedo al detalle del pedido "/mi-cuenta/pedidos/ORD-123"
+  Then veo una sección "Estado de Envío" con:
+    | Campo               | Valor                    |
+    | Estado              | Badge "Enviado" (naranja)|
+    | Transportista       | SEUR                     |
+    | Tracking            | ES2026ABC123456          |
+    | Fecha de envío      | 01/03/2026               |
+    | Entrega estimada    | 05/03/2026               |
+  And veo un timeline visual del progreso del envío
+  And hay un enlace "Seguir mi paquete" que abre la web del transportista
+
+Scenario: Timeline visual del estado del envío
+  Given estoy viendo el detalle de un pedido en estado "shipped"
+  Then veo un timeline con los estados:
+    | Estado             | Estado Visual  | Fecha           |
+    | En preparación     | ✓ Completado   | 28/02/2026      |
+    | Enviado            | → En curso     | 01/03/2026      |
+    | Entregado          | ○ Pendiente    | Est. 05/03/2026 |
+  And el estado actual está resaltado con color
+  And los estados futuros están en gris
+
+Scenario: Pedido sin envío aún (en preparación)
+  Given tengo un pedido en estado "processing"
+  When accedo al detalle del pedido
+  Then veo el estado "En preparación"
+  And NO veo la sección de tracking
+  And veo un mensaje "Tu pedido está siendo preparado"
+
+Scenario: Enlace de tracking al transportista
+  Given tengo un pedido enviado con carrier "SEUR"
+  And tracking number "ES2026ABC123456"
+  When hago click en "Seguir mi paquete"
+  Then se abre una nueva pestaña con la URL de seguimiento de SEUR
+  And la URL contiene el tracking number
+```
+
+### Tareas técnicas
+
+- [ ] [SHIP-05] Crear componente ShipmentTimeline.tsx (timeline visual de estados)
+- [ ] [SHIP-06] Integrar sección de tracking en la página de detalle del pedido
+- [ ] [SHIP-07] Implementar enlace externo al tracking del transportista (Correos, SEUR, etc.)
+- [ ] [SHIP-08] API proxy: GET /api/orders/[orderId]/shipment (obtener envío por pedido)
+- [ ] [SHIP-09] Tests: UI de tracking renderiza correctamente
+
+**Prioridad:** Alta  
+**Estimación:** 5-6 horas
+
+---
+
+## User Story 3: Emails de notificación de envío
+
+**Como** cliente  
+**Quiero** recibir notificaciones por email cuando mi pedido es enviado y entregado  
+**Para** estar informado del progreso sin tener que entrar a la web
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Emails de notificación de envío
+
+Scenario: Email de "Pedido Enviado"
+  Given mi pedido "ORD-123" acaba de pasar a estado "shipped"
+  And tiene tracking number "ES2026ABC123456" con carrier "SEUR"
+  Then recibo un email con asunto "Tu pedido ORD-123 ha sido enviado 📦"
+  And el email contiene:
+    | Elemento            | Contenido                        |
+    | Badge de estado     | "Enviado" (naranja)              |
+    | Tracking number     | ES2026ABC123456                  |
+    | Transportista       | SEUR                             |
+    | Enlace de tracking  | Link a la web del transportista  |
+    | Entrega estimada    | 05/03/2026                       |
+    | Productos           | Lista con imagen y nombre        |
+  And el diseño es consistente con los emails de pedido existentes
+
+Scenario: Email de "Pedido Entregado"
+  Given mi pedido "ORD-123" acaba de pasar a estado "delivered"
+  Then recibo un email con asunto "Tu pedido ORD-123 ha sido entregado ✅"
+  And el email contiene:
+    | Elemento            | Contenido                        |
+    | Badge de estado     | "Entregado" (verde)              |
+    | Fecha de entrega    | 04/03/2026                       |
+    | Productos           | Lista con imagen y nombre        |
+    | CTA                 | Botón "Ver mi pedido"            |
+
+Scenario: Email no se envía si no hay email asociado
+  Given un pedido cambia a "shipped"
+  And el usuario no tiene email registrado
+  Then se registra un warning en los logs
+  And el estado del pedido se actualiza igualmente
+  And no se lanza un error al administrador
+```
+
+### Tareas técnicas
+
+- [ ] [SHIP-10] Crear template de email "Tu pedido ha sido enviado" (React Email)
+- [ ] [SHIP-11] Crear template de email "Tu pedido ha sido entregado" (React Email)
+- [ ] [SHIP-12] Lifecycle hook: disparar email en cambios de estado de Shipment
+- [ ] [SHIP-13] Tests: emails de envío renderizan correctamente
+
+**Prioridad:** Alta  
+**Estimación:** 4-5 horas
+
+---
+
+## User Story 4: Rate limiting y headers de seguridad
+
+**Como** desarrollador  
+**Quiero** implementar rate limiting y headers de seguridad en producción  
+**Para** proteger la aplicación contra ataques y cumplir buenas prácticas
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Rate limiting y headers de seguridad
+
+Scenario: Rate limiting en endpoint de login
+  Given un cliente hace 5 intentos de login en 1 minuto
+  When hace el intento 6
+  Then recibe un error HTTP 429 "Too Many Requests"
+  And el mensaje dice "Demasiados intentos. Intenta de nuevo en 60 segundos."
+  And después de 60 segundos puede intentar de nuevo
+
+Scenario: Rate limiting en endpoint de checkout
+  Given un cliente hace 10 requests a /api/checkout en 1 minuto
+  When hace el request 11
+  Then recibe un error HTTP 429
+  And el pedido anterior no se ve afectado
+  And el rate limit se aplica por IP
+
+Scenario: Headers de seguridad en producción
+  Given la aplicación está desplegada en producción
+  When un navegador accede a cualquier página
+  Then las respuestas incluyen:
+    | Header                    | Valor                              |
+    | Strict-Transport-Security | max-age=31536000; includeSubDomains|
+    | X-Content-Type-Options    | nosniff                            |
+    | X-Frame-Options           | DENY                               |
+    | X-XSS-Protection          | 1; mode=block                      |
+    | Referrer-Policy           | strict-origin-when-cross-origin    |
+
+Scenario: CORS restrictivo
+  Given la aplicación está en producción
+  When una request llega desde un dominio no autorizado
+  Then la request es bloqueada por CORS
+  And solo se permite relojesbvbeni.com y api.relojesbvbeni.com
+
+Scenario: Secrets no expuestos
+  Given el repositorio está en GitHub
+  Then ningún archivo contiene API keys en texto plano
+  And .env está en .gitignore
+  And las variables de producción están solo en Railway/Vercel
+```
+
+### Tareas técnicas
+
+- [ ] [SEC-01] Configurar rate limiting en APIs críticas (login, checkout, register)
+- [ ] [SEC-02] Configurar headers de seguridad (CSP, HSTS, X-Frame-Options)
+- [ ] [SEC-03] Auditoría de secrets y variables de entorno (dev vs prod)
+- [ ] [SEC-04] Tests: rate limiting responde 429 y headers están presentes
+
+**Prioridad:** Alta (seguridad)  
+**Estimación:** 4-5 horas
+
+---
+
+## User Story 5: Cumplimiento GDPR y cookies
+
+**Como** propietario del negocio  
+**Quiero** que la web cumpla con el RGPD y la ley de cookies española  
+**Para** operar legalmente en España y proteger los datos de mis clientes
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Cumplimiento GDPR y cookies
+
+Scenario: Banner de cookies se muestra al primer acceso
+  Given un usuario accede a la web por primera vez
+  Then se muestra un banner fijo en la parte inferior con:
+    | Elemento            | Contenido                           |
+    | Texto               | "Usamos cookies para mejorar..."    |
+    | Botón principal     | "Aceptar todas"                     |
+    | Botón secundario    | "Solo esenciales"                   |
+    | Enlace              | "Política de cookies"               |
+  And el banner bloquea la carga de cookies no esenciales
+  And el banner no se puede ignorar (debe interactuar)
+
+Scenario: Aceptar todas las cookies
+  Given veo el banner de cookies
+  When hago click en "Aceptar todas"
+  Then se registra mi consentimiento
+  And se cargan cookies de analytics (Google Analytics)
+  And el banner desaparece
+  And en futuras visitas no se muestra el banner
+
+Scenario: Solo cookies esenciales
+  Given veo el banner de cookies
+  When hago click en "Solo esenciales"
+  Then se registra mi preferencia
+  And NO se cargan cookies de analytics
+  And solo se mantienen cookies de sesión y autenticación
+  And el banner desaparece
+
+Scenario: Página de Política de Privacidad accesible
+  Given que soy un visitante de la web
+  When navego al footer
+  Then veo un enlace "Política de Privacidad"
+  When hago click
+  Then se muestra la página "/politica-de-privacidad" con:
+    | Sección                  | Contenido obligatorio                  |
+    | Responsable              | Datos de BV Beni (nombre, CIF, dirección) |
+    | Datos recopilados        | Lista de datos personales (email, nombre, dirección) |
+    | Finalidad                | Para qué se usan los datos             |
+    | Base legal               | Consentimiento, ejecución de contrato  |
+    | Derechos                 | Acceso, rectificación, supresión, portabilidad |
+    | Contacto DPO             | Email de contacto para ejercer derechos |
+
+Scenario: Protección de PII en logs
+  Given un usuario registrado realiza acciones en la web
+  Then los logs del backend no contienen:
+    | Dato prohibido     |
+    | Email completo     |
+    | Nombre completo    |
+    | Dirección postal   |
+    | Número de tarjeta  |
+  And se usan identificadores internos (user_id, order_id)
+```
+
+### Tareas técnicas
+
+- [ ] [SEC-05] Implementar banner de consentimiento de cookies (con persistencia de preferencia)
+- [ ] [SEC-06] Crear páginas legales: Política de privacidad, Política de cookies, Términos y condiciones
+- [ ] [SEC-07] Auditoría de PII en logs y respuestas API (backend)
+- [ ] [SEC-08] Tests: banner de cookies funciona, analytics se bloquean sin consentimiento
+
+**Prioridad:** Alta (legal)  
+**Estimación:** 5-6 horas
+
+---
+
+## Notas Técnicas Adicionales - EPIC 17
+
+### Modelo de datos Shipment en Strapi:
+
+```typescript
+interface Shipment {
+  id: number
+  documentId: string
+  trackingNumber: string      // ES2026ABC123456
+  carrier: string             // SEUR, Correos, GLS, etc.
+  status: ShipmentStatus
+  shippedAt: Date
+  estimatedDelivery: Date
+  actualDelivery?: Date
+  order: Order                // Relación 1:1 con Order
+  createdAt: Date
+  updatedAt: Date
+}
+
+enum ShipmentStatus {
+  SHIPPED = 'shipped',
+  IN_TRANSIT = 'in_transit',
+  DELIVERED = 'delivered',
+  FAILED = 'failed',
+}
+```
+
+### URLs de tracking por transportista:
+
+```typescript
+const CARRIER_TRACKING_URLS: Record<string, string> = {
+  'SEUR': 'https://www.seur.com/livetracking/?segOnlineIdentificationNumber=',
+  'Correos': 'https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number=',
+  'GLS': 'https://www.gls-spain.es/es/ayuda/seguimiento-envio/?match=',
+  'MRW': 'https://www.mrw.es/seguimiento_envios/MRW_seguimiento_envios.asp?num=',
+}
+```
+
+### Dependencias:
+
+- Content type Order existente (EPIC 15)
+- Sistema de emails existente (Resend + React Email)
+- Lifecycle hooks de Order (EPIC 15-16)
+- Variables de entorno:
+  - `RATE_LIMIT_WINDOW_MS` (default: 60000)
+  - `RATE_LIMIT_MAX_REQUESTS` (default: 100)
+
+### Métricas de Éxito
+
+- ✅ 100% de envíos registrados generan email al cliente
+- ✅ Timeline de tracking es visible en < 2 clicks desde "Mis pedidos"
+- ✅ Rate limiting bloquea requests excesivos sin falsos positivos
+- ✅ Headers de seguridad presentes en 100% de respuestas de producción
+- ✅ Banner de cookies funcional y respeta preferencias del usuario
+- ✅ Coverage de tests > 80% en módulos de shipping y security
+
+---
 
 ## Deuda Técnica
 
