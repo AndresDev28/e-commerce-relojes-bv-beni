@@ -109,6 +109,34 @@ export default function OrderTimeline({
   const isErrorState = isErrorStatus(currentStatus)
 
   /**
+   * Obtener URL de tracking dependiendo del transportista [SHIP-07]
+   */
+  const getTrackingUrl = (carrier?: string | null, trackingNumber?: string | null): string | null => {
+    if (!carrier || !trackingNumber) return null;
+
+    // Normalizar el nombre del transportista para comparación
+    const normalizedCarrier = carrier.trim().toLowerCase();
+
+    // Diccionario de URLs de tracking conocidas por MVP
+    const carrierUrls: Record<string, string> = {
+      'seur': `https://www.seur.com/livetracking/?segOnlineIdentificationNumber=${trackingNumber}`,
+      'correos': `https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number=${trackingNumber}`,
+      'gls': `https://www.gls-spain.es/es/ayuda/seguimiento-envio/?match=${trackingNumber}`,
+      'mrw': `https://www.mrw.es/seguimiento_envios/MRW_seguimiento_envios.asp?num=${trackingNumber}`,
+      'dhl': `https://www.dhl.com/es-es/home/rastreo.html?tracking-id=${trackingNumber}`
+    };
+
+    // Buscar coincidencia parcial (ej: "Correos Express" mapeará a "correos")
+    for (const key of Object.keys(carrierUrls)) {
+      if (normalizedCarrier.includes(key)) {
+        return carrierUrls[key];
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * RENDERIZADO
    *
    * ESTRUCTURA:
@@ -198,17 +226,50 @@ export default function OrderTimeline({
 
                   {/* Tracking Info si es enviado y tenemos datos */}
                   {status === OrderStatus.SHIPPED && shipment?.tracking_number && (
-                    <div className="mt-3 p-3 bg-neutral-lightest rounded-md border border-neutral-light">
-                      <p className="text-sm text-neutral-dark font-medium mb-1">
-                        Información de Seguimiento
-                      </p>
-                      <ul className="text-sm text-neutral font-serif space-y-1">
-                        <li><strong>Agencia:</strong> {shipment.carrier || 'No especificado'}</li>
-                        <li><strong>N° Rastreo:</strong> {shipment.tracking_number}</li>
+                    <div className="mt-3 p-4 bg-neutral-lightest rounded-lg border border-neutral-light shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm text-neutral-dark font-sans font-bold">
+                          Información de Seguimiento
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-neutral font-serif bg-white p-3 rounded-md border border-neutral-100">
+                        <div>
+                          <span className="text-neutral-light text-xs uppercase tracking-wider font-sans font-semibold mb-1 block">Agencia</span>
+                          <span className="font-medium text-neutral-dark">{shipment.carrier || 'No especificado'}</span>
+                        </div>
+                        <div>
+                          <span className="text-neutral-light text-xs uppercase tracking-wider font-sans font-semibold mb-1 block">N° de Rastreo</span>
+                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-dark font-medium">{shipment.tracking_number}</span>
+                        </div>
                         {shipment.estimated_delivery_date && (
-                          <li><strong>Entrega Estimada:</strong> {new Date(shipment.estimated_delivery_date).toLocaleDateString('es-ES')}</li>
+                          <div className="sm:col-span-2 mt-1">
+                            <span className="text-neutral-light text-xs uppercase tracking-wider font-sans font-semibold mb-1 block">Entrega Estimada</span>
+                            <span className="font-medium text-primary">
+                              {new Date(shipment.estimated_delivery_date).toLocaleDateString('es-ES', {
+                                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                              })}
+                            </span>
+                          </div>
                         )}
-                      </ul>
+                      </div>
+
+                      {/* Enlace al Transportista [SHIP-07] */}
+                      {getTrackingUrl(shipment.carrier, shipment.tracking_number) && (
+                        <div className="mt-4">
+                          <a
+                            href={getTrackingUrl(shipment.carrier, shipment.tracking_number)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-neutral-dark hover:bg-black text-white text-sm font-bold font-sans rounded-md transition-colors"
+                          >
+                            Rastrear tu paquete
+                            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
 
