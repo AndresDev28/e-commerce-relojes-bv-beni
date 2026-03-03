@@ -28,7 +28,7 @@ interface EmailHeaderProps {
 */
 
 export function EmailHeader({
-  logoUrl = '/email-assets/logo.png',
+  logoUrl = 'https://raw.githubusercontent.com/AndresDev28/e-commerce-relojes-bv-beni/main/public/logo.png',
   storeName = 'Relojes BV Beni',
 }: EmailHeaderProps) {
   return (
@@ -39,32 +39,32 @@ export function EmailHeader({
         textAlign: 'center',
         borderBottom: `1px solid ${colors.gray[100]}`,
       }}
+    >
+      {/* Logo */}
+      <Img
+        src={logoUrl}
+        alt={storeName}
+        width="120"
+        height="auto"
+        style={{
+          margin: '0 auto',
+          display: 'block'
+        }}
+      />
+
+      {/* Tagline */}
+      <Text
+        style={{
+          margin: `${spacing.sm} 0 0 0`,
+          fontSize: typography.fontSize.sm,
+          color: colors.gray[600],
+          fontFamily: typography.fontFamily,
+          lineHeight: typography.lineHeight.normal,
+        }}
       >
-        {/* Logo */}
-        <Img
-          src={logoUrl}
-          alt={storeName}
-          width="120"
-          height="auto"
-          style={{
-            margin: '0 auto',
-            display: 'block'
-          }}
-        />
+        Tu tienda de relojes de confianza
+      </Text>
+    </Section>
+  )
 
-        {/* Tagline */}
-        <Text
-          style={{
-            margin: `${spacing.sm} 0 0 0`,
-            fontSize: typography.fontSize.sm,
-            color: colors.gray[600],
-            fontFamily: typography.fontFamily,
-            lineHeight: typography.lineHeight.normal,
-          }}
-        >
-          Tu tienda de relojes de confianza
-        </Text>
-      </Section>
-    )
-
-  }
+}

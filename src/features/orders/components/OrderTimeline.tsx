@@ -32,9 +32,12 @@ import {
   type StatusHistoryItem,
 } from '@/types'
 
+import type { OrderData } from '@/lib/api/orders'
+
 interface OrderTimelineProps {
   currentStatus: OrderStatus
   statusHistory?: StatusHistoryItem[]
+  shipment?: OrderData['shipment']
 }
 
 /**
@@ -52,6 +55,7 @@ const TIMELINE_STATES = [
 export default function OrderTimeline({
   currentStatus,
   statusHistory = [],
+  shipment,
 }: OrderTimelineProps) {
   /**
    * Formatear fecha a formato español corto
@@ -190,6 +194,22 @@ export default function OrderTimeline({
                     <p className="text-sm text-neutral font-serif mt-1">
                       {formatDate(statusDate)}
                     </p>
+                  )}
+
+                  {/* Tracking Info si es enviado y tenemos datos */}
+                  {status === OrderStatus.SHIPPED && shipment?.tracking_number && (
+                    <div className="mt-3 p-3 bg-neutral-lightest rounded-md border border-neutral-light">
+                      <p className="text-sm text-neutral-dark font-medium mb-1">
+                        Información de Seguimiento
+                      </p>
+                      <ul className="text-sm text-neutral font-serif space-y-1">
+                        <li><strong>Agencia:</strong> {shipment.carrier || 'No especificado'}</li>
+                        <li><strong>N° Rastreo:</strong> {shipment.tracking_number}</li>
+                        {shipment.estimated_delivery_date && (
+                          <li><strong>Entrega Estimada:</strong> {new Date(shipment.estimated_delivery_date).toLocaleDateString('es-ES')}</li>
+                        )}
+                      </ul>
+                    </div>
                   )}
 
                   {/* Indicador de estado actual */}

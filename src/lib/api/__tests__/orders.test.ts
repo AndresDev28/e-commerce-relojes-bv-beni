@@ -378,7 +378,7 @@ describe('[PAY-19] Orders API', () => {
       // ASSERT
       expect(mockFetch).toHaveBeenCalledTimes(1)
       expect(mockFetch).toHaveBeenCalledWith(
-        `${mockApiUrl}/api/orders?sort%5B0%5D=createdAt%3Adesc&pagination%5BpageSize%5D=100`,
+        `${mockApiUrl}/api/orders?sort%5B0%5D=createdAt%3Adesc&pagination%5BpageSize%5D=100&populate%5B0%5D=shipment`,
         expect.objectContaining({
           method: 'GET',
           headers: {

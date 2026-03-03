@@ -359,6 +359,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
       <OrderTimeline
         currentStatus={order.orderStatus}
         statusHistory={order.statusHistory}
+        shipment={order.shipment}
       />
 
       {/* 8. MODAL DE CANCELACIÓN - [FRONT-02] */}

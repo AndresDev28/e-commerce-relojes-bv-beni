@@ -47,6 +47,12 @@ export interface OrderData {
   statusHistory?: StatusHistoryItem[]
   shippedAt?: string
   deliveredAt?: string
+  shipment?: {
+    tracking_number: string | null;
+    carrier: string | null;
+    status: string | null;
+    estimated_delivery_date: string | null;
+  } | null;
   createdAt: string
   updatedAt: string
   publishedAt: string
@@ -125,6 +131,7 @@ export async function getUserOrders(
     const queryParams = new URLSearchParams({
       'sort[0]': 'createdAt:desc', // Más recientes primero
       'pagination[pageSize]': '100', // Aumentar límite de paginación
+      'populate[0]': 'shipment', // [EPIC-17] Populate Shipment tracking info 
     })
 
     const response = await fetch(`${API_URL}/api/orders?${queryParams}`, {

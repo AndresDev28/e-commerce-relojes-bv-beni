@@ -60,6 +60,12 @@ export interface OrderStatusEmailProps {
     shipping: number;
     total: number;
     createdAt?: string;
+    shipment?: {
+      tracking_number: string | null;
+      carrier: string | null;
+      status: string | null;
+      estimated_delivery_date: string | null;
+    } | null;
   };
   /**
    * Indica si el correo es una notificación de rechazo de cancelación
@@ -219,6 +225,48 @@ export default function OrderStatusEmail({
             >
               Número de pedido: <strong>{orderId}</strong>
             </Text>
+
+            {/* Tracking Info (Fase 17a) */}
+            {orderData.shipment && orderData.shipment.tracking_number && (
+              <Section
+                style={{
+                  backgroundColor: colors.gray[100],
+                  padding: spacing.md,
+                  borderRadius: '8px',
+                  marginBottom: spacing.lg,
+                }}
+              >
+                <Text
+                  style={{
+                    margin: `0 0 ${spacing.sm} 0`,
+                    fontSize: typography.fontSize.sm,
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.gray[900],
+                    fontFamily: typography.fontFamily,
+                  }}
+                >
+                  Información de Seguimiento:
+                </Text>
+                <Text
+                  style={{
+                    margin: 0,
+                    fontSize: typography.fontSize.sm,
+                    color: colors.gray[600],
+                    fontFamily: typography.fontFamily,
+                  }}
+                >
+                  <strong>Agencia:</strong> {orderData.shipment.carrier || 'No especificado'} <br />
+                  <strong>N° de Rastreo:</strong> {orderData.shipment.tracking_number}
+                  {orderData.shipment.estimated_delivery_date && (
+                    <>
+                      <br />
+                      <strong>Entrega Estimada:</strong> {new Date(orderData.shipment.estimated_delivery_date).toLocaleDateString('es-ES')}
+                    </>
+                  )}
+                </Text>
+              </Section>
+            )}
+
             {/* Items del pedido */}
             <OrderItems items={orderData.items} />
             {/* Resumen de totales */}
