@@ -80,7 +80,7 @@ export async function GET(
     // 1) Fetch user's orders list (the /api/orders endpoint returns only user's orders)
     // 2) Check if requested orderId is in that list
     // 3) If yes, fetch the specific order details
-    const userOrdersUrl = `${API_URL}/api/orders?sort[0]=createdAt:desc&pagination[pageSize]=100`
+    const userOrdersUrl = `${API_URL}/api/orders?sort[0]=createdAt:desc&pagination[pageSize]=100&populate[0]=shipment`
     console.log('🔍 Fetching user orders to validate ownership...')
 
     const userOrdersResponse = await fetch(userOrdersUrl, {
