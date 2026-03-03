@@ -75,6 +75,10 @@ export interface OrderStatusEmailProps {
    * Nota opcional del administrador (ej. motivo de rechazo)
    */
   statusChangeNote?: string | null;
+  /**
+   * Indicates if this is the initial purchase confirmation email
+   */
+  isNewOrder?: boolean;
 }
 
 /**
@@ -140,14 +144,19 @@ export default function OrderStatusEmail({
   orderData,
   isCancellationRejection,
   statusChangeNote,
+  isNewOrder,
 }: OrderStatusEmailProps) {
-  const message = isCancellationRejection
-    ? `Lamentamos informarte que tu solicitud de cancelación no ha podido ser aceptada. ${statusChangeNote ? `Motivo: ${statusChangeNote}` : 'Tu pedido continuará su procesamiento normal.'}`
-    : STATUS_MESSAGES[orderStatus]
+  const message = isNewOrder
+    ? '¡Gracias por confiar en nosotros! Hemos recibido tu pedido y actualmente se encuentra en preparación.'
+    : isCancellationRejection
+      ? `Lamentamos informarte que tu solicitud de cancelación no ha podido ser aceptada. ${statusChangeNote ? `Motivo: ${statusChangeNote}` : 'Tu pedido continuará su procesamiento normal.'}`
+      : STATUS_MESSAGES[orderStatus]
 
-  const subjectTitle = isCancellationRejection
-    ? 'Solicitud de cancelación rechazada'
-    : EMAIL_SUBJECTS[orderStatus]
+  const subjectTitle = isNewOrder
+    ? 'Confirmación de Pedido'
+    : isCancellationRejection
+      ? 'Solicitud de cancelación rechazada'
+      : EMAIL_SUBJECTS[orderStatus]
 
   const greetings = customerName || 'Cliente'
 
