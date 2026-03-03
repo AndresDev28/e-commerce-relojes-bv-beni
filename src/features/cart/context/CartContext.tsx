@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useState, ReactNode, useContext } from 'react';
+import { createContext, useState, ReactNode, useContext, useEffect } from 'react';
 import { Product } from '@/types';
 
 // Tipo para el Item del Carrito
@@ -10,10 +10,11 @@ export interface CartItem extends Product {
 // Contrato principal del Contexto
 interface CartContextType {
   cartItems: CartItem[]; // El estado: un array de nuestros items de carrito.
+  isHydrated: boolean; // Flag para saber si se ha cargado localStorage
   addToCart: (product: Product, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, newQuantity: number) => void;
-  clearCart: () => void
+  clearCart: () => void;
 }
 
 // Plantilla del Contexto
@@ -21,14 +22,41 @@ export const CartContext = createContext<CartContextType | undefined>(undefined)
 
 // Tipo de CartProvider
 interface CartProviderProps {
-  children: ReactNode
+  children: ReactNode;
 }
+
+const CART_STORAGE_KEY = 'bv-beni-cart';
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   // 1. Creamos un estado usando 'useState' para guardar la lista de 'CartItem'.
   // Lo inicializamos como un array vacío.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  // 2. Creamos la función 'addToCart'. Esta función:
+  // Flag de hidratación inicializada en false por defecto para el SSR
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Efecto para cargar datos iniciales del localStorage al montar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      if (storedCart) {
+        try {
+          setCartItems(JSON.parse(storedCart));
+        } catch (error) {
+          console.error("Failed to parse cart from localStorage", error);
+          setCartItems([]); // Reset if parsing fails
+        }
+      }
+      setIsHydrated(true);
+    }
+  }, []);
+
+  // Efecto para guardar el carrito en localStorage cada vez que cartItems cambie,
+  // pero solo después de que el componente se haya hidratado.
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    }
+  }, [cartItems, isHydrated]);
 
   const addToCart = (product: Product, quantity: number) => {
     setCartItems(prevItems => {
@@ -90,7 +118,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   }
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ cartItems, isHydrated, addToCart, removeFromCart, updateQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   )
@@ -105,4 +133,3 @@ export const useCart = () => {
 
   return context // Devolvemos el objeto { cartItems, addToCart, ... }
 }
-

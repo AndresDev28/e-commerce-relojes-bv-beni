@@ -28,7 +28,7 @@ const getStripePromise = () => {
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, jwt, isLoading: authLoading } = useAuth()
-  const { cartItems, clearCart } = useCart()
+  const { cartItems, clearCart, isHydrated } = useCart()
   const [paymentSuccessful, setPaymentSuccessful] = useState(false)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [orderError, setOrderError] = useState<string | null>(null)
@@ -48,8 +48,8 @@ export default function CheckoutPage() {
       paymentSuccessful,
     })
 
-    // Esperar a que termine de cargar el estado de autenticación
-    if (authLoading) return
+    // Esperar a que termine de cargar el estado de autenticación y la hidratación
+    if (authLoading || !isHydrated) return
 
     // Validación 1: Usuario debe estar autenticado
     if (!user) {
@@ -71,8 +71,8 @@ export default function CheckoutPage() {
     console.log('🔍 [useEffect] Todo OK, no se redirige')
   }, [authLoading, user, cartItems, router, paymentSuccessful, orderError])
 
-  // Mostrar loading mientras se valida la autenticación
-  if (authLoading) {
+  // Mostrar loading mientras se valida la autenticación o el carrito
+  if (authLoading || !isHydrated) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
