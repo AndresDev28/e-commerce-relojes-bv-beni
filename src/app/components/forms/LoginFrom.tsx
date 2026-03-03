@@ -63,7 +63,7 @@ export default function LoginForm() {
           onChange={e => setIdentifier(e.target.value)}
           required
           icon={<Mail size={18} className="text-neutral-medium" />}
-          autoComplete="username"
+          autoComplete="off"
         />
       </div>
       {/* Div para campo de contraseña */}

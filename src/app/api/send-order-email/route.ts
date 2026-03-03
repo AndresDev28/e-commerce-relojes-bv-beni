@@ -49,6 +49,7 @@ interface SendOrderEmailRequest {
   }
   previousOrderStatus?: OrderStatus
   statusChangeNote?: string | null
+  isNewOrder?: boolean
 }
 
 /**
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Validate required fields
-    const { orderId, customerEmail, orderStatus, orderData, previousOrderStatus, statusChangeNote } = body
+    const { orderId, customerEmail, orderStatus, orderData, previousOrderStatus, statusChangeNote, isNewOrder } = body
 
     if (!orderId || !customerEmail || !orderStatus || !orderData) {
       console.error('❌ Missing required fields:', { orderId, customerEmail, orderStatus, hasOrderData: !!orderData })
@@ -145,9 +146,11 @@ export async function POST(request: NextRequest) {
       (orderStatus === 'processing' || orderStatus === 'paid' || orderStatus === 'pending')
 
     // 6. Generate email content
-    const subject = isCancellationRejection
-      ? `Solicitud de cancelación rechazada - ${orderId}`
-      : getEmailSubject(orderId, orderStatus)
+    const subject = isNewOrder
+      ? `Confirmación de Pedido - ${orderId}`
+      : isCancellationRejection
+        ? `Solicitud de cancelación rechazada - ${orderId}`
+        : getEmailSubject(orderId, orderStatus)
 
     const html = await renderEmailToHtml(
       OrderStatusEmail({
@@ -157,6 +160,7 @@ export async function POST(request: NextRequest) {
         orderData,
         isCancellationRejection,
         statusChangeNote,
+        isNewOrder,
       })
     )
 

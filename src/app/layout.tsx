@@ -5,6 +5,7 @@ import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper'
 import { CartProvider } from '@/features/cart'
 import { FavoritesProvider } from '@/features/favorites'
 import StripeProviderWrapper from '@/components/providers/StripeProviderWrapper'
+import CookieBanner from '@/app/components/ui/CookieBanner'
 import './globals.css'
 
 // Configuramos fuentes y sus variables CSS
@@ -40,6 +41,7 @@ export default function RootLayout({
             <FavoritesProvider>
               <StripeProviderWrapper>
                 <AppShell>{children}</AppShell>
+                <CookieBanner />
               </StripeProviderWrapper>
             </FavoritesProvider>
           </AuthProviderWrapper>

@@ -60,6 +60,7 @@ export default function RegisterForm() {
         value={userName}
         required
         icon={<User size={18} className="text-neutral-medium" />}
+        autoComplete="off"
       />
       {/* Segundo campo: email */}
       <Input
@@ -70,6 +71,7 @@ export default function RegisterForm() {
         value={email}
         required
         icon={<Mail size={18} className="text-neutral-medium" />}
+        autoComplete="off"
       />
 
       {/* Tercer campo: password */}
@@ -83,7 +85,7 @@ export default function RegisterForm() {
             onChange={e => setPassword(e.target.value)}
             required
             icon={<Lock size={18} className="text-neutral-medium" />}
-            autoComplete="current-password"
+            autoComplete="new-password"
           />
           <button
             type="button"
