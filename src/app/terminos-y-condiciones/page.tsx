@@ -13,7 +13,7 @@ export default function TermsAndConditionsPage() {
 
                 <section>
                     <h2 className="text-2xl font-bold text-neutral-dark mb-4">1. Introducción general</h2>
-                    <p>Al acceder, navegar y utilizar la aplicación de e-commerce de Relojes BV Beni, propiedad intelectual operada en los canales vigentes, usted acepta plena y sin reservas todos los presentes Términos y Condiciones. Si usted se opone a cualquier cláusula o documento enlazado o directriz de nuestra marca, le rogamos detenga de inmediato el registro o actividad de compra en los servicios.</p>
+                    <p>Al acceder, navegar y utilizar la aplicación web de Relojes BV Beni, propiedad intelectual operada en los canales vigentes, usted acepta plena y sin reservas todos los presentes Términos y Condiciones. Si usted se opone a cualquier cláusula o documento enlazado o directriz de nuestra marca, le rogamos detenga de inmediato el registro o actividad de compra en los servicios.</p>
                 </section>
 
                 <section>
