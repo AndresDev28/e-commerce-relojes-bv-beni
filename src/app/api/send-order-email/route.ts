@@ -145,12 +145,17 @@ export async function POST(request: NextRequest) {
     const isCancellationRejection = previousOrderStatus === 'cancellation_requested' &&
       (orderStatus === 'processing' || orderStatus === 'paid' || orderStatus === 'pending')
 
+    const isShipmentFailure = orderStatus === 'processing' &&
+      (previousOrderStatus === 'shipped' || previousOrderStatus === 'delivered')
+
     // 6. Generate email content
     const subject = isNewOrder
       ? `Confirmación de Pedido - ${orderId}`
       : isCancellationRejection
         ? `Solicitud de cancelación rechazada - ${orderId}`
-        : getEmailSubject(orderId, orderStatus)
+        : isShipmentFailure
+          ? `Incidencia con tu envío - ${orderId}`
+          : getEmailSubject(orderId, orderStatus)
 
     const html = await renderEmailToHtml(
       OrderStatusEmail({
@@ -159,6 +164,7 @@ export async function POST(request: NextRequest) {
         orderStatus,
         orderData,
         isCancellationRejection,
+        isShipmentFailure,
         statusChangeNote,
         isNewOrder,
       })

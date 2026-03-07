@@ -455,6 +455,35 @@ describe('POST /api/send-order-email', () => {
       expect(callArgs.html).toContain('ya se estampó el nombre')
       expect(callArgs.html).toContain('Lamentamos informarte que tu solicitud de cancelación no ha podido ser aceptada')
     })
+
+    it('should handle shipment failures properly (SHIP-12)', async () => {
+      vi.mocked(sendEmail).mockResolvedValueOnce({
+        success: true,
+        emailId: 'email_shipment_failure',
+        attempt: 1,
+      })
+
+      const failureBody = {
+        ...validRequestBody,
+        previousOrderStatus: OrderStatus.SHIPPED,
+        orderStatus: OrderStatus.PROCESSING,
+      }
+
+      const request = new Request('http://localhost:3000/api/send-order-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': validWebhookSecret,
+        },
+        body: JSON.stringify(failureBody),
+      })
+
+      await POST(request as any)
+
+      const callArgs = vi.mocked(sendEmail).mock.calls[0][0]
+      expect(callArgs.subject).toContain('Incidencia con tu envío')
+      expect(callArgs.html).toContain('Ha habido una incidencia con el envío o entrega de tu pedido')
+    })
   })
 })
 
