@@ -27,6 +27,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email/client'
 import { RESEND_CONFIG } from '@/lib/email/config'
+import { maskEmail } from '@/lib/utils/maskPII'
 import { OrderStatus } from '@/types'
 import type { CartItem } from '@/types'
 import { OrderStatusEmail, EMAIL_SUBJECTS } from '@/emails/templates'
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
     )
 
     // 7. Send email
-    console.log(`📤 Sending email to ${customerEmail}...`)
+    console.log(`📤 Sending email to ${maskEmail(customerEmail)}...`)
     const result = await sendEmail({
       to: customerEmail,
       subject,
@@ -185,11 +186,11 @@ export async function POST(request: NextRequest) {
 
     // 8. Handle result
     if (result.success) {
-      console.log(`✅ Email sent successfully (ID: ${result.emailId})`)
+      console.log(`✅ Email sent successfully (ID: ${result.emailId}) to ${maskEmail(customerEmail)}`)
       return NextResponse.json({
         success: true,
         emailId: result.emailId,
-        message: `Email sent to ${customerEmail}`,
+        message: `Email sent to ${maskEmail(customerEmail)}`,
       })
     } else {
       // IMPORTANT (ORD-20 Decision): Log error but return 200
