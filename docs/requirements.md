@@ -890,8 +890,8 @@ Scenario: Email no se envía si no hay email asociado
 
 - [ ] [SHIP-10] Crear template de email "Tu pedido ha sido enviado" (React Email)
 - [ ] [SHIP-11] Crear template de email "Tu pedido ha sido entregado" (React Email)
-- [ ] [SHIP-12] Lifecycle hook: disparar email en cambios de estado de Shipment
-- [ ] [SHIP-13] Tests: emails de envío renderizan correctamente
+- [x] [SHIP-12] Lifecycle hook: disparar email en cambios de estado de Shipment
+- [x] [SHIP-13] Tests: emails de envío renderizan correctamente
 
 **Prioridad:** Alta  
 **Estimación:** 4-5 horas
