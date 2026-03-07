@@ -61,7 +61,7 @@ export default function CookiesPolicyPage() {
                     los visitantes se mueven por el sitio. Toda la información que recogen estas cookies es agregada y, por lo tanto, anónima.
                 </p>
                 <p>
-                    <em>Nota: Estas cookies solo se instalan si haces clic en "Aceptar Todas" en nuestro banner de cookies.</em>
+                    <em>Nota: Estas cookies solo se instalan si haces clic en &quot;Aceptar Todas&quot; en nuestro banner de cookies.</em>
                 </p>
 
                 <h2>3. Cómo controlar las cookies</h2>
