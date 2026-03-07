@@ -69,7 +69,7 @@ export default function CheckoutPage() {
     }
 
     console.log('🔍 [useEffect] Todo OK, no se redirige')
-  }, [authLoading, user, cartItems, router, paymentSuccessful, orderError])
+  }, [authLoading, user, cartItems, router, paymentSuccessful, orderError, isHydrated])
 
   // Mostrar loading mientras se valida la autenticación o el carrito
   if (authLoading || !isHydrated) {
