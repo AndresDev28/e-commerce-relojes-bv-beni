@@ -1,7 +1,7 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 27 Febrero 2026  
-**Estado actual:** EPIC 16 completado  
+**Última actualización:** 9 Marzo 2026  
+**Estado actual:** EPIC 17 + 17b completados ✅  
 **Objetivo:** Lanzamiento 14 Abril 2026
 
 ---
@@ -26,7 +26,24 @@
 - ✅ Emails de notificación (solicitado, aprobado, rechazado)
 - ✅ UI cliente y admin
 
-**Progreso general:** ~150h invertidas de ~240h estimadas (62%)
+**EPIC 17: Sistema de Envíos y Tracking**
+- ✅ Content-type Shipment en Strapi con relación a Order
+- ✅ Lifecycle hooks: auto-crear Shipment al pasar Order a "shipped"
+- ✅ Transición automática Order→delivered / Order→processing (failed)
+- ✅ Emails de envío: "pedido enviado", "pedido entregado", "fallo en envío"
+- ✅ Tests de integración para lifecycles y modelo Shipment
+- ✅ Campo `shipmentStatus` (renombrado por conflicto con campo reservado Strapi v5)
+
+**EPIC 17b: Hardening y Seguridad**
+- ✅ Rate limiting en APIs críticas (middleware Edge Runtime)
+- ✅ Headers de seguridad (CSP, HSTS, X-Frame-Options, X-XSS-Protection)
+- ✅ Banner de consentimiento de cookies (granular: esenciales vs analytics)
+- ✅ Páginas legales: Política de privacidad, Política de cookies
+- ✅ Auditoría de secrets y `.env` en `.gitignore`
+- ✅ Enmascaramiento de PII en logs (`maskPII.ts`)
+- ✅ Tests: rate limiting, headers y compliance GDPR
+
+**Progreso general:** ~185h invertidas de ~240h estimadas (77%)
 
 ---
 
@@ -49,7 +66,7 @@
 
 ---
 
-## 🎯 EPIC 17: Sistema de Envíos y Tracking (Simplificado MVP)
+## ✅ EPIC 17: Sistema de Envíos y Tracking (Simplificado MVP) — COMPLETADO
 
 **Objetivo:** Permitir que el admin registre envíos y que los clientes vean el tracking.
 
@@ -107,11 +124,12 @@
 - Emails se envían correctamente
 - UI muestra información correcta
 
-**Resultado esperado:** Sistema de tracking manual funcional.
+**Resultado esperado:** Sistema de tracking manual funcional.  
+**Estado:** ✅ Completado — 7 Marzo 2026
 
 ---
 
-## 🔒 EPIC 17b: Hardening y Seguridad
+## ✅ EPIC 17b: Hardening y Seguridad — COMPLETADO
 
 **Objetivo:** Asegurar que la aplicación cumple estándares de seguridad para producción.
 
@@ -167,7 +185,8 @@
 - Derecho de acceso y eliminación de datos (básico)
 - Enmascaramiento de PII en respuestas API donde sea posible
 
-**Resultado esperado:** Aplicación segura y conforme con regulaciones españolas.
+**Resultado esperado:** Aplicación segura y conforme con regulaciones españolas.  
+**Estado:** ✅ Completado — 9 Marzo 2026
 
 ---
 
@@ -682,8 +701,8 @@
 
 ### Pre-Producción (Must Have)
 
-- [ ] EPIC 17: Sistema de envíos simplificado (manual)
-- [ ] EPIC 17b: Hardening y seguridad (GDPR, rate limiting, headers)
+- [x] EPIC 17: Sistema de envíos simplificado (manual)
+- [x] EPIC 17b: Hardening y seguridad (GDPR, rate limiting, headers)
 - [ ] Testing exhaustivo (>80% cobertura)
 - [ ] Contenidos migrados y optimizados
 - [ ] SEO configurado (redirects, sitemap, analytics)
@@ -747,6 +766,6 @@
 
 ---
 
-**Última actualización:** 27 Febrero 2026  
-**Próxima revisión:** Al completar EPIC 17  
+**Última actualización:** 9 Marzo 2026  
+**Próxima revisión:** Al completar Testing + QA y Setup de Producción  
 **Contacto:** Andrés | andresjpadev@gmail.com

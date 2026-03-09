@@ -949,10 +949,10 @@ Scenario: Secrets no expuestos
 
 ### Tareas técnicas
 
-- [ ] [SEC-01] Configurar rate limiting en APIs críticas (login, checkout, register)
-- [ ] [SEC-02] Configurar headers de seguridad (CSP, HSTS, X-Frame-Options)
-- [ ] [SEC-03] Auditoría de secrets y variables de entorno (dev vs prod)
-- [ ] [SEC-04] Tests: rate limiting responde 429 y headers están presentes
+- [x] [SEC-01] Configurar rate limiting en APIs críticas (login, checkout, register)
+- [x] [SEC-02] Configurar headers de seguridad (CSP, HSTS, X-Frame-Options)
+- [x] [SEC-03] Auditoría de secrets y variables de entorno (dev vs prod)
+- [x] [SEC-04] Tests: rate limiting responde 429 y headers están presentes
 
 **Prioridad:** Alta (seguridad)  
 **Estimación:** 4-5 horas
@@ -1024,10 +1024,10 @@ Scenario: Protección de PII en logs
 
 ### Tareas técnicas
 
-- [ ] [SEC-05] Implementar banner de consentimiento de cookies (con persistencia de preferencia)
-- [ ] [SEC-06] Crear páginas legales: Política de privacidad, Política de cookies, Términos y condiciones
-- [ ] [SEC-07] Auditoría de PII en logs y respuestas API (backend)
-- [ ] [SEC-08] Tests: banner de cookies funciona, analytics se bloquean sin consentimiento
+- [x] [SEC-05] Implementar banner de consentimiento de cookies (con persistencia de preferencia)
+- [x] [SEC-06] Crear páginas legales: Política de privacidad, Política de cookies, Términos y condiciones
+- [x] [SEC-07] Auditoría de PII en logs y respuestas API (backend)
+- [x] [SEC-08] Tests: banner de cookies funciona, analytics se bloquean sin consentimiento
 
 **Prioridad:** Alta (legal)  
 **Estimación:** 5-6 horas
