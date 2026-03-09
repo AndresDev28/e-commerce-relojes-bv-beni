@@ -186,7 +186,7 @@
 - Enmascaramiento de PII en respuestas API donde sea posible
 
 **Resultado esperado:** Aplicación segura y conforme con regulaciones españolas.  
-**Estado:** ✅ Completado — 9 Marzo 2026
+**Estado:** ✅ Completado — 7 Marzo 2026
 
 ---
 
