@@ -1,5 +1,6 @@
 import CategoryCard from './CategoryCard'
 import { CategoryItem, StrapiCategory, StrapiImage } from '@/types'
+import { API_URL } from '@/lib/constants'
 
 interface CategoryGridProps {
   categories: StrapiCategory[]
@@ -7,7 +8,7 @@ interface CategoryGridProps {
 
 const CategoryGrid = ({ categories }: CategoryGridProps) => {
   // Transformamos categorías de Strapi a CategoryItem
-  const strapiApiUrl = 'http://127.0.0.1:1337'
+  const strapiApiUrl = API_URL || ''
   // Transformamos categorías de Strapi a CategoryItem
   const items: CategoryItem[] = categories.map(cat => {
     // Si Strapi trae imagen, la usamos; si no, fallback local por slug

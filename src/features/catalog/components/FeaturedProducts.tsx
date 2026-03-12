@@ -1,5 +1,6 @@
 import ProductCard from './ProductCard'
 import { Product, StrapiImage, StrapiProduct } from '@/types'
+import { API_URL } from '@/lib/constants'
 
 interface FeaturedProductsProps {
   products: StrapiProduct[]
@@ -41,7 +42,7 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
                 if (!img || !img.url) return '/images/empty-cart.png'
                 return img.url.startsWith('http')
                   ? img.url
-                  : `http://127.0.0.1:1337${img.url}`
+                  : `${API_URL}${img.url}`
               }),
               href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
               description: strapiProduct.description || '',

@@ -1092,6 +1092,94 @@ const CARRIER_TRACKING_URLS: Record<string, string> = {
 
 ---
 
+## EPIC 18: Testing e Integración E2E (QA)
+
+### Contexto
+
+Después de asegurar la aplicación con GDPR, Rate Limiting y Hardening (EPIC 17b) y terminar las funcionalidades core de pedidos y envíos, necesitamos asegurar la máxima fiabilidad de los "Happy Paths" de compra, cancelación y tracking utilizando automatización de navegador real con Playwright.
+
+---
+
+## User Story 1: Automatizar el flujo completo de compra (Happy Path)
+
+**Como** ingeniero QA / Owner  
+**Quiero** que el flujo de compra se pruebe automáticamente de principio a fin  
+**Para** garantizar que la pasarela de Stripe y la creación de órdenes en Strapi nunca se rompen
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Compra de un reloj E2E
+
+Scenario: [QA-01] Compra exitosa con tarjeta válida
+  Given un usuario anónimo navega al catálogo
+  When añade el producto "G-Shock GM2100" al carrito
+  And navega al checkout y rellena la dirección de envío
+  And introduce una tarjeta de prueba de Stripe válida
+  Then el sistema muestra la pantalla de "Pedido Confirmado"
+  And se crea un pedido en el backend con estado "paid"
+```
+
+### Tareas técnicas
+
+- [ ] [QA-01] Configurar Playwright en el repositorio frontend
+- [ ] [QA-01] Escribir script E2E: `checkout-happy-path.spec.ts`
+
+**Prioridad:** Alta  
+**Estimación:** 4 horas
+
+---
+
+## User Story 2: Automatizar flujos de post-venta (Cancelación y Tracking)
+
+**Como** ingeniero QA / Owner  
+**Quiero** probar automáticamente la vista de mis pedidos, cancelaciones y tracking  
+**Para** asegurar que el usuario siempre tiene una experiencia de autoservicio confiable
+
+### Criterios de Aceptación
+
+```gherkin
+Feature: Cancelación y Tracking E2E
+
+Scenario: [QA-02] Cliente cancela pedido en estado "paid"
+  Given un cliente con un pedido en estado "paid" hace menos de 24h
+  When accede a su historial y solicita la cancelación
+  And el admin aprueba la cancelación desde el admin mock
+  Then el pedido cambia a estado "cancelled"
+
+Scenario: [QA-03] Visualización de Envíos
+  Given un cliente tiene un pedido en estado "shipped"
+  When accede al detalle del pedido
+  Then puede ver el Timeline de tracking renderizado
+```
+
+### Tareas técnicas
+
+- [ ] [QA-02] Escribir script E2E: `order-cancellation.spec.ts`
+- [ ] [QA-03] Escribir script E2E: `order-tracking.spec.ts`
+
+**Prioridad:** Media  
+**Estimación:** 4 horas
+
+---
+
+## User Story 3: Auditorías Manuales e Infraestructura de QA
+
+**Como** owner del e-commerce  
+**Quiero** realizar chequeos manuales de accesibilidad, performance y compatibilidad cruzada  
+**Para** garantizar una experiencia de usuario de 10/10 antes de abrir tráfico real
+
+### Tareas técnicas
+
+- [ ] [QA-04] Auditoría de Performance (Lighthouse) score > 90
+- [ ] [QA-05] Load Testing Básico (50 usuarios concurrentes)
+- [ ] [QA-06] Cross-Browser QA Checklist manual (Safari iOS, Chrome Android, Firefox)
+
+**Prioridad:** Alta  
+**Estimación:** 3 horas
+
+---
+
 ## Deuda Técnica
 
   Esta sección documenta deuda técnica identificada durante el desarrollo que debe abordarse antes de producción o en iteraciones futuras.

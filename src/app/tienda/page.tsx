@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { ProductCard, ShopLoopHead } from '@/features/catalog'
 import { Product, StrapiProduct, StrapiImage } from '@/types'
 import { getProducts, getCategories } from '@/lib/api'
+import { API_URL } from '@/lib/constants'
 
 export default function ProductsPage() {
   // --- SECCIÓN 1: DATOS Y ESTADO ---
@@ -65,7 +66,7 @@ export default function ProductsPage() {
   const displayProducts = useMemo(() => {
     // --- PASO 1: TRANSFORMAR LOS DATOS "CRUDOS" DE STRAPI ---
     // Mapeamos el array 'products' que viene de la API a nuestra estructura 'Product' limpia.
-    const strapiApiUrl = 'http://127.0.0.1:1337'
+    const strapiApiUrl = API_URL || ''
     const formattedProducts: Product[] = products
       .filter(strapiProduct => strapiProduct) // Filtramos productos válidos
       .map(strapiProduct => {

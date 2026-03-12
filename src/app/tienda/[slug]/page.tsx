@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ProductDetailClient } from '@/features/catalog'
 import { Product, StrapiImage } from '@/types'
 import { getProductBySlug } from '@/lib/api'
+import { API_URL } from '@/lib/constants'
 
 export default async function ProductDetailPage({
   params,
@@ -32,7 +33,7 @@ export default async function ProductDetailPage({
     if (!img || !img.url) return '/images/empty-cart.png'
     return img.url.startsWith('http')
       ? img.url
-      : `http://127.0.0.1:1337${img.url}`
+      : `${API_URL}${img.url}`
   })
 
   // Normalizamos categoría (puede venir como objeto o array)
