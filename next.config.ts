@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://res.cloudinary.com http://127.0.0.1:1337 http://localhost:1337; font-src 'self' data:; connect-src 'self' https://api.stripe.com http://127.0.0.1:1337 http://localhost:1337 https://relojes-bv-beni-api.onrender.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://res.cloudinary.com http://127.0.0.1:1337 http://localhost:1337 http://relojes-bv-beni-api.localhost:1355 https://relojes-bv-beni-api.localhost:1355; font-src 'self' data:; connect-src 'self' https://api.stripe.com http://127.0.0.1:1337 http://localhost:1337 http://relojes-bv-beni-api.localhost:1355 https://relojes-bv-beni-api.localhost:1355 https://relojes-bv-beni-api.onrender.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com;",
           },
         ],
       },
