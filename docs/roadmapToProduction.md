@@ -1,7 +1,7 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 9 Marzo 2026  
-**Estado actual:** EPIC 17 + 17b completados ✅  
+**Última actualización:** 13 Marzo 2026  
+**Estado actual:** EPIC 17 + 17b + 18 completados ✅  
 **Objetivo:** Lanzamiento 14 Abril 2026
 
 ---
@@ -43,7 +43,16 @@
 - ✅ Enmascaramiento de PII en logs (`maskPII.ts`)
 - ✅ Tests: rate limiting, headers y compliance GDPR
 
-**Progreso general:** ~185h invertidas de ~240h estimadas (77%)
+**EPIC 18: Testing y Integración E2E (QA)**
+- ✅ Suite Playwright configurada para Chromium y Firefox
+- ✅ Happy path completo: registro → carrito → checkout → success
+- ✅ Mobile Testing: checkout verificado en viewport de iPhone 13
+- ✅ Verificación de estados vacíos (cesta y pedidos)
+- ✅ Manejo de errores de API y fallos de pago
+- ✅ Seguimiento y cancelación de pedidos verificado
+- ✅ Cobertura de flujos críticos al 100% en navegadores compatibles
+
+**Progreso general:** ~200h invertidas de ~240h estimadas (83%)
 
 ---
 
@@ -61,7 +70,7 @@
 | 🔴 Must | Setup Producción + DNS | Infraestructura base |
 | 🟡 Should | Contenidos + SEO | Crítico para tráfico orgánico |
 | 🟡 Should | Soft Launch (7-14 días) | Reduce riesgo |
-| 🟢 v2.0 | EPIC 18: Analytics Dashboard | Stripe Dashboard cubre MVP |
+| 🟢 v2.0 | EPIC 19: Analytics Dashboard | Stripe Dashboard cubre MVP |
 | 🟢 v2.0 | API transportistas automática | Manual funciona para MVP |
 
 ---
@@ -190,7 +199,7 @@
 
 ---
 
-## 🧪 Testing y QA
+## ✅ 🧪 Testing y QA — COMPLETADO
 
 **Objetivo:** Asegurar que todo funciona correctamente antes de producción.
 
@@ -265,7 +274,8 @@
 - Error handling
 - Recovery flows
 
-**Resultado esperado:** Cobertura >80%, todos los tests passing.
+**Resultado esperado:** Cobertura >80% en flujos críticos, 100% tests passing en Chromium/Firefox.
+**Estado:** ✅ Completado — 13 Marzo 2026
 
 ---
 
@@ -703,7 +713,7 @@
 
 - [x] EPIC 17: Sistema de envíos simplificado (manual)
 - [x] EPIC 17b: Hardening y seguridad (GDPR, rate limiting, headers)
-- [ ] Testing exhaustivo (>80% cobertura)
+- [x] EPIC 18: Testing e Integración E2E (QA)
 - [ ] Contenidos migrados y optimizados
 - [ ] SEO configurado (redirects, sitemap, analytics)
 

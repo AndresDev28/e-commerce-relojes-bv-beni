@@ -705,8 +705,8 @@ interface StatusChange {
 
 ## Próximos EPICs (después del 16)
 
-- **EPIC 17:** Sistema de envíos y hardening (simplificado MVP)
-- **EPIC 18:** Dashboard de analytics (v2.0 - post-lanzamiento)
+- **EPIC 18:** Testing e Integración E2E (QA)
+- **EPIC 19:** Dashboard de analytics (v2.0)
 
 ---
 
@@ -888,8 +888,8 @@ Scenario: Email no se envía si no hay email asociado
 
 ### Tareas técnicas
 
-- [ ] [SHIP-10] Crear template de email "Tu pedido ha sido enviado" (React Email)
-- [ ] [SHIP-11] Crear template de email "Tu pedido ha sido entregado" (React Email)
+- [x] [SHIP-10] Crear template de email "Tu pedido ha sido enviado" (React Email)
+- [x] [SHIP-11] Crear template de email "Tu pedido ha sido entregado" (React Email)
 - [x] [SHIP-12] Lifecycle hook: disparar email en cambios de estado de Shipment
 - [x] [SHIP-13] Tests: emails de envío renderizan correctamente
 
@@ -1089,6 +1089,76 @@ const CARRIER_TRACKING_URLS: Record<string, string> = {
 - ✅ Headers de seguridad presentes en 100% de respuestas de producción
 - ✅ Banner de cookies funcional y respeta preferencias del usuario
 - ✅ Coverage de tests > 80% en módulos de shipping y security
+
+---
+
+## EPIC 18: Testing e Integración E2E (QA)
+
+### Contexto
+Para asegurar la estabilidad del MVP antes del lanzamiento, se requiere una suite de pruebas End-to-End (E2E) que cubra los flujos críticos de negocio. Estas pruebas deben ejecutarse en entornos controlados que emulen el comportamiento real del usuario, incluyendo dispositivos móviles y navegadores principales.
+
+---
+
+## User Story 1: Happy Path de Compra
+**Como** cliente  
+**Quiero** realizar una compra completa sin errores  
+**Para** recibir mi reloj en casa correctamente
+
+### Criterios de Aceptación
+- [x] Navegar al catálogo y añadir producto al carrito.
+- [x] Redirección automática a login si no hay sesión.
+- [x] Login exitoso y retorno al carrito/checkout.
+- [x] Proceso de pago y llegada a página de éxito.
+
+---
+
+## User Story 2: Experiencia Móvil
+**Como** usuario móvil  
+**Quiero** comprar desde mi smartphone con total fluidez  
+**Para** no depender de un ordenador para mis compras
+
+### Criterios de Aceptación
+- [x] Botones y controles son accesibles en viewport móvil (iPhone 13).
+- [x] El banner de cookies no bloquea el flujo principal.
+- [x] La navegación entre carrito y checkout es rápida.
+
+---
+
+## User Story 3: Gestión Post-Compra
+**Como** cliente  
+**Quiero** seguir mi pedido y poder cancelarlo si es necesario  
+**Para** tener control total sobre mi compra
+
+### Criterios de Aceptación
+- [x] Ver historial de pedidos y timeline de tracking.
+- [x] Solicitar cancelación desde el detalle del pedido (modal).
+- [x] El sistema refleja los estados del transportista (Correos/SEUR).
+
+---
+
+## User Story 4: Resiliencia y Errores
+**Como** sistema  
+**Quiero** manejar fallos de API y pasarela con elegancia  
+**Para** no frustrar al usuario con cuelgues inesperados
+
+### Criterios de Aceptación
+- [x] Mostrar mensajes amigables ante errores 500 del servidor.
+- [x] Impedir acceso a checkout sin token de autenticación válido.
+
+---
+
+## Tareas técnicas
+- [x] [QA-01] Configurar Playwright con soporte para .localhost
+- [x] [QA-02] Implementar Mocks de API (Strapi/Stripe) robustos
+- [x] [QA-03] Implementar Test: Checkout Happy Path
+- [x] [QA-04] Implementar Test: Mobile Checkout
+- [x] [QA-05] Implementar Test: Seguimiento y Cancelación
+- [x] [QA-06] Implementar Test: Estados Vacíos y Errores
+- [x] [QA-07] Optimizar suite para Chromium y Firefox
+
+---
+
+## EPIC 19: Dashboard de analytics (v2.0 - post-lanzamiento)
 
 ---
 
