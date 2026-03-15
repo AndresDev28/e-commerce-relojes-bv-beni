@@ -33,6 +33,7 @@ const FavoriteItemRow = ({ product }: FavoriteItemProps) => {
             src={product.images[0] || '/images/placeholder.png'}
             alt={product.name}
             fill
+            sizes="96px"
             style={{ objectFit: 'contain' }}
             className="p-1"
           />

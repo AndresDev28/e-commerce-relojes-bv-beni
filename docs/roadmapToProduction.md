@@ -643,7 +643,7 @@
 > [!NOTE]
 > Estas features se implementarán después del lanzamiento, priorizadas por impacto en ventas y feedback de usuarios reales.
 
-### EPIC 18: Analytics Dashboard Admin
+### EPIC 19: Analytics Dashboard Admin
 
 **Objetivo:** Dar visibilidad completa del negocio al admin (más allá de Stripe Dashboard).
 
