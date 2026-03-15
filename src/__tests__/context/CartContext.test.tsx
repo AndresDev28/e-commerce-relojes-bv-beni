@@ -69,6 +69,19 @@ describe('CartContext', () => {
     <CartProvider>{children}</CartProvider>
   )
 
+  /**
+   * beforeEach: Limpia localStorage antes de cada test
+   *
+   * CONCEPTO: Aislamiento de tests
+   * Cada test debe ser independiente del anterior.
+   * localStorage persiste entre renderizaciones, por lo que
+   * debemos limpiarlo para evitar que el estado de un test
+   * contamine al siguiente.
+   */
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   // ============================================
   // GRUPO 1: Estado Inicial
   // ============================================

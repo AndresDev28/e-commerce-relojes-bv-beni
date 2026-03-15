@@ -25,6 +25,7 @@ const CartItemRow = ({ item }: CartItemProps) => {
             src={item.images[0]}
             alt={item.name}
             fill
+            sizes="96px"
             style={{ objectFit: 'contain' }}
             className="p-1"
           />
