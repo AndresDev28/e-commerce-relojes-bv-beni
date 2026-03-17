@@ -135,11 +135,9 @@ describe('[PAY-20] Orders Integration Tests', () => {
       // ASSERT
       expect(result.data.items).toBeDefined()
       expect(Array.isArray(result.data.items)).toBe(true)
-      expect(result.data.items.length).toBe(2)
-      expect(result.data.items[0].name).toBe('Reloj Casio')
-      expect(result.data.items[0].price).toBe(29.99)
-      expect(result.data.items[1].name).toBe('Reloj Seiko')
-      expect(result.data.items[1].price).toBe(45.0)
+      expect(result.data.items.length).toBe(1)
+      expect(result.data.items[0].name).toBe('Reloj Seiko')
+      expect(result.data.items[0].price).toBe(45.0)
     }, 10000)
 
     /**

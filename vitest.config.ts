@@ -15,15 +15,18 @@ export default defineConfig({
     // Configuración global de coverage (fuera de projects)
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'html', 'json'],
+      include: ['src/**/*.{js,ts,tsx}'],
       exclude: [
         'node_modules/',
         'next/',
+        '.next/',
         '.storybook/',
         '**/*.config.{js,ts}',
         '**/*.stories.{ts,tsx}',
         'src/stories/**',
         '**/*.d.ts',
+        'src/**/__tests__/**',
       ],
     },
     projects: [
