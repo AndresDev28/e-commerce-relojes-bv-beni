@@ -12,16 +12,6 @@ import type { OrderData } from '../orders'
  */
 export const mockCartItems: CartItem[] = [
   {
-    id: '1',
-    name: 'Reloj Casio',
-    price: 29.99,
-    quantity: 2,
-    images: ['/images/reloj1.jpg'],
-    href: '/products/reloj-casio',
-    description: 'Reloj Casio de alta calidad',
-    stock: 10,
-  },
-  {
     id: '2',
     name: 'Reloj Seiko',
     price: 45.0,
@@ -37,17 +27,15 @@ export const mockCartItems: CartItem[] = [
  * Factory function to create mock order data
  * Allows customization while providing sensible defaults
  */
-export function createMockOrderData(
-  overrides?: Partial<OrderData>
-): OrderData {
+export function createMockOrderData(overrides?: Partial<OrderData>): OrderData {
   return {
     id: 1,
     documentId: 'order-doc-id-123',
     orderId: 'ORD-1699123456-A5F3',
     items: mockCartItems,
-    subtotal: 104.98,
+    subtotal: 45.0,
     shipping: 0,
-    total: 104.98,
+    total: 45.0,
     orderStatus: OrderStatus.PAID,
     paymentIntentId: 'pi_test_123456',
     createdAt: '2025-11-07T10:00:00.000Z',
