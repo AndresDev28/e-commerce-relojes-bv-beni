@@ -29,7 +29,6 @@ Last updated: 2026-06-14
 
 | Skill | Trigger / description | Scope | Path |
 | --- | --- | --- | --- |
-| `accessibility` | Audit and improve web accessibility following WCAG 2.2 guidelines. Use when asked to "improve accessibility", "a11y audit", "WCAG compliance", "screen reader support", "keyboard navigation", or "make accessible". | user | `/home/adreidev/.config/agents/skills/accessibility/SKILL.md` |
 | `branch-pr` | Create Gentle AI pull requests with issue-first checks. Trigger: creating, opening, or preparing PRs for review. | user | `/home/adreidev/.config/agents/skills/branch-pr/SKILL.md` |
 | `chained-pr` | Trigger: PRs over 400 lines, stacked PRs, review slices. Split oversized changes into chained PRs that protect review focus. | user | `/home/adreidev/.config/agents/skills/chained-pr/SKILL.md` |
 | `cognitive-doc-design` | Design docs that reduce cognitive load. Trigger: writing guides, READMEs, RFCs, onboarding, architecture, or review-facing docs. | user | `/home/adreidev/.config/agents/skills/cognitive-doc-design/SKILL.md` |
