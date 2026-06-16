@@ -5,3 +5,4 @@ export { default as ProductActionIcon } from './components/ProductActionIcon';
 export { default as ProductCard } from './components/ProductCard';
 export { default as ProductDetailClient } from './components/ProductDetailClient';
 export { default as ShopLoopHead } from './components/ShopLoopHead';
+export { useProducts } from './hooks/useProducts';
