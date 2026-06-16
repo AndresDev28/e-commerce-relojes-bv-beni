@@ -1,8 +1,10 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ArrowUpDown, ChevronDown } from 'lucide-react'
 import Button from '@/app/components/ui/Button'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import type { StrapiCategory } from '@/types'
 
 // Define la estructura de un solo breadcrumb, asegurando que cada uno tenga un nombre visible y una URL de destino.
 interface Breadcrumb {
@@ -14,22 +16,23 @@ interface Breadcrumb {
 interface ShopLoopHeadProps {
   breadcrumbs: Breadcrumb[] // Un array de objetos Breadcrumb para construir la navegación.
   totalResults: number // El número total de productos para mostrar en el contador.
-  currentSort: string // El criterio de ordenación actualmente activo (ej: 'price-asc').
-  onSortChange: (sortValue: string) => void // Una función callback que se ejecuta cuando el usuario selecciona una nueva opción de ordenación.
-  activeCategory: string
-  onCategoryChange: (category: string) => void // Función para cambiar de categoria
-  categories: string[] // Categorías dinámicas provenientes de Strapi
+  categories: { name: string; slug: string }[] // Categorías dinámicas provenientes de Strapi
 }
 
 const ShopLoopHead = ({
   breadcrumbs,
   totalResults,
-  currentSort,
-  onSortChange,
-  activeCategory,
-  onCategoryChange,
   categories,
 }: ShopLoopHeadProps) => {
+  // Hooks de Next.js para manejo de URL y navegación
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Leer estado actual de la URL
+  const activeCategory = searchParams.get('category') || 'Todos'
+  const currentSort = searchParams.get('sort') || 'default'
+
   // visibilidad del menú dentro del componente
   const [isSortOpen, setIsSortOpen] = useState(false)
   // Definimos las opciones
@@ -46,8 +49,6 @@ const ShopLoopHead = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      // Comprueba si el menú desplegable existe (dropDownRef.current) y si el clic (e.target) ocurrió fuera de él.
-      // `!dropDownRef.current.contains(e.target as Node)` devuelve true si el clic fue fuera.
       if (
         dropDownRef.current &&
         !dropDownRef.current.contains(e.target as Node)
@@ -55,33 +56,64 @@ const ShopLoopHead = ({
         setIsSortOpen(false)
       }
     }
-    // Agregamos el listener
     document.addEventListener('mousedown', handleClickOutside)
-    // Limpiamos el listener cuando el componente se desmonte
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, []) // // El array vacío asegura que el efecto solo se ejecute una vez
+  }, [])
+
+  /**
+   * Handler para cambiar categoría.
+   * Usa router.replace para evitar cluttering history con cambios de filtro.
+   * Resetea page a 1 (spec: Category change resets pagination).
+   */
+  const handleCategoryChange = (categorySlug: string) => {
+    const params = new URLSearchParams()
+    params.set('page', '1')
+    if (categorySlug !== 'Todos') {
+      params.set('category', categorySlug)
+    }
+    if (currentSort && currentSort !== 'default') {
+      params.set('sort', currentSort)
+    }
+    router.replace(`${pathname}?${params.toString()}`)
+  }
+
+  /**
+   * Handler para cambiar ordenamiento.
+   * Usa router.replace, resetea page a 1.
+   */
+  const handleSortChange = (sortValue: string) => {
+    const params = new URLSearchParams()
+    params.set('page', '1')
+    if (activeCategory && activeCategory !== 'Todos') {
+      params.set('category', activeCategory)
+    }
+    if (sortValue && sortValue !== 'default') {
+      params.set('sort', sortValue)
+    }
+    router.replace(`${pathname}?${params.toString()}`)
+    setIsSortOpen(false)
+  }
 
   return (
-    // El JSX de breadcrumbs...
     <div className="mb-8 flex flex-col gap-4">
       <Breadcrumbs breadcrumbs={breadcrumbs} />
-      {/* Agregamos el filtro de categorías */}
+      {/* Filtro de categorías */}
       <div className="flex items-center gap-2 flex-wrap border-b border-neutral-light pb-4">
         <Button
           variant={activeCategory === 'Todos' ? 'primary' : 'primary'}
-          onClick={() => onCategoryChange('Todos')}
+          onClick={() => handleCategoryChange('Todos')}
         >
           Todos
         </Button>
-        {categories.map(category => (
+        {categories.map(cat => (
           <Button
-            key={category}
-            variant={activeCategory === category ? 'primary' : 'primary'}
-            onClick={() => onCategoryChange(category)}
+            key={cat.slug}
+            variant={activeCategory === cat.slug ? 'primary' : 'primary'}
+            onClick={() => handleCategoryChange(cat.slug)}
           >
-            {category}
+            {cat.name}
           </Button>
         ))}
       </div>
@@ -95,28 +127,22 @@ const ShopLoopHead = ({
             className="flex items-center gap-2 rounded-md border border-l-neutral-light px-3 py-2 text-sm"
           >
             <ArrowUpDown size={16} />
-            {/* Ocultamos el texto en mobile */}
             <span className="hidden md:inline-block">
               {sortOptions.find(option => option.value === currentSort)
                 ?.label || 'Ordenar por'}
             </span>
-            {/* Mostramos una flecha solo en móvil */}
             <ChevronDown
               size={16}
               className={`transition-transform md:hidden ${isSortOpen ? 'rotate-180' : ''}`}
             />
           </button>
-          {/* Menú de despliegue */}
           {isSortOpen && (
             <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
               <div className="py-1">
                 {sortOptions.map(option => (
                   <button
                     key={option.value}
-                    onClick={() => {
-                      onSortChange(option.value)
-                      setIsSortOpen(false) // Cierra el menú al seleccionar
-                    }}
+                    onClick={() => handleSortChange(option.value)}
                     className="block w-full px-4 py-2 text-left text-sm text-neutral-dark hover:bg-neutral-lightest"
                   >
                     {option.label}

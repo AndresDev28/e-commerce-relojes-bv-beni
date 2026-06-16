@@ -25,18 +25,8 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import type { OrderData } from '@/lib/api/orders'
+import type { PaginationMeta } from '@/types'
 import OrderCard from './OrderCard'
-
-/**
- * Metadata de paginación retornada por el backend
- * Viene en la respuesta como meta.pagination
- */
-interface PaginationMeta {
-  page: number        // Página actual (1-indexed)
-  pageSize: number    // Tamaño fijo: 10 órdenes
-  pageCount: number   // Total de páginas disponibles
-  total: number       // Total de órdenes en la BD
-}
 
 /**
  * Estructura de respuesta del endpoint GET /api/orders
