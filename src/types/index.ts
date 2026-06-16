@@ -40,6 +40,28 @@ export interface StrapiCategory {
   image?: StrapiImage | StrapiImage[]
 }
 
+// Metadata de paginación retornada por Strapi
+export interface PaginationMeta {
+  page: number
+  pageSize: number
+  pageCount: number
+  total: number
+}
+
+// Parámetros opcionales para consultar productos con paginación/filtros
+export interface GetProductsParams {
+  page?: number
+  pageSize?: number
+  category?: string   // Strapi slug
+  sort?: string        // 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc'
+}
+
+// Respuesta paginada de productos
+export interface ProductsResponse {
+  products: StrapiProduct[]
+  pagination: PaginationMeta
+}
+
 // El tipo final para un producto completo que viene de la API
 export interface StrapiProduct {
   id: number
