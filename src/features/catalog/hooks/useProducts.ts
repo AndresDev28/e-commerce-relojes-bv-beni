@@ -173,7 +173,7 @@ export function useProducts() {
     const nextPage = page + 1
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', String(nextPage))
-    router.push(`${pathname}?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }, [page, pagination, router, pathname, searchParams])
 
   /**
