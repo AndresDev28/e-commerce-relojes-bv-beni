@@ -30,10 +30,15 @@ Next.js 15 App Router + React 19 + Strapi CMS + Stripe + Resend
 Structure code so the business domain (Catalog, Checkout, Shipping, Payments) is obvious before the technology.
 
 - **Routes (`src/app/`)**: Thin delivery layer only — page UI, layouts, and metadata. No business logic.
-- **Features (`src/features/`)**: Domain-driven vertical slices — `cart/`, `checkout/`, `catalog/`, `orders/`.
+- **Features (`src/features/`)**: Domain-driven vertical slices — `cart/`, `catalog/`, `checkout/`, `favorites/`, `orders/`.
   - Each feature exposes a public API (`index.ts`) and hides internals (`components`, `hooks`, `services`, `utils`).
   - Features MUST NOT have circular imports between each other.
-- **Shared Core (`src/shared/`)**: Generic UI (buttons, modals), math utilities, global configs.
+- **UI Components (`src/components/`)**: Shared React components organized with atomic design.
+- **Context (`src/context/`)**: React context providers for cross-cutting state.
+- **Lib (`src/lib/`)**: Third-party and service integrations (e.g., Stripe, Resend, Strapi clients) plus global config.
+- **Emails (`src/emails/`)**: React Email templates.
+- **Utils (`src/utils/`)**: Generic helpers and math utilities.
+- **Types (`src/types/`)**: Shared TypeScript type definitions.
 
 ## Component Standards (Atomic Design)
 
