@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.0.0...relojes-bv-beni-v1.1.0) (2026-06-19)
+
+
+### Features
+
+* **catalog:** add Load More pagination with URL sync for product grid ([#51](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/51)) ([03f206d](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/03f206d90c664245809e438e7ad091d36f50656a))
+
+
+### Bug Fixes
+
+* **catalog:** add stable sort tiebreaker and deduplicateById safety net ([#54](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/54)) ([269aaf9](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/269aaf9e906af1f2b75cf5e1d45b2d889415f0e6))
+
 ## [1.0.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v0.1.0...relojes-bv-beni-v1.0.0) (2026-06-13)
 
 
