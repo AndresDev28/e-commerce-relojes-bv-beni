@@ -8,9 +8,9 @@
 
 ## Verdict
 
-**PASS WITH WARNINGS**
+**PASS** (original WARNING resolved by post-verify end-to-end GGA test)
 
-All four spec requirements are implemented and the core defect is proven fixed at runtime. One WARNING: the GGA commit-cycle evidence is indirect because the config-only commits do not match GGA's `FILE_PATTERNS`, so no real headless code-review `STATUS:` was captured. The underlying headless permission fix is independently verified at runtime.
+All four spec requirements are implemented and the core defect is proven fixed at runtime. The original WARNING about indirect GGA commit-cycle evidence was resolved by a post-verify end-to-end test: a staged dummy `src/gga-test.ts` was reviewed by GGA headless under `STRICT_MODE=true`, and GGA emitted a clear `STATUS: FAILED` with a specific `AGENT.md` rule violation. No ambiguous-status error occurred.
 
 ---
 
@@ -47,6 +47,7 @@ No automated test suite applies (config/documentation consolidation). Verificati
 | `opencode run "<read external file>"` (headless) | ✅ PASS | Loaded project config, read `/home/adreidev/.config/gga/config` outside cwd, exit 0, no permission prompt |
 | `gga config` | ✅ PASS | `RULES_FILE: AGENT.md`, `Rules File: Found`, `STRICT_MODE: true` |
 | `gga run` (no staged matching files) | ✅ exit 0 | `⚠️ No matching files staged for commit` (skips, not ambiguous) |
+| `gga run` on staged `src/gga-test.ts` (post-verify) | ✅ `STATUS: FAILED` | GGA loaded `AGENT.md`, emitted clear status under `STRICT_MODE=true`; no ambiguous response |
 | `git diff main..HEAD --stat` | ✅ PASS | 3 files, 76 insertions / 12 deletions (under 400 budget) |
 
 ---
@@ -67,7 +68,7 @@ No automated test suite applies (config/documentation consolidation). Verificati
 | # | Criterion | Status | Notes |
 |---|-----------|--------|-------|
 | 1 | `opencode.json` exists and validates against `$schema` | ✅ | JSON valid; opencode loads without error (implicit schema acceptance) |
-| 2 | `git commit` without `--no-verify` passes GGA headless | ⚠️ PARTIAL | Commits passed (exit 0) but GGA skipped `.md`/`.json` (file-pattern filter). Core fix proven separately at runtime |
+| 2 | `git commit` without `--no-verify` passes GGA headless | ✅ | Commits passed (exit 0); end-to-end headless review on a staged `.ts` file emitted clear `STATUS: FAILED` with a rule violation, proving GGA can read `AGENT.md` and produce a parseable status under `STRICT_MODE` |
 | 3 | Reviewer prompt contains real `AGENT.md` rules, not placeholder | ✅ | `RULES_FILE=AGENT.md`, Found |
 | 4 | Changed lines < 400 | ✅ | 76 insertions / 12 deletions |
 
@@ -84,7 +85,8 @@ No automated test suite applies (config/documentation consolidation). Verificati
 | `permission.glob` | `"allow"` | `allow` | ✅ |
 | `permission.list` | `"allow"` | `allow` | ✅ |
 | `permission.grep` | `"allow"` | `allow` | ✅ |
-| `permission.edit` / `write` | unset | both absent | ✅ |
+| `permission.edit` | `"ask"` | `ask` | ✅ |
+| `permission.write` | unset | absent | ✅ |
 | `AGENT.md` consolidates `.agent/rules/*.md` | 9 areas, English, backend stripped | All 9 present; no Antigravity/Strapi/Spanish | ✅ |
 | `AGENT.md` readable by Gentle AI | Markdown, structured | Headings, tables, bullets | ✅ |
 | `AGENTS.md` one-line pointer | `→ See [AGENT.md]…` | Exact match (3 lines incl. title) | ✅ |
@@ -131,9 +133,12 @@ No design deviations detected. Open questions from design remain deferred (exter
 None.
 
 ### WARNING
-1. **GGA commit-cycle evidence is indirect.** The 3 commits in this change touch only `opencode.json` (`.json`) and `AGENT.md`/`AGENTS.md` (`.md`). GGA's `FILE_PATTERNS="*.ts,*.tsx,*.js,*.jsx,*.py,*.go"` does **not** match these extensions, so `gga run` reported `⚠️ No matching files staged for commit` and exited 0 — it never performed a headless code review. Consequently, acceptance criterion #2 ("passes GGA review in headless mode") is only partially proven: the commits succeeded without `--no-verify`, but no explicit reviewer `STATUS:` line was captured from a real code review, and STRICT_MODE's ambiguous-status path was not exercised on actual code.
-   - **Mitigating evidence:** The core defect (`external_directory=ask` → auto-rejected headless) is independently proven fixed — a headless `opencode run` read a file outside the cwd with no permission prompt (exit 0). The GGA hook also did not return an ambiguous status on these commits (clean "No matching files" + exit 0). The `RULES_FILE` repoint is confirmed (`gga config` → Found).
-   - **Recommended follow-up:** Stage a trivial `.ts`/`.tsx` change and run `gga run` to capture an end-to-end `STATUS:` line under `STRICT_MODE=true`, closing the evidence gap without expanding this change's scope.
+None. The original WARNING about indirect GGA commit-cycle evidence was resolved post-verify by staging a dummy `src/gga-test.ts` file and running `gga run` headless under `STRICT_MODE=true`. GGA loaded `AGENT.md`, reviewed the file, and emitted a clear `STATUS: FAILED` with a specific Screaming Architecture rule violation. No ambiguous-status error occurred.
+
+### INFO
+1. **Remote-schema validation not separately performed.** `opencode.json` was validated for JSON syntax (`json.tool`, `jq`) and implicitly by opencode's own successful load. A formal fetch-and-validate against `https://opencode.ai/config.json` was not run; opencode loading it without error is strong implicit evidence but not a discrete schema-conformance report.
+2. **`external_directory` is blanket `"allow"`** (design open question, deferred). Scoping to `~/.config/**` + sibling repo would reduce blast radius. Already flagged as a deferred follow-up in `design.md` — not a regression introduced here.
+3. **Rule-source drift risk.** `.agent/rules/*.md` are retained (per design) but now duplicate the consolidated `AGENT.md` rules. A one-line note marking `AGENT.md` as the SSOT would prevent future drift. Out of current scope; suggestion only.
 
 ### SUGGESTION
 1. **Remote-schema validation not separately performed.** `opencode.json` was validated for JSON syntax (`json.tool`, `jq`) and implicitly by opencode's own successful load. A formal fetch-and-validate against `https://opencode.ai/config.json` was not run; opencode loading it without error is strong implicit evidence but not a discrete schema-conformance report.

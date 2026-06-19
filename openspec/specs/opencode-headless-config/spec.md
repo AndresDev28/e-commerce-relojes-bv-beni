@@ -12,6 +12,7 @@ The project MUST contain an `opencode.json` at repository root with:
 - `$schema` pointing to `https://opencode.ai/config.json`
 - `instructions: ["AGENT.md"]`
 - `permission.glob`, `permission.list`, `permission.grep`, and `permission.external_directory` set to `"allow"`
+- `permission.edit` set to `"ask"` so a headless reviewer cannot edit files without approval
 
 #### Scenario: Headless permission grant
 
@@ -24,7 +25,8 @@ The project MUST contain an `opencode.json` at repository root with:
 
 - GIVEN the reviewer agent runs headless
 - WHEN it checks write permissions
-- THEN `edit` and `write` remain unset so the agent stays non-mutating
+- THEN `edit` is explicitly set to `"ask"` so the agent cannot edit without approval
+- AND `write` remains unset so the agent stays non-mutating
 
 ### Requirement 2: AGENT.md Consolidation
 
