@@ -3,9 +3,28 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { getProducts } from '@/lib/api'
-import type { StrapiProduct, StrapiImage, Product, PaginationMeta } from '@/types'
+import type {
+  StrapiProduct,
+  StrapiImage,
+  Product,
+  PaginationMeta,
+} from '@/types'
 
 const DEFAULT_PAGE_SIZE = 8
+
+/**
+ * Deduplicate an array of products by ID, keeping the first occurrence.
+ * Safety net against Strapi returning the same product on multiple pages
+ * due to unstable sort tiebreakers.
+ */
+function deduplicateById(products: Product[]): Product[] {
+  const seen = new Set<string>()
+  return products.filter(p => {
+    if (seen.has(p.id)) return false
+    seen.add(p.id)
+    return true
+  })
+}
 
 /**
  * Transform a StrapiProduct to the application Product type.
@@ -26,9 +45,7 @@ function formatProduct(strapiProduct: StrapiProduct): Product {
 
   const images = imagesArray.map(img => {
     if (!img || !img.url) return '/images/empty-cart.png'
-    return img.url.startsWith('http')
-      ? img.url
-      : `${strapiApiUrl}${img.url}`
+    return img.url.startsWith('http') ? img.url : `${strapiApiUrl}${img.url}`
   })
 
   const categoryName = Array.isArray(strapiProduct.category)
@@ -85,7 +102,10 @@ export function useProducts() {
       }
 
       const response = await getProducts(params)
-      return response as { products: StrapiProduct[]; pagination: PaginationMeta }
+      return response as {
+        products: StrapiProduct[]
+        pagination: PaginationMeta
+      }
     },
     [category, sort]
   )
@@ -114,7 +134,7 @@ export function useProducts() {
         if (page === 1) {
           // Simple case: just page 1
           if (!cancelled) {
-            setProducts(formattedPage1)
+            setProducts(deduplicateById(formattedPage1))
             setPagination(page1Result.pagination)
           }
         } else {
@@ -123,7 +143,7 @@ export function useProducts() {
           if (targetPage <= 1) {
             // Edge case: URL says page > 1 but only 1 page exists
             if (!cancelled) {
-              setProducts(formattedPage1)
+              setProducts(deduplicateById(formattedPage1))
               setPagination(page1Result.pagination)
             }
           } else {
@@ -142,7 +162,7 @@ export function useProducts() {
             ]
 
             if (!cancelled) {
-              setProducts(allProducts)
+              setProducts(deduplicateById(allProducts))
               setPagination(page1Result.pagination)
             }
           }
