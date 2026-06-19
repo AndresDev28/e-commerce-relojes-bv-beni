@@ -1,6 +1,12 @@
 // src/lib/api.ts
 
-import { StrapiProduct, StrapiCategory, PaginationMeta, GetProductsParams, ProductsResponse } from '@/types'
+import {
+  StrapiProduct,
+  StrapiCategory,
+  PaginationMeta,
+  GetProductsParams,
+  ProductsResponse,
+} from '@/types'
 
 // Tipo para la respuesta de la API de Strapi (genérico)
 interface StrapiApiResponse<T> {
@@ -26,7 +32,9 @@ async function fetchApi<T>(
   query?: Record<string, string>
 ): Promise<T> {
   const apiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL || 'http://127.0.0.1:1337'
+    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
+    process.env.STRAPI_API_URL ||
+    'http://127.0.0.1:1337'
 
   const url = new URL(`/api${endpoint}`, apiUrl)
 
@@ -65,9 +73,13 @@ export async function getProducts(): Promise<StrapiProduct[]>
  * Obtener productos — versión con parámetros de paginación/filtro.
  * Devuelve productos paginados + metadata.
  */
-export async function getProducts(params: GetProductsParams): Promise<ProductsResponse>
+export async function getProducts(
+  params: GetProductsParams
+): Promise<ProductsResponse>
 
-export async function getProducts(params?: GetProductsParams): Promise<StrapiProduct[] | ProductsResponse> {
+export async function getProducts(
+  params?: GetProductsParams
+): Promise<StrapiProduct[] | ProductsResponse> {
   // Sin parámetros → comportamiento original: fetch all
   if (!params) {
     return fetchApi<StrapiProduct[]>('/products', { populate: '*' })
@@ -88,16 +100,22 @@ export async function getProducts(params?: GetProductsParams): Promise<StrapiPro
     query['filters[category][slug][$eq]'] = params.category
   }
 
-  // Ordenamiento — mapear formato UI a formato Strapi (price:asc)
-  if (params.sort) {
-    const sortMap: Record<string, string> = {
-      'price-asc': 'price:asc',
-      'price-desc': 'price:desc',
-      'name-asc': 'name:asc',
-      'name-desc': 'name:desc',
-    }
-    query['sort'] = sortMap[params.sort] ?? params.sort
+  // Ordenamiento — mapear formato UI a formato Strapi v4 array syntax (sort[0], sort[1])
+  // Always add id:asc as secondary tiebreaker for stable pagination.
+  const sortMap: Record<string, string> = {
+    'price-asc': 'price:asc',
+    'price-desc': 'price:desc',
+    'name-asc': 'name:asc',
+    'name-desc': 'name:desc',
   }
+
+  if (params.sort) {
+    query['sort[0]'] = sortMap[params.sort] ?? params.sort
+  } else {
+    // Default tiebreaker when no explicit sort is given
+    query['sort[0]'] = 'id:asc'
+  }
+  query['sort[1]'] = 'id:asc'
 
   const data = await fetchApi<StrapiProduct[]>('/products', query)
 
@@ -105,7 +123,9 @@ export async function getProducts(params?: GetProductsParams): Promise<StrapiPro
   // We need to call fetchApi differently to get the full response with meta.
   // Let's use a direct approach for paginated calls.
   const apiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL || 'http://127.0.0.1:1337'
+    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
+    process.env.STRAPI_API_URL ||
+    'http://127.0.0.1:1337'
 
   const url = new URL(`/api/products`, apiUrl)
   Object.entries(query).forEach(([key, value]) => {
@@ -114,7 +134,9 @@ export async function getProducts(params?: GetProductsParams): Promise<StrapiPro
 
   const response = await fetch(url.toString(), { cache: 'no-store' })
   if (!response.ok) {
-    throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`)
+    throw new Error(
+      `Failed to fetch products: ${response.status} ${response.statusText}`
+    )
   }
 
   const fullResponse: {
