@@ -8,25 +8,48 @@ Define paginated product fetching, "Load More" interaction, and URL synchronizat
 
 ### Requirement: Paginated Product Fetching
 
-The system MUST fetch products from Strapi in paginated batches. The default page size SHALL be 8 items. The `getProducts()` service MUST remain backward-compatible when no pagination params are provided.
+The system MUST fetch products in paginated batches with a stable secondary sort by `id:asc`. The `getProducts()` service MUST use Strapi v4 array syntax (`sort[0]`, `sort[1]`). The default page size SHALL remain 8 items. Backward compatibility without params MUST be preserved.
 
 #### Scenario: Initial catalog load
 
 - GIVEN the user visits `/tienda`
 - WHEN the catalog page renders
-- THEN the first 8 products are fetched and displayed
+- THEN the first 8 products are fetched and displayed with `sort[0]=id:asc`
 
 #### Scenario: Load more products
 
 - GIVEN the catalog shows page 1 of products
 - WHEN the user clicks the "Load More" button
-- THEN the next 8 products are fetched and appended to the grid
+- THEN the next 8 products are fetched and appended to the grid with the same stable sort
+
+#### Scenario: Explicit sort
+
+- GIVEN sort "price-asc" is selected
+- WHEN products fetch
+- THEN the request contains `sort[0]=price:asc` and `sort[1]=id:asc`
 
 #### Scenario: Backward-compatible un-paginated call
 
 - GIVEN a consumer calls `getProducts()` without pagination params
 - WHEN the request executes
 - THEN all matching products are returned (existing behavior preserved)
+
+### Requirement: Product Deduplication on Accumulation
+
+The system MUST deduplicate accumulated products by ID before state update. Duplicate IDs across pages SHALL be reduced to the first occurrence.
+
+#### Scenario: Duplicate across pages
+
+- GIVEN product ID 42 exists on page 1 and page 2
+- WHEN pages are accumulated
+- THEN product 42 appears exactly once
+
+#### Scenario: 102-product catalog
+
+- GIVEN 102 products in Strapi
+- WHEN all pages load
+- THEN the accumulated list contains 102 unique IDs
+- AND zero React duplicate-key warnings fire
 
 ### Requirement: URL Synchronization
 
