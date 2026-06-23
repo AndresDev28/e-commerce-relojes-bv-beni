@@ -98,13 +98,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    console.log('💰 Payment Intent - Calculated total:', {
-      subtotal,
-      shipping,
-      total,
-      items: items.length,
-    })
-
     // ================================================================
     // STEP 3.5: [AND-99] Pre-validate stock availability
     // ================================================================
@@ -148,7 +141,6 @@ export async function POST(request: NextRequest) {
           console.warn(`[AND-99] Stock check failed for item ${item.id}:`, stockError)
         }
       }
-      console.log('✅ [AND-99] Stock pre-validation passed for all items')
     }
     // ================================================================
     // STEP 4: Create Payment Intent with Stripe
@@ -167,7 +159,6 @@ export async function POST(request: NextRequest) {
         shipping: shipping.toString(),
       },
     })
-    console.log('✅ Payment Intent created:', paymentIntent.id)
     // ================================================================
     // STEP 5: Return client_secret to frontend
     // ================================================================

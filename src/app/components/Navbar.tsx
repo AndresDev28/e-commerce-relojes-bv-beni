@@ -17,10 +17,6 @@ const Navbar = () => {
   // Lógica para determinar el estado del icono User
   const userIconLink = user ? '/mi-cuenta' : '/login'
 
-  // Las pruebas
-  console.log('ESTADO DEL CARRITO:', cartItems)
-  console.log('ESTADO DE AUTH:', auth)
-
   return (
     <header className="bg-dark text-white shadow-md">
       <div className="container mx-auto flex items-center justify-between p-4">
