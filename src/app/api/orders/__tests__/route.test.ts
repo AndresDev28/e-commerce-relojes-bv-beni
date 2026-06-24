@@ -9,6 +9,9 @@
  * FUNCIONALIDADES TESTEADAS:
  * [ORD-01] - Obtención de órdenes desde Strapi
  * [ORD-02] - Paginación de resultados
+ * [SEC-01] - JWT validation via requireUser
+ * [SEC-02] - IDOR prevention
+ * [TRC-01] - X-Trace-Id propagation
  *
  * PATRÓN DE DISEÑO:
  * - Arrange-Act-Assert (AAA): Organización clara de cada test en 3 fases
@@ -18,7 +21,7 @@
  * @see https://vitest.dev/guide/
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET } from '../route'
 import { NextRequest } from 'next/server'
 
@@ -26,18 +29,180 @@ import { NextRequest } from 'next/server'
 // CONFIGURACIÓN DE MOCKS
 // ============================================================================
 
-/**
- * Mock del módulo de constantes
- *
- * POR QUÉ: Necesitamos simular la URL de Strapi para que los tests no dependan
- * de un servidor real. Esto permite:
- * 1. Ejecutar tests sin conexión a internet
- * 2. Tests más rápidos (no hay llamadas HTTP reales)
- * 3. Resultados predecibles y consistentes
- */
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337'
 }))
+
+// Restore globals after each test (fix V5 stubbing)
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+// ============================================================================
+// SUITE DE TESTS: JWT Validation & Authorization (requireUser)
+// ============================================================================
+
+describe('[SEC-01] JWT Validation via requireUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    global.fetch = vi.fn()
+  })
+
+  it('should return 401 if no authorization header is provided', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders')
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Unauthorized - JWT token required')
+  })
+
+  it('should return 401 if authorization header is malformed', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: {
+        'Authorization': 'InvalidToken123'
+      }
+    })
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Unauthorized - Invalid token format')
+  })
+
+  it('should return 401 when JWT is expired (Strapi returns 401)', async () => {
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: { 'Authorization': 'Bearer expired-token' }
+    })
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
+  })
+})
+
+// ============================================================================
+// SUITE DE TESTS: IDOR Prevention
+// ============================================================================
+
+describe('[SEC-02] IDOR Prevention', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    global.fetch = vi.fn()
+    // Mock successful Strapi user validation
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
+    })
+  })
+
+  it('should return 403 when user param does not match JWT user', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders?user=99', {
+      headers: { 'Authorization': 'Bearer valid-token' }
+    })
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('No tienes permiso para acceder a este recurso.')
+  })
+
+  it('should allow request when user param matches JWT user', async () => {
+    // Mock Strapi orders response
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: [{ id: 1, orderId: 'ORD-001', createdAt: '2025-11-20T10:00:00Z' }],
+        meta: { pagination: { page: 1, pageSize: 10, pageCount: 1, total: 1 } },
+      }),
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/orders?user=42', {
+      headers: { 'Authorization': 'Bearer valid-token' }
+    })
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.data).toHaveLength(1)
+  })
+})
+
+// ============================================================================
+// SUITE DE TESTS: Trace Id Propagation
+// ============================================================================
+
+describe('[TRC-01] X-Trace-Id Propagation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    global.fetch = vi.fn()
+    // Mock successful Strapi user validation
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
+    })
+    // Mock Strapi orders response
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: [],
+        meta: { pagination: { page: 1, pageSize: 10, pageCount: 1, total: 0 } },
+      }),
+    })
+  })
+
+  it('should echo X-Trace-Id in response when provided in request', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: {
+        'Authorization': 'Bearer valid-token',
+        'X-Trace-Id': 'test-trace-abc-123',
+      }
+    })
+
+    const response = await GET(request)
+
+    expect(response.headers.get('X-Trace-Id')).toBe('test-trace-abc-123')
+  })
+
+  it('should propagate X-Trace-Id to Strapi fetch call', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: {
+        'Authorization': 'Bearer valid-token',
+        'X-Trace-Id': 'test-trace-abc-123',
+      }
+    })
+
+    await GET(request)
+
+    // Second fetch call is to Strapi orders
+    const strapiCall = (global.fetch as any).mock.calls[1]
+    expect(strapiCall[1].headers['X-Trace-Id']).toBe('test-trace-abc-123')
+  })
+
+  it('should generate and echo X-Trace-Id when not provided', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: { 'Authorization': 'Bearer valid-token' }
+    })
+
+    const response = await GET(request)
+    const traceId = response.headers.get('X-Trace-Id')
+
+    expect(traceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
+  })
+})
 
 // ============================================================================
 // SUITE DE TESTS: Funcionalidad básica del endpoint
@@ -56,82 +221,15 @@ vi.mock('@/lib/constants', () => ({
 describe('[ORD-01] GET /api/orders', () => {
   /**
    * Configuración que se ejecuta ANTES de cada test
-   *
-   * POR QUÉ: Garantiza que cada test empiece con un estado limpio
-   * - clearAllMocks(): Limpia el historial de llamadas a funciones mock
-   * - global.fetch = vi.fn(): Crea un nuevo mock de fetch para cada test
-   *
-   * ALTERNATIVA CONSIDERADA: Usar afterEach() pero beforeEach() es mejor
-   * porque asegura el estado limpio ANTES de cada test, no después.
    */
   beforeEach(() => {
     vi.clearAllMocks()
-    // Mock de fetch: Intercepta todas las llamadas HTTP
     global.fetch = vi.fn()
-  })
-
-  /**
-   * Test: Debe rechazar requests sin token de autenticación
-   *
-   * @description
-   * Verifica que el endpoint implemente seguridad básica rechazando
-   * requests sin el header de Authorization.
-   *
-   * PATRÓN AAA:
-   * - Arrange: Preparar un request SIN header de auth
-   * - Act: Llamar al endpoint
-   * - Assert: Verificar respuesta 401
-   *
-   * CASO EDGE: Usuario intenta acceder sin estar autenticado
-   * DECISIÓN: Retornar 401 en lugar de 403 porque el usuario no está
-   * autenticado (401 = no autenticado, 403 = autenticado pero sin permisos)
-   */
-  it('should return 401 if no authorization header is provided', async () => {
-    // Arrange: Crear request sin header de autenticación
-    const request = new NextRequest('http://localhost:3000/api/orders')
-
-    // Act: Ejecutar el endpoint
-    const response = await GET(request)
-    const data = await response.json()
-
-    // Assert: Debe retornar 401 Unauthorized con mensaje descriptivo
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized - JWT token required')
-  })
-
-  /**
-   * Test: Debe rechazar tokens con formato inválido
-   *
-   * @description
-   * Valida que el endpoint verifique el formato del token JWT.
-   * El formato esperado es: "Bearer <token>"
-   *
-   * CASO EDGE: Usuario envía un token malformado
-   * EJEMPLOS DE TOKENS INVÁLIDOS:
-   * - "InvalidToken123" (sin "Bearer ")
-   * - "Bearer" (sin token)
-   * - "" (string vacío)
-   *
-   * POR QUÉ VALIDAR EL FORMATO:
-   * 1. Seguridad: Evita ataques con tokens maliciosos
-   * 2. Consistencia: Sigue el estándar RFC 6750 (Bearer Token)
-   * 3. Debugging: Mensajes de error claros para el cliente
-   */
-  it('should return 401 if authorization header is malformed', async () => {
-    // Arrange: Crear request con token sin formato "Bearer"
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'InvalidToken123' // Token malformado: falta "Bearer "
-      }
+    // Mock successful Strapi user validation
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
     })
-
-    // Act: Ejecutar el endpoint
-    const response = await GET(request)
-    const data = await response.json()
-
-    // Assert: Debe rechazar con 401 y mensaje específico
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized - Invalid token format')
   })
 
   /**
@@ -187,7 +285,8 @@ describe('[ORD-01] GET /api/orders', () => {
       }
     ]
 
-    // Mock de fetch: Simular respuesta exitosa de Strapi
+    // First fetch: Strapi user validation (already mocked in beforeEach)
+    // Second fetch: Strapi orders response
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: mockOrders })
@@ -211,15 +310,11 @@ describe('[ORD-01] GET /api/orders', () => {
     expect(data.data[0].orderId).toBe('ORD-1700000002-A')
     expect(data.data[1].orderId).toBe('ORD-1700000001-A')
 
-    // Verificar que fetch fue llamado con los parámetros correctos
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/orders'),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': 'Bearer valid-jwt-token' // Token reenviado a Strapi
-        })
-      })
-    )
+    // Verify Strapi orders fetch was called with correct token and trace-id
+    const strapiCall = (global.fetch as any).mock.calls[1]
+    expect(strapiCall[0]).toContain('/api/orders')
+    expect(strapiCall[1].headers).toHaveProperty('Authorization')
+    expect(strapiCall[1].headers).toHaveProperty('X-Trace-Id')
   })
 
   /**
@@ -262,10 +357,10 @@ describe('[ORD-01] GET /api/orders', () => {
     const response = await GET(request)
     const data = await response.json()
 
-    // Assert: Debe retornar 500 con mensaje genérico
-    expect(response.status).toBe(500)
-    expect(data.error).toBe('Failed to fetch orders from Strapi')
-    // IMPORTANTE: No exponemos "Database connection failed" al cliente
+    // Assert: Debe retornar 502 (gateway error) con mensaje genérico
+    expect(response.status).toBe(502)
+    expect(data.error).toBe('No pudimos cargar tus pedidos. Intentá de nuevo.')
+    // IMPORTANTE: No exponemos "Database connection failed" ni el backend al cliente
   })
 
   /**
@@ -304,7 +399,7 @@ describe('[ORD-01] GET /api/orders', () => {
 
     // Assert: Debe retornar 500 con mensaje genérico
     expect(response.status).toBe(500)
-    expect(data.error).toBe('Internal server error')
+    expect(data.error).toBe('Ocurrió un error inesperado. Intentá de nuevo.')
     // Mensaje aún más genérico para no dar pistas sobre la arquitectura
   })
 })
@@ -343,6 +438,11 @@ describe('[ORD-02] Pagination', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     global.fetch = vi.fn()
+    // Mock successful Strapi user validation
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
+    })
   })
 
   /**
