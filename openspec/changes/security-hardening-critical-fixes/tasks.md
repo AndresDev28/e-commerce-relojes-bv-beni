@@ -42,6 +42,7 @@ Chain strategy: feature-branch-chain
 - [ ] 2.2 Add JWT validation + IDOR check (`user` query param must match JWT user) in `src/app/api/orders/route.ts`
 - [ ] 2.3 Add `requireUser()` validation in `src/app/api/create-payment-intent/route.ts` (signature+expiry, not just presence)
 - [ ] 2.4 Write unit tests for `requireUser`: 401 missing, 401 expired, 200 valid, 403 IDOR mismatch
+- [ ] 2.5 Create `src/lib/trace.ts` with `getTraceId(request)` helper (read existing header or generate new); propagate `X-Trace-Id` to Strapi/Stripe and echo in response headers in `/api/orders` and `/api/create-payment-intent`
 
 ## Phase 3: Session Infrastructure (PR 3a)
 
@@ -53,6 +54,7 @@ Chain strategy: feature-branch-chain
 - [ ] 3.6 Rewrite `src/context/AuthContext.tsx`: remove localStorage JWT; hydrate from `/api/auth/session`; call auth routes
 - [ ] 3.7 Update `vitest.config.ts`: exclude `**/*.integration.test.ts` from unit project glob
 - [ ] 3.8 Write unit tests for session.ts helpers, auth routes, and AuthContext hydration
+- [ ] 3.9 Propagate `X-Trace-Id` (via `getTraceId`) in all new auth routes: login, register, logout, session; echo in response headers
 
 ## Phase 4: Consumer Migration (PR 3b)
 
@@ -62,3 +64,4 @@ Chain strategy: feature-branch-chain
 - [ ] 4.4 Drop `jwtToken` param from `src/lib/api/orders.ts` `createOrder` and `getUserOrders`; call Next routes
 - [ ] 4.5 Update all consumer files referencing `jwt` from `useAuth()` — rely on cookie (check `src/features/orders/`, `src/features/checkout/`, `src/features/favorites/`)
 - [ ] 4.6 Write unit tests for cookie-based route handlers and consumer migration
+- [ ] 4.7 Propagate `X-Trace-Id` (via `getTraceId`) in `/api/orders/[orderId]`, `/api/orders/[orderId]/request-cancellation`, and `/api/favorites` routes; echo in response headers
