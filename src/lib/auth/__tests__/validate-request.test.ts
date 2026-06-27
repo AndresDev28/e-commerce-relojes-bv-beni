@@ -73,7 +73,7 @@ describe('requireUser', () => {
     if ('error' in result) {
       expect(result.error.status).toBe(401)
       const body = await result.error.json()
-      expect(body.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
+      expect(body.error).toBe('Sesión expirada. Iniciá sesión de nuevo.')
     }
 
     // Verify Strapi was called with the correct token

@@ -66,7 +66,7 @@ export async function requireUser(
     if (userResponse.status === 401) {
       return {
         error: NextResponse.json(
-          { error: 'Sesión expirada. Inicia sesión de nuevo.' },
+          { error: 'Sesión expirada. Iniciá sesión de nuevo.' },
           { status: 401, headers: { 'X-Trace-Id': traceId } }
         ),
       }

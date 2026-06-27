@@ -86,7 +86,7 @@ describe('[SEC-01] JWT Validation via requireUser', () => {
     const data = await response.json()
 
     expect(response.status).toBe(401)
-    expect(data.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
+    expect(data.error).toBe('Sesión expirada. Iniciá sesión de nuevo.')
   })
 })
 
@@ -114,7 +114,7 @@ describe('[SEC-02] IDOR Prevention', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toBe('No tienes permiso para acceder a este recurso.')
+    expect(data.error).toBe('No tenés permiso para acceder a este recurso.')
   })
 
   it('should allow request when user param matches JWT user', async () => {
@@ -315,6 +315,8 @@ describe('[ORD-01] GET /api/orders', () => {
     expect(strapiCall[0]).toContain('/api/orders')
     expect(strapiCall[1].headers).toHaveProperty('Authorization')
     expect(strapiCall[1].headers).toHaveProperty('X-Trace-Id')
+    // Verify the sort query param is sent to Strapi (the actual contract — route delegates sorting, doesn't reorder)
+    expect(strapiCall[0]).toMatch(/sort%5B0%5D=createdAt%3Adesc/)
   })
 
   /**

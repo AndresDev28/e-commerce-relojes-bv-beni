@@ -6,7 +6,7 @@
  * de atributos Strapi v4.
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
 import { AuthUser } from '@/lib/auth/validate-request'
 import type { Order, PaginationMeta, StrapiOrderResponse } from '../types'
@@ -32,7 +32,7 @@ export async function getOrdersService(params: {
   if (userIdParam && Number(userIdParam) !== user.id) {
     return {
       error: NextResponse.json(
-        { error: 'No tienes permiso para acceder a este recurso.' },
+        { error: 'No tenés permiso para acceder a este recurso.' },
         { status: 403, headers: { 'X-Trace-Id': traceId } }
       ),
     }
