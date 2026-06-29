@@ -1,93 +1,56 @@
 /**
  * [ORD-01] GET /api/orders endpoint
  *
- * Returns user's orders from Strapi with pagination support
- * Requires JWT authentication
+ * Thin adapter — delegates to the orders feature service.
+ * Requires JWT authentication via Authorization header.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { API_URL } from '@/lib/constants'
+import { requireUser } from '@/lib/auth/validate-request'
+import { getTraceId } from '@/lib/trace'
+import { getOrdersService } from '@/features/orders'
 
 /**
  * GET /api/orders
  *
  * Query params:
- * - user (optional): userId to filter orders
+ * - user (optional): userId to filter orders — must match JWT user (IDOR)
  * - page (optional): page number (default: 1)
  *
  * Headers:
  * - Authorization: Bearer <jwt-token>
  */
 export async function GET(request: NextRequest) {
+  const traceId = getTraceId(request)
+
   try {
-    // 1. Validate JWT token
-    const authHeader = request.headers.get('Authorization')
+    const authResult = await requireUser(request)
+    if ('error' in authResult) return authResult.error
 
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized - JWT token required' },
-        { status: 401 }
-      )
-    }
+    const { user, jwtToken } = authResult
 
-    if (!authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Invalid token format' },
-        { status: 401 }
-      )
-    }
-
-    const jwtToken = authHeader.replace('Bearer ', '')
-
-    // 2. Get query parameters
     const { searchParams } = new URL(request.url)
     const page = searchParams.get('page') || '1'
-    const userId = searchParams.get('user')
+    const userIdParam = searchParams.get('user')
 
-    // 3. Build Strapi query parameters
-    const strapiParams = new URLSearchParams({
-      'sort[0]': 'createdAt:desc', // Most recent first
-      'pagination[page]': page,
-      'pagination[pageSize]': '10', // [ORD-02] Will be implemented
+    const result = await getOrdersService({
+      user,
+      jwtToken,
+      traceId,
+      page,
+      userIdParam,
     })
 
-    // Add user filter if provided
-    if (userId) {
-      strapiParams.set('filters[user][id][$eq]', userId)
-    }
+    if ('error' in result) return result.error
 
-    // 4. Fetch orders from Strapi
-    const strapiUrl = `${API_URL}/api/orders?${strapiParams}`
-
-    const response = await fetch(strapiUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken}`,
-      },
-    })
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch orders from Strapi' },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
-
-    // 5. Unwrap attributes if present and return orders with pagination metadata
-    const unwrappedData = data.data.map((item: Record<string, unknown>) => item.attributes ? item.attributes : item)
-
-    return NextResponse.json({
-      data: unwrappedData,
-      meta: data.meta,
-    })
-
-  } catch (error) {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { data: result.data, meta: result.meta },
+      { headers: { 'X-Trace-Id': traceId } }
+    )
+  } catch {
+    return NextResponse.json(
+      { error: 'Ocurrió un error inesperado. Intentá de nuevo.' },
+      { status: 500, headers: { 'X-Trace-Id': traceId } }
     )
   }
 }

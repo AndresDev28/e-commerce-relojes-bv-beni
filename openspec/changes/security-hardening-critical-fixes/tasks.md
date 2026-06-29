@@ -38,11 +38,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Route Authorization (PR 2)
 
-- [ ] 2.1 Create `src/lib/auth/validate-request.ts` with `requireUser(request)` — reads Authorization header, validates JWT via Strapi `GET /api/users/me`
-- [ ] 2.2 Add JWT validation + IDOR check (`user` query param must match JWT user) in `src/app/api/orders/route.ts`
-- [ ] 2.3 Add `requireUser()` validation in `src/app/api/create-payment-intent/route.ts` (signature+expiry, not just presence)
-- [ ] 2.4 Write unit tests for `requireUser`: 401 missing, 401 expired, 200 valid, 403 IDOR mismatch
-- [ ] 2.5 Create `src/lib/trace.ts` with `getTraceId(request)` helper (read existing header or generate new); propagate `X-Trace-Id` to Strapi/Stripe and echo in response headers in `/api/orders` and `/api/create-payment-intent`
+- [x] 2.1 Create `src/lib/auth/validate-request.ts` with `requireUser(request)` — reads Authorization header, validates JWT via Strapi `GET /api/users/me`
+- [x] 2.2 Add JWT validation + IDOR check (`user` query param must match JWT user) in `src/app/api/orders/route.ts`
+- [x] 2.3 Add `requireUser()` validation in `src/app/api/create-payment-intent/route.ts` (signature+expiry, not just presence)
+- [x] 2.4 Write unit tests for `requireUser`: 401 missing, 401 expired, 200 valid, 403 IDOR mismatch
+- [x] 2.5 Create `src/lib/trace.ts` with `getTraceId(request)` helper (read existing header or generate new); propagate `X-Trace-Id` to Strapi/Stripe and echo in response headers in `/api/orders` and `/api/create-payment-intent`
 
 ## Phase 3: Session Infrastructure (PR 3a)
 
