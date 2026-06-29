@@ -1,29 +1,22 @@
-/**
- * Trace ID helper for request correlation.
- *
- * Reads an existing `X-Trace-Id` header from an incoming request or
- * generates a new one. Use this in route handlers to propagate the
- * same trace id to Strapi, Stripe, and response headers.
- */
+export type TraceableRequest = Pick<Request, 'headers'>
 
-/**
- * Read the `X-Trace-Id` header from a request, or generate a new one.
- *
- * If the request already carries a trace id (e.g. from a client-side
- * fetch that generated one), it is preserved. Otherwise a fresh UUID
- * is created.
- */
-export function getTraceId(request: Request | { headers: { get: (name: string) => string | null } }): string {
+export function getTraceId(request: TraceableRequest): string {
   const existing = request.headers.get('X-Trace-Id')
   if (existing) return existing
   return generateTraceId()
 }
 
-/**
- * Generate a unique trace ID (UUID v4 or fallback).
- */
 function generateTraceId(): string {
-  return crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  if (typeof crypto?.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  if (typeof crypto?.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    bytes[6] = (bytes[6] & 0x0f) | 0x40
+    bytes[8] = (bytes[8] & 0x3f) | 0x80
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
+    return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
+  }
+  throw new Error('No secure random source available')
 }
