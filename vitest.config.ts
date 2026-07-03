@@ -12,6 +12,7 @@ const dirname =
 export default defineConfig({
   plugins: [react()],
   test: {
+    maxWorkers: 2,
     // Configuración global de coverage (fuera de projects)
     coverage: {
       provider: 'v8',
@@ -57,6 +58,7 @@ export default defineConfig({
           globals: true,
           css: true,
           include: ['src/**/__tests__/**/*.{test,spec}.{js,ts,tsx}'],
+          exclude: ['**/*.integration.test.{ts,tsx}'],
         },
       },
       // Proyecto 3: Tests de integración (NUEVO)
