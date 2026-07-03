@@ -3,6 +3,10 @@ export type TraceableRequest = Pick<Request, 'headers'>
 export function getTraceId(request: TraceableRequest): string {
   const existing = request.headers.get('X-Trace-Id')
   if (existing) return existing
+  return newTraceId()
+}
+
+export function newTraceId(): string {
   return generateTraceId()
 }
 
