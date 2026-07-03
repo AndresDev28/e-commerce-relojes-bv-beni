@@ -58,10 +58,12 @@ describe('api.ts security hardening', () => {
       await getProducts({ page: 1, pageSize: 8 })
       await getProducts({ page: 2, pageSize: 8 })
 
-      const traceId1 = (mockFetch.mock.calls[0][1] as RequestInit)
-        .headers!['X-Trace-Id'] as string
-      const traceId2 = (mockFetch.mock.calls[1][1] as RequestInit)
-        .headers!['X-Trace-Id'] as string
+      const headers1 = (mockFetch.mock.calls[0][1] as RequestInit)
+        .headers as Record<string, string>
+      const headers2 = (mockFetch.mock.calls[1][1] as RequestInit)
+        .headers as Record<string, string>
+      const traceId1 = headers1['X-Trace-Id']
+      const traceId2 = headers2['X-Trace-Id']
       expect(traceId1).not.toBe(traceId2)
     })
   })
