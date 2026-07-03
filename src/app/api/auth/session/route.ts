@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
 import { getTraceId } from '@/lib/trace'
-import { readSessionJwt } from '@/lib/auth/session'
+import { readSessionJwt, SESSION_COOKIE } from '@/lib/auth/session'
 
 export async function GET(request: NextRequest) {
   const traceId = getTraceId(request)
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   if (strapiResponse.status === 401) {
     const response = NextResponse.json({ user: null }, { headers: traceHeaders })
-    response.cookies.set('bv_session', '', { path: '/', maxAge: 0 })
+    response.cookies.set(SESSION_COOKIE, '', { path: '/', maxAge: 0 })
     return response
   }
 
