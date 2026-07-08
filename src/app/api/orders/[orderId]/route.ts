@@ -1,143 +1,83 @@
-/**
- * [ORD-09] GET /api/orders/:orderId endpoint
- * [ORD-10] Refactored to use reusable ownership validation middleware
- * [ORD-16] Security logging for unauthorized access attempts
- *
- * Returns specific order details with ownership validation
- * Requires JWT authentication
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
+import { getTraceId } from '@/lib/trace'
+import { requireUser } from '@/lib/auth/validate-request'
 
-/**
- * GET /api/orders/:orderId
- *
- * Returns complete order details if the authenticated user owns the order
- *
- * Path params:
- * - orderId: Order ID (e.g., "ORD-1763064732-F")
- *
- * Headers:
- * - Authorization: Bearer <jwt-token>
- *
- * Responses:
- * - 200: Order details returned successfully
- * - 401: Unauthorized (missing or invalid JWT)
- * - 403: Forbidden (order belongs to another user)
- * - 404: Order not found
- * - 500: Internal server error
- */
+interface OrderDetailsResponse {
+  data: Array<{
+    id: number
+    documentId?: string
+    orderId?: string
+    [key: string]: unknown
+  }>
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
+  const traceId = getTraceId(request)
+
   try {
-    // 1. Validate JWT token
-    const authHeader = request.headers.get('Authorization')
+    const authResult = await requireUser(request)
+    if ('error' in authResult) return authResult.error
+    const { user, jwtToken } = authResult
 
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized - JWT token required' },
-        { status: 401 }
-      )
-    }
-
-    if (!authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Invalid token format' },
-        { status: 401 }
-      )
-    }
-
-    const jwtToken = authHeader.replace('Bearer ', '')
     const { orderId } = await params
 
-    // 2. Get authenticated user from Strapi
-    const userResponse = await fetch(`${API_URL}/api/users/me`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwtToken}`,
-      },
-    })
-
-    if (!userResponse.ok) {
-      console.error(
-        `Strapi users/me error: ${userResponse.status} ${userResponse.statusText}`
-      )
-      return NextResponse.json(
-        { error: 'Failed to authenticate user' },
-        { status: 500 }
-      )
-    }
-
-    const user = await userResponse.json()
-    const userId = user.id
-
-    // 3. First, get user's orders to validate ownership
-    // Strapi v5 doesn't allow filtering by 'user' relation, so we:
-    // 1) Fetch user's orders list (the /api/orders endpoint returns only user's orders)
-    // 2) Check if requested orderId is in that list
-    // 3) If yes, fetch the specific order details
-    const userOrdersUrl = `${API_URL}/api/orders?sort[0]=createdAt:desc&pagination[pageSize]=100&populate[0]=shipment`
-    console.log('🔍 Fetching user orders to validate ownership...')
-
-    const userOrdersResponse = await fetch(userOrdersUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwtToken}`,
-      },
-    })
-
-    if (!userOrdersResponse.ok) {
-      const errorBody = await userOrdersResponse.text()
-      console.error(`Strapi error fetching user orders: ${userOrdersResponse.status}`)
-      console.error('Strapi error body:', errorBody)
-      return NextResponse.json(
-        { error: 'Failed to validate order ownership' },
-        { status: 500 }
-      )
-    }
-
-    const userOrdersData = await userOrdersResponse.json()
-    const userOrderIds = (userOrdersData.data || []).map((o: Record<string, unknown>) => o.attributes ? (o.attributes as Record<string, unknown>).orderId : o.orderId)
-
-    // 4. Check if user owns this order
-    if (!userOrderIds.includes(orderId)) {
-      // [ORD-16] Security audit log for unauthorized access attempts
-      console.warn('⚠️ [SECURITY AUDIT] Unauthorized order access attempt:', {
-        event: 'unauthorized_access_attempt',
-        requestingUserId: userId,
-        attemptedOrderId: orderId,
-        timestamp: new Date().toISOString(),
-        // IMPORTANT: We log IDs but NOT sensitive order data
+    const url = `${API_URL}/api/orders?filters[orderId][$eq]=${encodeURIComponent(orderId)}&populate=*`
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+          'X-Trace-Id': traceId,
+        },
       })
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    } catch {
+      return NextResponse.json(
+        { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },
+        { status: 502, headers: { 'X-Trace-Id': traceId } }
+      )
     }
 
-    // [ORD-16] Security audit log for successful access
-    console.log('✅ [SECURITY AUDIT] Authorized order access:', {
-      event: 'authorized_access',
-      userId: userId,
-      orderId: orderId,
-      timestamp: new Date().toISOString(),
-    })
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },
+        { status: 502, headers: { 'X-Trace-Id': traceId } }
+      )
+    }
 
-    // 5. Find the order in the already-fetched list
-    const order = userOrdersData.data.find((o: Record<string, unknown>) => (o.attributes ? (o.attributes as Record<string, unknown>).orderId : o.orderId) === orderId)
+    let payload: OrderDetailsResponse
+    try {
+      payload = await response.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },
+        { status: 502, headers: { 'X-Trace-Id': traceId } }
+      )
+    }
 
-    const unwrappedOrder = order?.attributes ? order.attributes : order
+    const orders = payload.data ?? []
+    const ownedOrder = orders.find((o) => o.orderId === orderId)
 
-    return NextResponse.json({
-      data: unwrappedOrder,
-    })
-  } catch (error) {
-    console.error('❌ Error in GET /api/orders/:orderId:', error)
+    if (!ownedOrder || (ownedOrder as { user?: { id?: number } }).user?.id !== user.id) {
+      return NextResponse.json(
+        { error: 'Pedido no encontrado' },
+        { status: 404, headers: { 'X-Trace-Id': traceId } }
+      )
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { data: ownedOrder },
+      { headers: { 'X-Trace-Id': traceId } }
+    )
+  } catch {
+    return NextResponse.json(
+      { error: 'Ocurrió un error inesperado. Inténtalo de nuevo.' },
+      { status: 500, headers: { 'X-Trace-Id': traceId } }
     )
   }
 }
