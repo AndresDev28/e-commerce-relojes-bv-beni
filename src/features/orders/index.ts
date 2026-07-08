@@ -7,6 +7,7 @@ export { default as CancelOrderModal } from './components/CancelOrderModal'
 
 // Export service
 export { getOrdersService } from './services/getOrdersService'
+export { createOrderService } from './services/createOrderService'
 
 // Export types
 export type { Order, StrapiOrderResponse } from './types'

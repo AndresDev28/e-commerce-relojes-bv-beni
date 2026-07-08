@@ -1,21 +1,17 @@
-/**
- * Unit tests for requireUser — JWT validation via Strapi /api/users/me.
- *
- * COVERAGE:
- * - 401 missing Authorization header
- * - 401 malformed Authorization header
- * - 401 expired/invalid JWT (Strapi returns 401)
- * - 200 valid user (Strapi returns user with id)
- * - 500 Strapi error (non-401 failure)
- */
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { requireUser } from '@/lib/auth/validate-request'
 import { NextRequest } from 'next/server'
+import { SESSION_COOKIE } from '@/lib/auth/session'
 
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337',
 }))
+
+function authedRequest(jwt: string) {
+  const request = new NextRequest('http://localhost:3000/api/test')
+  request.cookies.set(SESSION_COOKIE, jwt)
+  return request
+}
 
 describe('requireUser', () => {
   beforeEach(() => {
@@ -27,7 +23,7 @@ describe('requireUser', () => {
     vi.unstubAllGlobals()
   })
 
-  it('returns 401 when Authorization header is missing', async () => {
+  it('returns 401 when no session cookie is present', async () => {
     const request = new NextRequest('http://localhost:3000/api/orders')
 
     const result = await requireUser(request)
@@ -36,47 +32,25 @@ describe('requireUser', () => {
     if ('error' in result) {
       expect(result.error.status).toBe(401)
       const body = await result.error.json()
-      expect(body.error).toBe('Unauthorized - JWT token required')
-      expect(result.error.headers.get('X-Trace-Id')).toBeTruthy()
-    }
-  })
-
-  it('returns 401 when Authorization header is malformed', async () => {
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: { Authorization: 'InvalidFormat' },
-    })
-
-    const result = await requireUser(request)
-
-    expect('error' in result).toBe(true)
-    if ('error' in result) {
-      expect(result.error.status).toBe(401)
-      const body = await result.error.json()
-      expect(body.error).toBe('Unauthorized - Invalid token format')
+      expect(body.error).toBe('No tienes una sesión activa. Inicia sesión.')
       expect(result.error.headers.get('X-Trace-Id')).toBeTruthy()
     }
   })
 
   it('returns 401 when JWT is expired (Strapi returns 401)', async () => {
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-    })
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      new Response('', { status: 401 })
+    )
 
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: { Authorization: 'Bearer expired-token' },
-    })
-
-    const result = await requireUser(request)
+    const result = await requireUser(authedRequest('expired-token'))
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error.status).toBe(401)
       const body = await result.error.json()
-      expect(body.error).toBe('Sesión expirada. Iniciá sesión de nuevo.')
+      expect(body.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
     }
 
-    // Verify Strapi was called with the correct token
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:1337/api/users/me',
       expect.objectContaining({
@@ -88,26 +62,21 @@ describe('requireUser', () => {
     )
   })
 
-  it('returns 200 with user when JWT is valid', async () => {
+  it('returns user + jwtToken on success', async () => {
     const mockUser = { id: 42, email: 'test@example.com' }
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    })
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify(mockUser), { status: 200 })
+    )
 
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: { Authorization: 'Bearer valid-token' },
-    })
-
-    const result = await requireUser(request)
+    const result = await requireUser(authedRequest('valid-token'))
 
     expect('error' in result).toBe(false)
     if (!('error' in result)) {
       expect(result.user.id).toBe(42)
       expect(result.user.email).toBe('test@example.com')
+      expect(result.jwtToken).toBe('valid-token')
     }
 
-    // Verify Strapi was called with both auth and trace-id
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:1337/api/users/me',
       expect.objectContaining({
@@ -119,41 +88,63 @@ describe('requireUser', () => {
     )
   })
 
-  it('returns 500 when Strapi returns a non-401 error', async () => {
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-    })
+  it('returns 502 when Strapi returns a non-401 error', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      new Response('', { status: 500 })
+    )
 
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: { Authorization: 'Bearer valid-token' },
-    })
-
-    const result = await requireUser(request)
+    const result = await requireUser(authedRequest('valid-token'))
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.status).toBe(500)
+      expect(result.error.status).toBe(502)
       const body = await result.error.json()
-      expect(body.error).toBe('No pudimos verificar tu sesión. Intentá de nuevo.')
+      expect(body.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
     }
   })
 
-  it('returns 500 when Strapi response has no user id', async () => {
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ email: 'test@example.com' }), // no id field
-    })
+  it('returns 502 when Strapi response has no user id', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ email: 'test@example.com' }), { status: 200 })
+    )
 
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: { Authorization: 'Bearer valid-token' },
-    })
-
-    const result = await requireUser(request)
+    const result = await requireUser(authedRequest('valid-token'))
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.status).toBe(500)
+      expect(result.error.status).toBe(502)
     }
+  })
+
+  it('returns 502 when Strapi is unreachable', async () => {
+    vi.mocked(global.fetch).mockRejectedValueOnce(new Error('network down'))
+
+    const result = await requireUser(authedRequest('valid-token'))
+
+    expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error.status).toBe(502)
+    }
+  })
+
+  it('forwards X-Trace-Id from incoming request', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 1 }), { status: 200 })
+    )
+
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: { 'X-Trace-Id': 'incoming-trace' },
+    })
+    request.cookies.set(SESSION_COOKIE, 'jwt')
+    await requireUser(request)
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:1337/api/users/me',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-Trace-Id': 'incoming-trace',
+        }),
+      })
+    )
   })
 })
