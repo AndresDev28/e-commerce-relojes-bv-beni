@@ -3,10 +3,15 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CancelOrderModal from '../CancelOrderModal'
 
-// Mock Modal component
+interface MockModalProps {
+    isOpen: boolean
+    children: React.ReactNode
+    title: string
+}
+
 vi.mock('@/app/components/ui/Modal', () => {
     return {
-        default: ({ isOpen, children, title }: any) => {
+        default: ({ isOpen, children, title }: MockModalProps) => {
             if (!isOpen) return null
             return (
                 <div data-testid="mock-modal">
@@ -18,11 +23,10 @@ vi.mock('@/app/components/ui/Modal', () => {
     }
 })
 
-// Mock useAuth
-const mockJwt = 'fake-jwt-token'
 vi.mock('@/context/AuthContext', () => ({
     useAuth: () => ({
-        jwt: mockJwt,
+        user: { id: 1, email: 'test@test.com' },
+        isLoading: false,
     }),
 }))
 
@@ -86,7 +90,6 @@ describe('CancelOrderModal Component', () => {
     })
 
     it('submits correctly and calls onSuccess', async () => {
-        // Mock successful API response
         ; (global.fetch as any).mockResolvedValueOnce({
             ok: true,
             json: async () => ({ success: true }),
@@ -95,34 +98,30 @@ describe('CancelOrderModal Component', () => {
         const user = userEvent.setup()
         render(<CancelOrderModal {...defaultProps} />)
 
-        // Type reason
         const textarea = screen.getByLabelText(/Motivo de la cancelación/i)
         await user.type(textarea, 'Error en el color')
 
-        // Click submit
         const submitButton = screen.getByRole('button', { name: /Confirmar cancelación/i })
         await user.click(submitButton)
 
-        // verify fetch was called with correct arguments
         await waitFor(() => {
             expect(global.fetch).toHaveBeenCalledWith('/api/orders/ORD-123/request-cancellation', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${mockJwt}`,
+                    'X-Trace-Id': expect.any(String),
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ reason: 'Error en el color' }),
             })
         })
 
-        // verify onSuccess was called
         await waitFor(() => {
             expect(mockOnSuccess).toHaveBeenCalledTimes(1)
         })
     })
 
     it('displays error message when API fails', async () => {
-        // Mock failed API response
         ; (global.fetch as any).mockResolvedValueOnce({
             ok: false,
             json: async () => ({ message: 'El pedido ya no se puede cancelar' }),
@@ -131,25 +130,20 @@ describe('CancelOrderModal Component', () => {
         const user = userEvent.setup()
         render(<CancelOrderModal {...defaultProps} />)
 
-        // Type reason
         const textarea = screen.getByLabelText(/Motivo de la cancelación/i)
         await user.type(textarea, 'Ya no lo quiero')
 
-        // Click submit
         const submitButton = screen.getByRole('button', { name: /Confirmar cancelación/i })
         await user.click(submitButton)
 
-        // Wait for the error to appear
         await waitFor(() => {
             expect(screen.getByText('El pedido ya no se puede cancelar')).toBeInTheDocument()
         })
 
-        // onSuccess should NOT have been called
         expect(mockOnSuccess).not.toHaveBeenCalled()
     })
 
     it('clears error when typing again', async () => {
-        // Mock failed API response
         ; (global.fetch as any).mockResolvedValueOnce({
             ok: false,
             json: async () => ({ message: 'Error de servidor' }),
@@ -168,7 +162,6 @@ describe('CancelOrderModal Component', () => {
             expect(screen.getByText('Error de servidor')).toBeInTheDocument()
         })
 
-        // Type again should clear the error
         await user.type(textarea, ' changes')
         expect(screen.queryByText('Error de servidor')).not.toBeInTheDocument()
     })

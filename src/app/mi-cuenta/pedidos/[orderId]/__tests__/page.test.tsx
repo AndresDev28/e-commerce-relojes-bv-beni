@@ -16,7 +16,6 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { useRouter } from 'next/navigation'
 import OrderDetailPage from '../page'
 
-// Mocks
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
 }))
@@ -51,17 +50,21 @@ vi.mock('@/features/orders/components/OrderDetail', () => ({
   ),
 }))
 
-// Import useAuth después del mock
 import { useAuth } from '@/context/AuthContext'
+
+function fulfilledPromise<T>(value: T): Promise<T> {
+  return Object.assign(Promise.resolve(value), {
+    status: 'fulfilled' as const,
+    value,
+  })
+}
 
 describe('[ORD-11] Order Detail Page', () => {
   let mockParams: Promise<{ orderId: string }>
   const mockPush = vi.fn()
 
   beforeEach(() => {
-    mockParams = Promise.resolve({ orderId: 'ORD-123' })
-    // Hack para que React use() lo lea síncronamente sin hacer suspend
-    Object.assign(mockParams, { status: 'fulfilled', value: { orderId: 'ORD-123' } })
+    mockParams = fulfilledPromise({ orderId: 'ORD-123' })
 
     vi.clearAllMocks()
     global.fetch = vi.fn()
@@ -77,7 +80,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should redirect to login when user is not authenticated', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: null,
-        jwt: null,
+        isLoading: false,
       })
 
       render(<OrderDetailPage params={mockParams} />)
@@ -92,7 +95,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should not redirect when user is authenticated', () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -124,10 +127,9 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should show loading spinner while fetching data', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
-      // Simular fetch que nunca se resuelve (loading infinito)
       global.fetch = vi
         .fn()
         .mockImplementation(() => new Promise(() => { }))
@@ -142,7 +144,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display breadcrumbs during loading', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi
@@ -168,7 +170,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display order details when fetch succeeds', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       const mockOrder = {
@@ -198,7 +200,7 @@ describe('[ORD-11] Order Detail Page', () => {
       expect(screen.getByText(/Order: ORD-123/)).toBeInTheDocument()
     })
 
-    it('should call API with correct JWT token', async () => {
+    it('should call API with correct credentials and trace id', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
@@ -218,7 +220,7 @@ describe('[ORD-11] Order Detail Page', () => {
 
         ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
           user: { id: 1, email: 'user@test.com' },
-          jwt: 'test-jwt-token',
+          isLoading: false,
         })
 
       render(<OrderDetailPage params={mockParams} />)
@@ -228,8 +230,9 @@ describe('[ORD-11] Order Detail Page', () => {
           '/api/orders/ORD-123',
           expect.objectContaining({
             method: 'GET',
+            credentials: 'same-origin',
             headers: expect.objectContaining({
-              Authorization: 'Bearer test-jwt-token',
+              'X-Trace-Id': expect.any(String),
             }),
           })
         )
@@ -244,7 +247,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display forbidden message when user does not own order', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -266,7 +269,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should redirect to orders list after 2 seconds on 403', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -295,7 +298,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display not found message when order does not exist', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -315,7 +318,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should show button to return to orders list on 404', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -338,7 +341,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display error message on network failure', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
@@ -357,7 +360,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display retry button on generic error', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
@@ -372,7 +375,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should handle 500 server error', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -395,7 +398,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should display breadcrumbs with dynamic orderId', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -423,7 +426,7 @@ describe('[ORD-11] Order Detail Page', () => {
     it('should include correct breadcrumb hierarchy', async () => {
       ; (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: { id: 1, email: 'user@test.com' },
-        jwt: 'valid-token',
+        isLoading: false,
       })
 
       global.fetch = vi
