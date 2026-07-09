@@ -9,5 +9,8 @@ export { default as CancelOrderModal } from './components/CancelOrderModal'
 export { getOrdersService } from './services/getOrdersService'
 export { createOrderService } from './services/createOrderService'
 
+// Export hooks
+export { useOrderById } from './hooks/useOrderById'
+
 // Export types
 export type { Order, StrapiOrderResponse } from './types'
