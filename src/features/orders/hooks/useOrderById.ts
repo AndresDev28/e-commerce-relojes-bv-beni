@@ -63,7 +63,7 @@ export function useOrderById(orderId: string): UseOrderByIdResult {
           setOrder(data.data)
           setLoading(false)
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setError('Error al cargar el pedido. Inténtalo de nuevo.')
           setLoading(false)

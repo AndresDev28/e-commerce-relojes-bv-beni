@@ -66,7 +66,7 @@ export function useFavoritesApi(): UseFavoritesApiResult {
         throw new Error('No se pudieron actualizar tus favoritos.')
       }
 
-      const data = await response.json()
+      await response.json()
       setFavorites(newFavorites)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'No se pudieron actualizar tus favoritos.'
