@@ -12,9 +12,9 @@ import CheckoutForm from '@/features/checkout/components/CheckoutForm'
 import OrderSummary from '@/features/checkout/components/OrderSummary'
 import { getStripePublishableKey } from '@/lib/stripe/config'
 import { generateOrderId } from '@/lib/orders/generateOrderId'
-import { createOrder } from '@/lib/api/orders'
 import { calculateShipping } from '@/lib/constants/shipping'
-import { OrderStatus } from '@/types'
+import { assembleOrderData } from '@/features/checkout/services/assembleOrderData'
+import { newTraceId } from '@/lib/trace'
 
 // Inicializar Stripe de forma lazy para evitar errores durante el build
 // La promesa se crea solo cuando se necesita en el cliente
@@ -27,7 +27,7 @@ const getStripePromise = () => {
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { user, jwt, isLoading: authLoading } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { cartItems, clearCart, isHydrated } = useCart()
   const [paymentSuccessful, setPaymentSuccessful] = useState(false)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
@@ -94,65 +94,48 @@ export default function CheckoutPage() {
   const handleSuccess = async (paymentIntent: PaymentIntent) => {
     console.log('✅ Pago exitoso!', paymentIntent.id)
 
-    // [PAY-17] Generar ID único del pedido al inicio
     const orderId = generateOrderId()
     console.log('📦 Order ID generado:', orderId)
 
     try {
-      // Activar estado de carga
       setIsCreatingOrder(true)
       setOrderError(null)
 
-      // Marcar pago como exitoso ANTES de vaciar el carrito
       setPaymentSuccessful(true)
 
-      // [PAY-18] Crear orden en Strapi
-      if (jwt) {
-        console.log('💾 Creando orden en Strapi...')
+      console.log('💾 Creando orden en Strapi...')
 
-        const expandedPaymentIntent = paymentIntent as PaymentIntent & {
-          latest_charge?: {
-            payment_method_details?: {
-              card?: {
-                brand: string
-                last4: string
-              }
-            }
-          }
-        }
-        const paymentMethodDetails =
-          expandedPaymentIntent.latest_charge?.payment_method_details?.card
+      const orderData = assembleOrderData({
+        orderId,
+        cartItems,
+        subtotal,
+        shipping: shippingCost,
+        total,
+        paymentIntent,
+      })
 
-        const orderData = {
-          orderId,
-          items: cartItems,
-          subtotal,
-          shipping: shippingCost,
-          total,
-          orderStatus: OrderStatus.PAID,
-          paymentIntentId: paymentIntent.id,
-          paymentInfo: {
-            method: 'card',
-            brand: paymentMethodDetails?.brand || 'unknown',
-            last4: paymentMethodDetails?.last4 || '0000',
-          },
-        }
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Trace-Id': newTraceId(),
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(orderData),
+      })
 
-        await createOrder(orderData, jwt)
-        console.log('✅ Orden creada en Strapi')
-      } else {
-        console.warn('⚠️ No se pudo crear la orden: usuario sin JWT')
+      if (!response.ok) {
+        throw new Error('No se pudo crear el pedido.')
       }
 
-      // Vaciar carrito
+      console.log('✅ Orden creada en Strapi')
+
       clearCart()
 
-      // Redirigir con orderId en query params
       router.push(`/order-confirmation?orderId=${orderId}`)
     } catch (error) {
       console.error('❌ Error al crear la orden:', error)
 
-      // [AND-99] NO redirigir a la página de éxito si la orden falló
       const errorMsg = error instanceof Error
         ? error.message
         : 'Error al crear la orden'

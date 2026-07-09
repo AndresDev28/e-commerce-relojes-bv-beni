@@ -11,6 +11,7 @@ export { createOrderService } from './services/createOrderService'
 
 // Export hooks
 export { useOrderById } from './hooks/useOrderById'
+export { useOrderHistory } from './hooks/useOrderHistory'
 
 // Export types
 export type { Order, StrapiOrderResponse } from './types'

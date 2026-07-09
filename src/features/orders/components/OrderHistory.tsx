@@ -5,120 +5,27 @@
  * con paginación, estados visuales y manejo de errores.
  *
  * RESPONSABILIDADES:
- * - Consumir el endpoint GET /api/orders con JWT
- * - Mostrar lista paginada de pedidos (10 por página)
+ * - Consumir el endpoint GET /api/orders
+ * - Mostrar lista paginada de pedidos
  * - Manejar estados: loading, error, vacío, con datos
  * - Implementar navegación entre páginas
  * - Sincronizar página actual con URL (?page=N)
- *
- * FLUJO:
- * 1. useEffect detecta cambio en currentPage o user.jwt
- * 2. Llama a /api/orders?page=N con Authorization header
- * 3. Actualiza estados (orders, pagination, loading, error)
- * 4. Renderiza estado apropiado según resultado
  */
 
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/context/AuthContext'
-import type { OrderData } from '@/lib/api/orders'
-import type { PaginationMeta } from '@/types'
+import { useOrderHistory } from '@/features/orders/hooks/useOrderHistory'
 import OrderCard from './OrderCard'
 
-/**
- * Estructura de respuesta del endpoint GET /api/orders
- * Sigue el formato estándar de Strapi
- */
-interface OrdersResponse {
-  data: OrderData[]
-  meta: {
-    pagination: PaginationMeta
-  }
-}
-
 export default function OrderHistory() {
-  // Hook para obtener usuario autenticado (necesitamos su JWT)
-  const { user, jwt } = useAuth()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
-  // Hooks de Next.js para manejo de URL y navegación
-  const searchParams = useSearchParams()  // Leer query params (?page=2)
-  const router = useRouter()              // Navegar programáticamente
-  const pathname = usePathname()          // URL actual sin query params
-
-  // Estados del componente
-  const [orders, setOrders] = useState<OrderData[]>([])
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Extraer página actual de la URL, default = 1
   const currentPage = Number(searchParams.get('page')) || 1
-
-  /**
-   * Effect principal: Cargar pedidos cuando cambia la página o el usuario
-   *
-   * DEPENDENCIAS:
-   * - user?.jwt: Se ejecuta cuando el usuario se autentica
-   * - currentPage: Se ejecuta cuando cambia la página en la URL
-   *
-   * EARLY RETURN:
-   * Si no hay JWT, no hacemos nada (usuario no autenticado)
-   */
-  useEffect(() => {
-    // Guard clause: No continuar si no hay usuario autenticado
-    if (!jwt) {
-      return
-    }
-
-    /**
-     * Función asíncrona para obtener pedidos del backend
-     *
-     * PROCESO:
-     * 1. Activar loading, limpiar error previo
-     * 2. Llamar GET /api/orders?page=N con JWT en header
-     * 3. Si ok: actualizar orders y pagination
-     * 4. Si error: mostrar mensaje al usuario
-     * 5. Siempre: desactivar loading
-     */
-    const fetchOrders = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        // Construir URL con query param de página
-        const url = `/api/orders?page=${currentPage}`
-
-        // Fetch con autenticación JWT
-        const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwt}`, // JWT requerido por el endpoint
-          },
-        })
-
-        // Validar respuesta HTTP
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders')
-        }
-
-        // Parsear JSON y actualizar estados
-        const data: OrdersResponse = await response.json()
-        setOrders(data.data)                    // Array de órdenes
-        setPagination(data.meta.pagination)     // Metadata de paginación
-      } catch (err) {
-        console.error('Error fetching orders:', err)
-        setError('Error al cargar los pedidos')
-      } finally {
-        // Siempre desactivar loading, incluso si hubo error
-        setIsLoading(false)
-      }
-    }
-
-    fetchOrders()
-  }, [jwt, currentPage])
+  const { orders, pagination, loading, error } = useOrderHistory(currentPage)
 
   /**
    * Handler para cambiar de página
@@ -141,7 +48,7 @@ export default function OrderHistory() {
    * ESTADO 1: LOADING
    * Mostrar mientras se cargan los datos del backend
    */
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <p className="text-neutral-dark font-serif">Cargando pedidos...</p>
