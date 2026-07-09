@@ -8,6 +8,7 @@ export { default as CancelOrderModal } from './components/CancelOrderModal'
 // Export service
 export { getOrdersService } from './services/getOrdersService'
 export { createOrderService } from './services/createOrderService'
+export { requestOrderCancellation } from './services/requestCancellation'
 
 // Export hooks
 export { useOrderById } from './hooks/useOrderById'

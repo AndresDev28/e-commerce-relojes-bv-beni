@@ -1,23 +1,23 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/features/cart'
+import {
+  CheckoutForm,
+  OrderSummary,
+  useCreateOrder,
+  useCheckoutTotals,
+} from '@/features/checkout'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Button from '@/app/components/ui/Button'
 import Link from 'next/link'
-import { loadStripe, PaymentIntent } from '@stripe/stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+import type { PaymentIntent } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
-import CheckoutForm from '@/features/checkout/components/CheckoutForm'
-import OrderSummary from '@/features/checkout/components/OrderSummary'
 import { getStripePublishableKey } from '@/lib/stripe/config'
-import { generateOrderId } from '@/lib/orders/generateOrderId'
-import { calculateShipping } from '@/lib/constants/shipping'
-import { assembleOrderData } from '@/features/checkout/services/assembleOrderData'
-import { newTraceId } from '@/lib/trace'
 
-// Inicializar Stripe de forma lazy para evitar errores durante el build
-// La promesa se crea solo cuando se necesita en el cliente
 const getStripePromise = () => {
   if (typeof window === 'undefined') {
     return null
@@ -29,49 +29,32 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
   const { cartItems, clearCart, isHydrated } = useCart()
-  const [paymentSuccessful, setPaymentSuccessful] = useState(false)
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
-  const [orderError, setOrderError] = useState<string | null>(null)
+  const { createOrder, isCreatingOrder, orderError } = useCreateOrder({
+    clearCart,
+  })
+  const { total } = useCheckoutTotals(cartItems)
   const [stripePromise] = useState(getStripePromise)
+
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
     { name: 'Cesta', href: '/carrito' },
     { name: 'Finalizar Compra', href: '/checkout' },
   ]
 
-  // Protección de ruta: verificar autenticación y carrito vacío
   useEffect(() => {
-    console.log('🔍 [useEffect] Ejecutándose...', {
-      authLoading,
-      hasUser: !!user,
-      cartItemsLength: cartItems.length,
-      paymentSuccessful,
-    })
-
-    // Esperar a que termine de cargar el estado de autenticación y la hidratación
     if (authLoading || !isHydrated) return
 
-    // Validación 1: Usuario debe estar autenticado
     if (!user) {
-      console.log('🔍 [useEffect] No hay usuario, redirigiendo a /login')
       router.push('/login')
       return
     }
 
-    // Validación 2: Carrito no debe estar vacío
-    // IMPORTANTE: No redirigir si el pago fue exitoso o hay error de orden
-    if (cartItems.length === 0 && !paymentSuccessful && !orderError) {
-      console.log(
-        '🔍 [useEffect] Carrito vacío y pago NO exitoso, redirigiendo a /tienda'
-      )
+    if (cartItems.length === 0 && !orderError) {
       router.push('/tienda')
       return
     }
+  }, [authLoading, user, cartItems, router, orderError, isHydrated])
 
-    console.log('🔍 [useEffect] Todo OK, no se redirige')
-  }, [authLoading, user, cartItems, router, paymentSuccessful, orderError, isHydrated])
-
-  // Mostrar loading mientras se valida la autenticación o el carrito
   if (authLoading || !isHydrated) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -85,82 +68,15 @@ export default function CheckoutPage() {
     )
   }
 
-  // No renderizar contenido si no está autenticado o carrito vacío
-  // IMPORTANTE: Permitir renderizado si hay un error de orden
-  if (!user || (cartItems.length === 0 && !paymentSuccessful && !orderError)) {
+  if (!user || (cartItems.length === 0 && !orderError)) {
     return null
   }
 
-  const handleSuccess = async (paymentIntent: PaymentIntent) => {
-    console.log('✅ Pago exitoso!', paymentIntent.id)
-
-    const orderId = generateOrderId()
-    console.log('📦 Order ID generado:', orderId)
-
-    try {
-      setIsCreatingOrder(true)
-      setOrderError(null)
-
-      setPaymentSuccessful(true)
-
-      console.log('💾 Creando orden en Strapi...')
-
-      const orderData = assembleOrderData({
-        orderId,
-        cartItems,
-        subtotal,
-        shipping: shippingCost,
-        total,
-        paymentIntent,
-      })
-
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Trace-Id': newTraceId(),
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify(orderData),
-      })
-
-      if (!response.ok) {
-        throw new Error('No se pudo crear el pedido.')
-      }
-
-      console.log('✅ Orden creada en Strapi')
-
-      clearCart()
-
-      router.push(`/order-confirmation?orderId=${orderId}`)
-    } catch (error) {
-      console.error('❌ Error al crear la orden:', error)
-
-      const errorMsg = error instanceof Error
-        ? error.message
-        : 'Error al crear la orden'
-
-      setOrderError(
-        `Tu pago fue procesado, pero hubo un problema al registrar tu pedido: ${errorMsg}. ` +
-        `Por favor, contacta con soporte indicando tu ID de pago: ${paymentIntent.id}`
-      )
-      setPaymentSuccessful(false)
-    } finally {
-      setIsCreatingOrder(false)
-    }
+  const handleSuccess = (paymentIntent: PaymentIntent) => {
+    createOrder(paymentIntent, cartItems)
   }
 
-  const handleError = (error: string) => {
-    console.error('❌ Error en pago:', error)
-  }
-
-  // Cálculo de totales (debe coincidir con OrderSummary)
-  const subtotal = cartItems.reduce(
-    (sum, cartItem) => sum + cartItem.price * cartItem.quantity,
-    0
-  )
-  const shippingCost = calculateShipping(subtotal)
-  const total = subtotal + shippingCost
+  const handleError = (_error: string) => {}
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -171,25 +87,30 @@ export default function CheckoutPage() {
           Finalizar Compra
         </h1>
 
-        {/* [AND-99] Error al registrar el pedido */}
         {orderError && (
           <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <div>
                 <h3 className="text-lg font-sans font-semibold text-red-800 mb-2">
                   Error al registrar el pedido
                 </h3>
-                <p className="text-sm text-red-700 font-sans">
-                  {orderError}
-                </p>
+                <p className="text-sm text-red-700 font-sans">{orderError}</p>
                 <div className="mt-4 flex gap-3">
                   <Link href="/tienda">
-                    <Button variant="outline">
-                      Volver a la Tienda
-                    </Button>
+                    <Button variant="outline">Volver a la Tienda</Button>
                   </Link>
                 </div>
               </div>
@@ -198,7 +119,6 @@ export default function CheckoutPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Columna Izquierda - Formulario de Pago */}
           <div className="order-2 lg:order-1">
             <div className="bg-white rounded-lg shadow-md p-6 border border-neutral-light">
               <h2 className="text-xl font-sans font-semibold text-dark mb-6">
@@ -224,12 +144,10 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Columna Derecha - Resumen del Pedido */}
           <div className="order-1 lg:order-2">
             <div className="sticky top-8">
               <OrderSummary />
 
-              {/* Mensaje de seguridad */}
               <div className="mt-4 bg-white rounded-lg shadow-md p-4">
                 <div className="flex items-start gap-2 text-sm text-neutral-medium">
                   <svg
@@ -255,7 +173,6 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Modal de loading durante creación de orden */}
       {isCreatingOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center">
@@ -272,4 +189,3 @@ export default function CheckoutPage() {
     </div>
   )
 }
-
