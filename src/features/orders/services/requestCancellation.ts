@@ -27,7 +27,6 @@ export async function requestOrderCancellation(
       if (errorData.message) errorMessage = errorData.message
       if (errorData.error) errorMessage = errorData.error
     } catch {
-      // Ignorar si no es JSON válido
     }
     throw new Error(errorMessage)
   }
