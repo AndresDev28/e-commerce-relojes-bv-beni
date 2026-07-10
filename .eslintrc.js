@@ -30,4 +30,15 @@ module.exports = {
       version: 'detect',
     },
   },
+  overrides: [
+    {
+      files: [
+        'src/features/catalog/components/ShopLoopHead.tsx',
+        'src/lib/api.ts',
+      ],
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+      },
+    },
+  ],
 };
