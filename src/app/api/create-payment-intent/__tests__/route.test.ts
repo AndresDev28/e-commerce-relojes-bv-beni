@@ -1,18 +1,8 @@
-/**
- * Tests for POST /api/create-payment-intent
- * 
- * COVERAGE:
- * - Successful payment intent creation
- * - Authentication validation
- * - Invalid request body handling
- * - Amount calculation
- * - Error handling
- */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { POST } from '../route'
 import { NextRequest } from 'next/server'
+import { SESSION_COOKIE } from '@/lib/auth/session'
 
-// HOISTED: MockStripeError and mockCreate must be defined before vi.mock() hoisting
 const { mockCreate, MockStripeError } = vi.hoisted(() => {
   const mockCreate = vi.fn()
   class MockStripeError extends Error {
@@ -32,7 +22,6 @@ vi.mock('stripe', () => {
       create: mockCreate,
     },
   }))
-  // Add errors as static property on the constructor so Stripe.default.errors works
   Object.assign(StripeMock, {
     errors: {
       StripeError: MockStripeError,
@@ -45,12 +34,19 @@ vi.mock('stripe', () => {
     },
   }
 })
-// Mock shipping calculation
+
 vi.mock('@/lib/constants/shipping', () => ({
   calculateShipping: vi.fn((subtotal: number) => {
     return subtotal >= 100 ? 0 : 5.99
   }),
+  SHIPPING_COST: 5.99,
+  FREE_SHIPPING_THRESHOLD: 100,
 }))
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe('POST /api/create-payment-intent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -66,8 +62,29 @@ describe('POST /api/create-payment-intent', () => {
     { id: '1', name: 'Product 1', price: 50, quantity: 2 },
     { id: '2', name: 'Product 2', price: 30, quantity: 1 },
   ]
+
+  function createAuthenticatedRequest(items: typeof validItems) {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 1, email: 'user@example.com' }),
+      })
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [{ stock: 100, name: 'Product' }] }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    })
+    request.cookies.set(SESSION_COOKIE, 'valid-session-token')
+    return request
+  }
+
   describe('Authentication', () => {
-    it('rejects request without authorization header', async () => {
+    it('rejects request without session cookie', async () => {
       const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
         method: 'POST',
         body: JSON.stringify({ items: validItems }),
@@ -75,111 +92,99 @@ describe('POST /api/create-payment-intent', () => {
       const response = await POST(request)
       const data = await response.json()
       expect(response.status).toBe(401)
-      expect(data.error).toContain('Unauthorized')
+      expect(data.error).toContain('Inicia sesión')
     })
-    it('rejects request with invalid token format', async () => {
+
+    it('rejects request with invalid session cookie', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+      })
       const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
         method: 'POST',
-        headers: {
-          authorization: 'InvalidFormat',
-        },
         body: JSON.stringify({ items: validItems }),
       })
+      request.cookies.set(SESSION_COOKIE, 'invalid-token')
       const response = await POST(request)
       const data = await response.json()
       expect(response.status).toBe(401)
-      expect(data.error).toContain('Unauthorized')
+      expect(data.error).toContain('Inicia sesión')
     })
-    it('accepts request with valid Bearer token', async () => {
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token_123',
-        },
-        body: JSON.stringify({ items: validItems }),
-      })
+
+    it('accepts request with valid session cookie', async () => {
+      const request = createAuthenticatedRequest(validItems)
       const response = await POST(request)
       expect(response.status).toBe(200)
     })
   })
+
   describe('Request Validation', () => {
     it('rejects request without items', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 1, email: 'user@example.com' }),
+      })
       const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
         method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
         body: JSON.stringify({}),
       })
+      request.cookies.set(SESSION_COOKIE, 'valid-session-token')
       const response = await POST(request)
       const data = await response.json()
       expect(response.status).toBe(400)
-      expect(data.error).toContain('items array is required')
+      expect(data.error).toContain('al menos un producto')
     })
+
     it('rejects request with empty items array', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 1, email: 'user@example.com' }),
+      })
       const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
         method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
         body: JSON.stringify({ items: [] }),
       })
+      request.cookies.set(SESSION_COOKIE, 'valid-session-token')
       const response = await POST(request)
       const data = await response.json()
       expect(response.status).toBe(400)
-      expect(data.error).toContain('items array is required')
+      expect(data.error).toContain('al menos un producto')
     })
   })
+
   describe('Amount Calculation', () => {
     it('calculates total correctly with shipping', async () => {
       const items = [
         { id: '1', name: 'Product', price: 50, quantity: 1 },
       ]
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items }),
-      })
+      const request = createAuthenticatedRequest(items)
       await POST(request)
-      // subtotal: 50, shipping: 5.99 (< 100), total: 55.99
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          amount: 5599, // 55.99 * 100
+          amount: 5599,
           currency: 'eur',
         })
       )
     })
+
     it('calculates total correctly with free shipping', async () => {
       const items = [
         { id: '1', name: 'Product', price: 100, quantity: 1 },
       ]
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items }),
-      })
+      const request = createAuthenticatedRequest(items)
       await POST(request)
-      // subtotal: 100, shipping: 0 (>= 100), total: 100
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          amount: 10000, // 100 * 100
+          amount: 10000,
         })
       )
     })
+
     it('calculates total for multiple items', async () => {
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items: validItems }),
-      })
+      const request = createAuthenticatedRequest(validItems)
       await POST(request)
-      // subtotal: (50*2) + (30*1) = 130, shipping: 0, total: 130
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           amount: 13000,
@@ -187,29 +192,19 @@ describe('POST /api/create-payment-intent', () => {
       )
     })
   })
+
   describe('Payment Intent Creation', () => {
     it('creates payment intent successfully', async () => {
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items: validItems }),
-      })
+      const request = createAuthenticatedRequest(validItems)
       const response = await POST(request)
       const data = await response.json()
       expect(response.status).toBe(200)
       expect(data.clientSecret).toBe('pi_test_123_secret_abc')
-      expect(data.amount).toBe(130) // Calculated total
+      expect(data.amount).toBe(130)
     })
+
     it('expands latest_charge for payment details', async () => {
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items: validItems }),
-      })
+      const request = createAuthenticatedRequest(validItems)
       await POST(request)
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -217,14 +212,9 @@ describe('POST /api/create-payment-intent', () => {
         })
       )
     })
+
     it('includes metadata in payment intent', async () => {
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items: validItems }),
-      })
+      const request = createAuthenticatedRequest(validItems)
       await POST(request)
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -236,7 +226,14 @@ describe('POST /api/create-payment-intent', () => {
         })
       )
     })
+
+    it('includes X-Trace-Id in response headers', async () => {
+      const request = createAuthenticatedRequest(validItems)
+      const response = await POST(request)
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
+    })
   })
+
   describe('Error Handling', () => {
     it('handles Stripe errors gracefully', async () => {
       const Stripe = await import('stripe')
@@ -246,31 +243,20 @@ describe('POST /api/create-payment-intent', () => {
           message: 'Test error',
         })
       )
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items: validItems }),
-      })
+      const request = createAuthenticatedRequest(validItems)
       const response = await POST(request)
       const data = await response.json()
       expect(response.status).toBe(500)
-      expect(data.error).toBe('Payment processing error')
+      expect(data.error).toContain('procesamiento del pago')
     })
+
     it('handles invalid item data', async () => {
       const invalidItems = [
         { id: '1', name: 'Product', price: -10, quantity: 1 },
       ]
-      const request = new NextRequest('http://localhost:3000/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-        body: JSON.stringify({ items: invalidItems }),
-      })
+      const request = createAuthenticatedRequest(invalidItems)
       const response = await POST(request)
-      expect(response.status).toBe(500)
+      expect(response.status).toBe(400)
     })
   })
 })
