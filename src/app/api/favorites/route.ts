@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTraceId } from '@/lib/trace'
 import { requireUser } from '@/lib/auth/validate-request'
-import { getFavoritesService, MAX_FAVORITES, type FavoritesList } from '@/features/favorites'
-import { updateFavoritesService, validateFavoritesList } from '@/features/favorites'
+import { getFavoritesService, updateFavoritesService, validateFavoritesList, MAX_FAVORITES } from '@/features/favorites'
 
 export async function GET(request: NextRequest) {
   const traceId = getTraceId(request)
