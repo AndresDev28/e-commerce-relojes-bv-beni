@@ -35,6 +35,18 @@ vi.mock('stripe', () => {
   }
 })
 
+vi.mock('@/lib/stripe/server', () => ({
+  getStripeServer: () => ({
+    paymentIntents: {
+      create: mockCreate,
+    },
+  }),
+}))
+
+vi.mock('@/lib/constants', () => ({
+  API_URL: 'http://localhost:1337',
+}))
+
 vi.mock('@/lib/constants/shipping', () => ({
   calculateShipping: vi.fn((subtotal: number) => {
     return subtotal >= 100 ? 0 : 5.99
