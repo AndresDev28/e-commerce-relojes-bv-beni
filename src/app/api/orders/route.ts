@@ -1,95 +1,110 @@
-/**
- * [ORD-01] GET /api/orders endpoint
- *
- * Returns user's orders from Strapi with pagination support
- * Requires JWT authentication
- */
-
 import { NextRequest, NextResponse } from 'next/server'
-import { API_URL } from '@/lib/constants'
+import { getTraceId } from '@/lib/trace'
+import { requireUser } from '@/lib/auth/validate-request'
+import { getOrdersService, createOrderService } from '@/features/orders'
 
-/**
- * GET /api/orders
- *
- * Query params:
- * - user (optional): userId to filter orders
- * - page (optional): page number (default: 1)
- *
- * Headers:
- * - Authorization: Bearer <jwt-token>
- */
+interface CreateOrderBody {
+  orderId?: unknown
+  items?: unknown
+  subtotal?: unknown
+  shipping?: unknown
+  total?: unknown
+  orderStatus?: unknown
+  paymentIntentId?: unknown
+  paymentInfo?: unknown
+}
+
 export async function GET(request: NextRequest) {
+  const traceId = getTraceId(request)
+
   try {
-    // 1. Validate JWT token
-    const authHeader = request.headers.get('Authorization')
+    const authResult = await requireUser(request)
+    if ('error' in authResult) return authResult.error
 
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized - JWT token required' },
-        { status: 401 }
-      )
-    }
+    const { user, jwtToken } = authResult
 
-    if (!authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Invalid token format' },
-        { status: 401 }
-      )
-    }
-
-    const jwtToken = authHeader.replace('Bearer ', '')
-
-    // 2. Get query parameters
     const { searchParams } = new URL(request.url)
     const page = searchParams.get('page') || '1'
-    const userId = searchParams.get('user')
+    const userIdParam = searchParams.get('user')
 
-    // 3. Build Strapi query parameters
-    const strapiParams = new URLSearchParams({
-      'sort[0]': 'createdAt:desc', // Most recent first
-      'pagination[page]': page,
-      'pagination[pageSize]': '10', // [ORD-02] Will be implemented
+    const result = await getOrdersService({
+      user,
+      jwtToken,
+      traceId,
+      page,
+      userIdParam,
     })
 
-    // Add user filter if provided
-    if (userId) {
-      strapiParams.set('filters[user][id][$eq]', userId)
-    }
+    if ('error' in result) return result.error
 
-    // 4. Fetch orders from Strapi
-    const strapiUrl = `${API_URL}/api/orders?${strapiParams}`
+    return NextResponse.json(
+      { data: result.data, meta: result.meta },
+      { headers: { 'X-Trace-Id': traceId } }
+    )
+  } catch {
+    return NextResponse.json(
+      { error: 'Ocurrió un error inesperado. Inténtalo de nuevo.' },
+      { status: 500, headers: { 'X-Trace-Id': traceId } }
+    )
+  }
+}
 
-    const response = await fetch(strapiUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken}`,
-      },
-    })
+export async function POST(request: NextRequest) {
+  const traceId = getTraceId(request)
 
-    if (!response.ok) {
-      console.error(`Strapi error: ${response.status} ${response.statusText}`)
+  try {
+    const authResult = await requireUser(request)
+    if ('error' in authResult) return authResult.error
+    const { jwtToken } = authResult
+
+    let body: CreateOrderBody
+    try {
+      body = (await request.json()) as CreateOrderBody
+    } catch {
       return NextResponse.json(
-        { error: 'Failed to fetch orders from Strapi' },
-        { status: response.status }
+        { error: 'Solicitud inválida.' },
+        { status: 400, headers: { 'X-Trace-Id': traceId } }
       )
     }
 
-    const data = await response.json()
+    const { orderId, items, subtotal, shipping, total, orderStatus, paymentIntentId, paymentInfo } = body
 
-    // 5. Unwrap attributes if present and return orders with pagination metadata
-    const unwrappedData = data.data.map((item: Record<string, unknown>) => item.attributes ? item.attributes : item)
+    if (typeof orderId !== 'string' || !orderId.trim()) {
+      return NextResponse.json(
+        { error: 'Falta el identificador del pedido.' },
+        { status: 400, headers: { 'X-Trace-Id': traceId } }
+      )
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: 'El pedido debe incluir al menos un producto.' },
+        { status: 400, headers: { 'X-Trace-Id': traceId } }
+      )
+    }
+    if (
+      typeof subtotal !== 'number' ||
+      typeof shipping !== 'number' ||
+      typeof total !== 'number'
+    ) {
+      return NextResponse.json(
+        { error: 'Los importes del pedido son inválidos.' },
+        { status: 400, headers: { 'X-Trace-Id': traceId } }
+      )
+    }
 
-    return NextResponse.json({
-      data: unwrappedData,
-      meta: data.meta,
+    const result = await createOrderService({
+      jwtToken,
+      traceId,
+      input: { orderId, items, subtotal, shipping, total, orderStatus, paymentIntentId, paymentInfo },
     })
 
-  } catch (error) {
-    console.error('❌ Error in GET /api/orders:', error)
+    if ('error' in result) return result.error
+
+    return NextResponse.json(result.data, { headers: { 'X-Trace-Id': traceId } })
+  } catch {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Ocurrió un error inesperado. Inténtalo de nuevo.' },
+      { status: 500, headers: { 'X-Trace-Id': traceId } }
     )
   }
 }

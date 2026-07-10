@@ -1,4 +1,3 @@
-import { OrderStatus } from '@/types'
 /**
  * [ORD-07] Tests: OrderHistory renderiza lista correctamente
  *
@@ -6,29 +5,21 @@ import { OrderStatus } from '@/types'
  * que muestra el historial de pedidos del usuario.
  */
 
+import { OrderStatus } from '@/types'
+
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import OrderHistory from '../OrderHistory'
 import type { OrderData } from '@/lib/api/orders'
 
-// Mock de useAuth para simular usuario autenticado
-const mockUser = {
-  id: 1,
-  username: 'testuser',
-  email: 'test@example.com',
-  jwt: 'mock-jwt-token',
-}
-
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
-    user: mockUser,
-    jwt: mockUser.jwt,
-    isAuthenticated: true,
+    user: { id: 1, username: 'testuser', email: 'test@example.com' },
+    isLoading: false,
   }),
 }))
 
-// Mock de next/navigation para manejar search params
 const mockSearchParams = new URLSearchParams()
 const mockPush = vi.fn()
 const mockPathname = '/mi-cuenta/pedidos'
@@ -39,7 +30,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
 }))
 
-// Mock de next/link
 vi.mock('next/link', () => ({
   default: ({
     children,
@@ -50,10 +40,8 @@ vi.mock('next/link', () => ({
   }) => <a href={href}>{children}</a>,
 }))
 
-// Mock de fetch global
 global.fetch = vi.fn()
 
-// Helper: Mock de datos de órdenes
 const createMockOrder = (overrides: Partial<OrderData> = {}): OrderData => ({
   id: 1,
   documentId: 'doc-001',
@@ -110,16 +98,14 @@ describe('[ORD-07] OrderHistory Component', () => {
 
       render(<OrderHistory />)
 
-      // Verificar que muestra loading inicialmente
       expect(screen.getByText(/cargando/i)).toBeInTheDocument()
 
-      // Esperar a que carguen los datos
       await waitFor(() => {
         expect(screen.queryByText(/cargando/i)).not.toBeInTheDocument()
       })
     })
 
-    it('should call API with JWT token', async () => {
+    it('should call API with credentials and trace id', async () => {
       const mockOrders = [createMockOrder()]
 
       vi.mocked(fetch).mockResolvedValueOnce({
@@ -138,8 +124,9 @@ describe('[ORD-07] OrderHistory Component', () => {
         expect(fetch).toHaveBeenCalledWith(
           expect.stringContaining('/api/orders'),
           expect.objectContaining({
+            credentials: 'same-origin',
             headers: expect.objectContaining({
-              Authorization: 'Bearer mock-jwt-token',
+              'X-Trace-Id': expect.any(String),
             }),
           })
         )
@@ -273,7 +260,7 @@ describe('[ORD-07] OrderHistory Component', () => {
   describe('Estado de loading', () => {
     it('should show loading indicator while fetching', () => {
       vi.mocked(fetch).mockImplementation(
-        () => new Promise(() => { }) // Never resolves
+        () => new Promise(() => { })
       )
 
       render(<OrderHistory />)
@@ -293,7 +280,7 @@ describe('[ORD-07] OrderHistory Component', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/error al cargar los pedidos/i)
+          screen.getByText(/Network error/i)
         ).toBeInTheDocument()
       })
     })
@@ -308,7 +295,7 @@ describe('[ORD-07] OrderHistory Component', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/error al cargar los pedidos/i)
+          screen.getByText(/error al cargar/i)
         ).toBeInTheDocument()
       })
     })
@@ -433,16 +420,13 @@ describe('[ORD-07] OrderHistory Component', () => {
 
       render(<OrderHistory />)
 
-      // Esperar a que carguen los datos de página 1
       await waitFor(() => {
         expect(screen.getByText('ORD-PAGE1')).toBeInTheDocument()
       })
 
-      // Hacer click en botón "Siguiente"
       const nextButton = screen.getByText(/siguiente/i)
       await userEvent.click(nextButton)
 
-      // Verificar que router.push se llamó con la URL correcta
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith(
           '/mi-cuenta/pedidos?page=2'
@@ -451,7 +435,6 @@ describe('[ORD-07] OrderHistory Component', () => {
     })
 
     it('should navigate to previous page and update URL when clicking "Anterior"', async () => {
-      // Simular que estamos en página 2
       mockSearchParams.set('page', '2')
 
       const mockOrdersPage2 = [
@@ -470,16 +453,13 @@ describe('[ORD-07] OrderHistory Component', () => {
 
       render(<OrderHistory />)
 
-      // Esperar a que carguen los datos de página 2
       await waitFor(() => {
         expect(screen.getByText('ORD-PAGE2')).toBeInTheDocument()
       })
 
-      // Hacer click en botón "Anterior"
       const prevButton = screen.getByText(/anterior/i)
       await userEvent.click(prevButton)
 
-      // Verificar que router.push se llamó con la URL correcta
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith(
           '/mi-cuenta/pedidos?page=1'
@@ -488,7 +468,6 @@ describe('[ORD-07] OrderHistory Component', () => {
     })
 
     it('should reflect current page in URL parameter', async () => {
-      // Simular que estamos en página 3
       mockSearchParams.set('page', '3')
 
       const mockOrdersPage3 = [createMockOrder()]
@@ -506,23 +485,21 @@ describe('[ORD-07] OrderHistory Component', () => {
       render(<OrderHistory />)
 
       await waitFor(() => {
-        // Verificar que se muestra el indicador de página correcta
         expect(screen.getByText('Página 3 de 5')).toBeInTheDocument()
       })
 
-      // Verificar que fetch se llamó con el parámetro de página correcto
       expect(fetch).toHaveBeenCalledWith(
         '/api/orders?page=3',
         expect.objectContaining({
+          credentials: 'same-origin',
           headers: expect.objectContaining({
-            Authorization: 'Bearer mock-jwt-token',
+            'X-Trace-Id': expect.any(String),
           }),
         })
       )
     })
 
     it('should load correct data for each page', async () => {
-      // Página 1: primeros 10 pedidos
       const mockOrdersPage1 = Array.from({ length: 10 }, (_, i) =>
         createMockOrder({
           id: i + 1,
@@ -543,18 +520,17 @@ describe('[ORD-07] OrderHistory Component', () => {
 
       render(<OrderHistory />)
 
-      // Verificar que se muestran los pedidos de página 1
       await waitFor(() => {
         expect(screen.getByText('ORD-PAGE1-1')).toBeInTheDocument()
         expect(screen.getByText('ORD-PAGE1-10')).toBeInTheDocument()
       })
 
-      // Verificar que fetch se llamó con page=1
       expect(fetch).toHaveBeenCalledWith(
         '/api/orders?page=1',
         expect.objectContaining({
+          credentials: 'same-origin',
           headers: expect.objectContaining({
-            Authorization: 'Bearer mock-jwt-token',
+            'X-Trace-Id': expect.any(String),
           }),
         })
       )
@@ -596,15 +572,12 @@ describe('[ORD-07] OrderHistory Component', () => {
       render(<OrderHistory />)
 
       await waitFor(() => {
-        // Verificar que OrderCard muestra el orderId
         expect(screen.getByText('ORD-1700000001-A')).toBeInTheDocument()
         expect(screen.getByText('ORD-1700000002-B')).toBeInTheDocument()
 
-        // Verificar que OrderCard muestra el total formateado
         expect(screen.getByText(/99,99/)).toBeInTheDocument()
         expect(screen.getByText(/149,99/)).toBeInTheDocument()
 
-        // Verificar que OrderCard muestra el estado traducido
         expect(screen.getByText('Entregado')).toBeInTheDocument()
         expect(screen.getByText('Enviado')).toBeInTheDocument()
       })
@@ -632,7 +605,6 @@ describe('[ORD-07] OrderHistory Component', () => {
       render(<OrderHistory />)
 
       await waitFor(() => {
-        // Verificar que se renderizan 5 OrderCards
         const orderCards = screen.getAllByText(/ORD-/)
         expect(orderCards).toHaveLength(5)
       })

@@ -9,6 +9,9 @@
  * FUNCIONALIDADES TESTEADAS:
  * [ORD-01] - Obtención de órdenes desde Strapi
  * [ORD-02] - Paginación de resultados
+ * [SEC-01] - JWT validation via requireUser
+ * [SEC-02] - IDOR prevention
+ * [TRC-01] - X-Trace-Id propagation
  *
  * PATRÓN DE DISEÑO:
  * - Arrange-Act-Assert (AAA): Organización clara de cada test en 3 fases
@@ -17,32 +20,161 @@
  *
  * @see https://vitest.dev/guide/
  */
-
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET } from '../route'
 import { NextRequest } from 'next/server'
-
-// ============================================================================
+import { SESSION_COOKIE } from '@/lib/auth/session'
 // CONFIGURACIÓN DE MOCKS
-// ============================================================================
-
-/**
- * Mock del módulo de constantes
- *
- * POR QUÉ: Necesitamos simular la URL de Strapi para que los tests no dependan
- * de un servidor real. Esto permite:
- * 1. Ejecutar tests sin conexión a internet
- * 2. Tests más rápidos (no hay llamadas HTTP reales)
- * 3. Resultados predecibles y consistentes
- */
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337'
 }))
-
-// ============================================================================
-// SUITE DE TESTS: Funcionalidad básica del endpoint
-// ============================================================================
-
+// Restore globals after each test (fix V5 stubbing)
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+describe('[SEC-01] JWT Validation via requireUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    global.fetch = vi.fn()
+  })
+  it('should return 401 if no session cookie is provided', async () => {
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    const response = await GET(request)
+    const data = await response.json()
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('No tienes una sesión activa. Inicia sesión.')
+  })
+  it('should return 401 if session cookie is invalid', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+    })
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'invalid-token')
+    const response = await GET(request)
+    const data = await response.json()
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
+  })
+  it('should return 401 when session is expired (Strapi returns 401)', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+    })
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'expired-token')
+    const response = await GET(request)
+    const data = await response.json()
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Sesión expirada. Inicia sesión de nuevo.')
+  })
+})
+describe('[SEC-02] IDOR Prevention', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    global.fetch = vi.fn()
+  })
+  it('should return 403 when user param does not match JWT user', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
+    })
+    const request = new NextRequest('http://localhost:3000/api/orders?user=99')
+    request.cookies.set(SESSION_COOKIE, 'valid-token')
+    const response = await GET(request)
+    const data = await response.json()
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('No tenés permiso para acceder a este recurso.')
+  })
+  it('should allow request when user param matches JWT user', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{ id: 1, orderId: 'ORD-001', createdAt: '2025-11-20T10:00:00Z' }],
+          meta: { pagination: { page: 1, pageSize: 10, pageCount: 1, total: 1 } },
+        }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/orders?user=42')
+    request.cookies.set(SESSION_COOKIE, 'valid-token')
+    const response = await GET(request)
+    const data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data.data).toHaveLength(1)
+  })
+})
+describe('[TRC-01] X-Trace-Id Propagation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    global.fetch = vi.fn()
+  })
+  it('should echo X-Trace-Id in response when provided in request', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [],
+          meta: { pagination: { page: 1, pageSize: 10, pageCount: 1, total: 0 } },
+        }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: { 'X-Trace-Id': 'test-trace-abc-123' }
+    })
+    request.cookies.set(SESSION_COOKIE, 'valid-token')
+    const response = await GET(request)
+    expect(response.headers.get('X-Trace-Id')).toBe('test-trace-abc-123')
+  })
+  it('should propagate X-Trace-Id to Strapi fetch call', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [],
+          meta: { pagination: { page: 1, pageSize: 10, pageCount: 1, total: 0 } },
+        }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/orders', {
+      headers: { 'X-Trace-Id': 'test-trace-abc-123' }
+    })
+    request.cookies.set(SESSION_COOKIE, 'valid-token')
+    await GET(request)
+    const strapiCall = (global.fetch as any).mock.calls[1]
+    expect(strapiCall[1].headers['X-Trace-Id']).toBe('test-trace-abc-123')
+  })
+  it('should generate and echo X-Trace-Id when not provided', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [],
+          meta: { pagination: { page: 1, pageSize: 10, pageCount: 1, total: 0 } },
+        }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-token')
+    const response = await GET(request)
+    const traceId = response.headers.get('X-Trace-Id')
+    expect(traceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
+  })
+})
 /**
  * [ORD-01] Suite de tests para el endpoint GET /api/orders
  *
@@ -54,110 +186,11 @@ vi.mock('@/lib/constants', () => ({
  * - Ordenamiento de resultados
  */
 describe('[ORD-01] GET /api/orders', () => {
-  /**
-   * Configuración que se ejecuta ANTES de cada test
-   *
-   * POR QUÉ: Garantiza que cada test empiece con un estado limpio
-   * - clearAllMocks(): Limpia el historial de llamadas a funciones mock
-   * - global.fetch = vi.fn(): Crea un nuevo mock de fetch para cada test
-   *
-   * ALTERNATIVA CONSIDERADA: Usar afterEach() pero beforeEach() es mejor
-   * porque asegura el estado limpio ANTES de cada test, no después.
-   */
   beforeEach(() => {
     vi.clearAllMocks()
-    // Mock de fetch: Intercepta todas las llamadas HTTP
     global.fetch = vi.fn()
   })
-
-  /**
-   * Test: Debe rechazar requests sin token de autenticación
-   *
-   * @description
-   * Verifica que el endpoint implemente seguridad básica rechazando
-   * requests sin el header de Authorization.
-   *
-   * PATRÓN AAA:
-   * - Arrange: Preparar un request SIN header de auth
-   * - Act: Llamar al endpoint
-   * - Assert: Verificar respuesta 401
-   *
-   * CASO EDGE: Usuario intenta acceder sin estar autenticado
-   * DECISIÓN: Retornar 401 en lugar de 403 porque el usuario no está
-   * autenticado (401 = no autenticado, 403 = autenticado pero sin permisos)
-   */
-  it('should return 401 if no authorization header is provided', async () => {
-    // Arrange: Crear request sin header de autenticación
-    const request = new NextRequest('http://localhost:3000/api/orders')
-
-    // Act: Ejecutar el endpoint
-    const response = await GET(request)
-    const data = await response.json()
-
-    // Assert: Debe retornar 401 Unauthorized con mensaje descriptivo
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized - JWT token required')
-  })
-
-  /**
-   * Test: Debe rechazar tokens con formato inválido
-   *
-   * @description
-   * Valida que el endpoint verifique el formato del token JWT.
-   * El formato esperado es: "Bearer <token>"
-   *
-   * CASO EDGE: Usuario envía un token malformado
-   * EJEMPLOS DE TOKENS INVÁLIDOS:
-   * - "InvalidToken123" (sin "Bearer ")
-   * - "Bearer" (sin token)
-   * - "" (string vacío)
-   *
-   * POR QUÉ VALIDAR EL FORMATO:
-   * 1. Seguridad: Evita ataques con tokens maliciosos
-   * 2. Consistencia: Sigue el estándar RFC 6750 (Bearer Token)
-   * 3. Debugging: Mensajes de error claros para el cliente
-   */
-  it('should return 401 if authorization header is malformed', async () => {
-    // Arrange: Crear request con token sin formato "Bearer"
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'InvalidToken123' // Token malformado: falta "Bearer "
-      }
-    })
-
-    // Act: Ejecutar el endpoint
-    const response = await GET(request)
-    const data = await response.json()
-
-    // Assert: Debe rechazar con 401 y mensaje específico
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Unauthorized - Invalid token format')
-  })
-
-  /**
-   * Test: Debe obtener órdenes de Strapi y ordenarlas por fecha
-   *
-   * @description
-   * Verifica el flujo completo exitoso:
-   * 1. Request autenticado correctamente
-   * 2. Llamada a Strapi con el token JWT
-   * 3. Procesamiento de la respuesta
-   * 4. Ordenamiento por fecha (más reciente primero)
-   *
-   * DECISIÓN DE DISEÑO:
-   * - Ordenar por createdAt DESC: Los usuarios quieren ver las órdenes
-   *   más recientes primero (patrón común en e-commerce)
-   *
-   * ALTERNATIVA CONSIDERADA:
-   * - Ordenar por updatedAt: Rechazado porque una orden vieja con un
-   *   cambio pequeño aparecería primero, confundiendo al usuario
-   *
-   * @example
-   * // Orden esperada en la respuesta:
-   * // [ORD-002 (2025-11-20), ORD-001 (2025-11-19)]
-   */
   it('should fetch orders from Strapi and return them sorted by date', async () => {
-    // Arrange: Preparar datos de prueba con fechas diferentes
     const mockOrders = [
       {
         id: 2,
@@ -168,7 +201,7 @@ describe('[ORD-01] GET /api/orders', () => {
         shipping: 10,
         total: 110,
         orderStatus: 'paid',
-        createdAt: '2025-11-20T10:00:00Z', // MÁS RECIENTE
+        createdAt: '2025-11-20T10:00:00Z',
         updatedAt: '2025-11-20T10:00:00Z',
         publishedAt: '2025-11-20T10:00:00Z'
       },
@@ -181,138 +214,67 @@ describe('[ORD-01] GET /api/orders', () => {
         shipping: 10,
         total: 210,
         orderStatus: 'pending',
-        createdAt: '2025-11-19T10:00:00Z', // MÁS ANTIGUA
+        createdAt: '2025-11-19T10:00:00Z',
         updatedAt: '2025-11-19T10:00:00Z',
         publishedAt: '2025-11-19T10:00:00Z'
       }
     ]
-
-    // Mock de fetch: Simular respuesta exitosa de Strapi
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockOrders })
-    })
-
-    // Crear request autenticado
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: mockOrders }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Verificar respuesta exitosa y ordenamiento correcto
     expect(response.status).toBe(200)
     expect(data.data).toHaveLength(2)
-    // La orden más reciente (2025-11-20) debe aparecer primero
     expect(data.data[0].orderId).toBe('ORD-1700000002-A')
     expect(data.data[1].orderId).toBe('ORD-1700000001-A')
-
-    // Verificar que fetch fue llamado con los parámetros correctos
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/orders'),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': 'Bearer valid-jwt-token' // Token reenviado a Strapi
-        })
-      })
-    )
+    const strapiCall = (global.fetch as any).mock.calls[1]
+    expect(strapiCall[0]).toContain('/api/orders')
+    expect(strapiCall[1].headers).toHaveProperty('Authorization')
+    expect(strapiCall[1].headers).toHaveProperty('X-Trace-Id')
+    expect(strapiCall[0]).toMatch(/sort%5B0%5D=createdAt%3Adesc/)
   })
-
-  /**
-   * Test: Debe manejar errores de Strapi de forma elegante
-   *
-   * @description
-   * Verifica que el endpoint maneje errores del backend (Strapi) sin
-   * exponer información sensible al cliente.
-   *
-   * CASO EDGE: Strapi tiene un error interno (BD caída, timeout, etc.)
-   *
-   * PATRÓN DE DISEÑO: Graceful Degradation
-   * - Capturar el error antes de que llegue al cliente
-   * - Retornar un mensaje genérico (no exponer detalles del servidor)
-   * - Usar status code apropiado (500 = error del servidor)
-   *
-   * POR QUÉ OCULTAR DETALLES:
-   * Seguridad: No revelar información sobre la infraestructura
-   * (nombres de BD, rutas internas, versiones, etc.)
-   *
-   * @example
-   * // Error de Strapi: "Database connection failed"
-   * // Respuesta al cliente: "Failed to fetch orders from Strapi"
-   */
   it('should handle Strapi errors gracefully', async () => {
-    // Arrange: Simular error 500 de Strapi
-    ;(global.fetch as any).mockResolvedValueOnce({
-      ok: false, // Indica que la respuesta HTTP fue un error
-      status: 500,
-      json: async () => ({ error: { message: 'Database connection failed' } })
-    })
-
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: { message: 'Database connection failed' } }),
+      })
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Debe retornar 500 con mensaje genérico
-    expect(response.status).toBe(500)
-    expect(data.error).toBe('Failed to fetch orders from Strapi')
-    // IMPORTANTE: No exponemos "Database connection failed" al cliente
+    expect(response.status).toBe(502)
+    expect(data.error).toBe('No pudimos cargar tus pedidos. Intentá de nuevo.')
   })
-
-  /**
-   * Test: Debe manejar errores de red de forma elegante
-   *
-   * @description
-   * Verifica el manejo de errores cuando la llamada a Strapi falla
-   * completamente (no hay respuesta HTTP).
-   *
-   * CASOS EDGE CUBIERTOS:
-   * - Strapi está caído (no responde)
-   * - Timeout de red
-   * - DNS no resuelve
-   * - Conexión rechazada
-   *
-   * DIFERENCIA CON EL TEST ANTERIOR:
-   * - Test anterior: Strapi responde con error (fetch exitoso pero ok=false)
-   * - Este test: fetch falla completamente (promesa rechazada)
-   *
-   * PATRÓN: Error Boundary
-   * Capturar excepciones no controladas para evitar que la app se rompa
-   */
   it('should handle network errors gracefully', async () => {
-    // Arrange: Simular fallo total de red (promesa rechazada)
-    ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
-
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 42, email: 'user@example.com' }),
+      })
+      .mockRejectedValueOnce(new Error('Network error'))
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Debe retornar 500 con mensaje genérico
     expect(response.status).toBe(500)
-    expect(data.error).toBe('Internal server error')
-    // Mensaje aún más genérico para no dar pistas sobre la arquitectura
+    expect(data.error).toBe('Ocurrió un error inesperado. Inténtalo de nuevo.')
   })
 })
-
-// ============================================================================
-// SUITE DE TESTS: Paginación
-// ============================================================================
-
 /**
  * [ORD-02] Suite de tests para paginación de órdenes
  *
@@ -343,8 +305,12 @@ describe('[ORD-02] Pagination', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     global.fetch = vi.fn()
+    // Mock successful Strapi user validation
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
+    })
   })
-
   /**
    * Test: Debe retornar 10 órdenes por página por defecto
    *
@@ -380,7 +346,6 @@ describe('[ORD-02] Pagination', () => {
       updatedAt: `2025-11-${20 - i}T10:00:00Z`,
       publishedAt: `2025-11-${20 - i}T10:00:00Z`
     }))
-
     // Mock de respuesta de Strapi con metadata de paginación
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
@@ -396,23 +361,14 @@ describe('[ORD-02] Pagination', () => {
         }
       })
     })
-
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Verificar respuesta y metadata de paginación
     expect(response.status).toBe(200)
     expect(data.data).toHaveLength(10) // Exactamente 10 órdenes
     expect(data.meta.pagination.pageSize).toBe(10)
     expect(data.meta.pagination.page).toBe(1) // Primera página por defecto
-
     /**
      * CONCEPTO IMPORTANTE: URL Encoding
      *
@@ -435,7 +391,6 @@ describe('[ORD-02] Pagination', () => {
       expect.any(Object)
     )
   })
-
   /**
    * Test: Debe soportar el parámetro de página
    *
@@ -470,7 +425,6 @@ describe('[ORD-02] Pagination', () => {
       updatedAt: `2025-11-${10 - i}T10:00:00Z`,
       publishedAt: `2025-11-${10 - i}T10:00:00Z`
     }))
-
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -485,30 +439,19 @@ describe('[ORD-02] Pagination', () => {
         }
       })
     })
-
-    // Request con query parameter ?page=2
-    const request = new NextRequest('http://localhost:3000/api/orders?page=2', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    const request = new NextRequest('http://localhost:3000/api/orders?page=2')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Verificar que se retorna la página 2 correctamente
     expect(response.status).toBe(200)
     expect(data.data).toHaveLength(10)
     expect(data.meta.pagination.page).toBe(2) // Confirmar página 2
-
     // Verificar que el parámetro se envió a Strapi correctamente
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining('pagination%5Bpage%5D=2'),
       expect.any(Object)
     )
   })
-
   /**
    * Test: Debe retornar menos de 10 órdenes en la última página
    *
@@ -551,7 +494,6 @@ describe('[ORD-02] Pagination', () => {
       updatedAt: `2025-11-0${i + 1}T10:00:00Z`,
       publishedAt: `2025-11-0${i + 1}T10:00:00Z`
     }))
-
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -566,25 +508,16 @@ describe('[ORD-02] Pagination', () => {
         }
       })
     })
-
-    const request = new NextRequest('http://localhost:3000/api/orders?page=3', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    const request = new NextRequest('http://localhost:3000/api/orders?page=3')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Verificar que se retornan solo 5 órdenes (no 10)
     expect(response.status).toBe(200)
     expect(data.data).toHaveLength(5) // IMPORTANTE: Solo 5, no 10
     expect(data.meta.pagination.page).toBe(3)
     expect(data.meta.pagination.total).toBe(25)
     // Nota: Frontend puede detectar última página si data.length < pageSize
   })
-
   /**
    * Test: Debe retornar array vacío cuando no hay órdenes
    *
@@ -629,25 +562,16 @@ describe('[ORD-02] Pagination', () => {
         }
       })
     })
-
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Verificar respuesta exitosa con array vacío
     expect(response.status).toBe(200) // 200, no 404
     expect(data.data).toEqual([])     // Array vacío válido
     expect(data.meta.pagination.total).toBe(0)
     expect(data.meta.pagination.pageCount).toBe(0)
     // Frontend puede usar total=0 para mostrar: "No tienes órdenes aún"
   })
-
   /**
    * Test: Debe incluir metadata de paginación en la respuesta
    *
@@ -699,7 +623,6 @@ describe('[ORD-02] Pagination', () => {
         publishedAt: '2025-11-20T10:00:00Z'
       }
     ]
-
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -714,22 +637,13 @@ describe('[ORD-02] Pagination', () => {
         }
       })
     })
-
-    const request = new NextRequest('http://localhost:3000/api/orders', {
-      headers: {
-        'Authorization': 'Bearer valid-jwt-token'
-      }
-    })
-
-    // Act: Ejecutar el endpoint
+    const request = new NextRequest('http://localhost:3000/api/orders')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
     const response = await GET(request)
     const data = await response.json()
-
-    // Assert: Verificar presencia y estructura de metadata
     expect(response.status).toBe(200)
     expect(data).toHaveProperty('meta')           // Debe tener 'meta'
     expect(data.meta).toHaveProperty('pagination') // Debe tener 'pagination'
-
     // Verificar que todos los campos estén presentes y correctos
     expect(data.meta.pagination).toEqual({
       page: 1,       // Primera página
@@ -737,7 +651,6 @@ describe('[ORD-02] Pagination', () => {
       pageCount: 5,  // 5 páginas totales
       total: 47      // 47 órdenes totales
     })
-
     /**
      * Con esta metadata, el frontend puede mostrar:
      * - "Mostrando 1-10 de 47 órdenes"

@@ -22,15 +22,44 @@ interface StrapiApiResponse<T> {
 }
 
 /**
+ * Generate a unique trace ID for request correlation.
+ */
+function generateTraceId(): string {
+  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
+
+/**
+ * Map raw HTTP/Strapi errors to friendly, non-technical messages.
+ */
+function mapApiError(status: number, statusText: string, body?: unknown): string {
+  if (status === 404) return 'No se encontraron los datos solicitados.'
+  if (status === 429) return 'Demasiadas peticiones. Intenta de nuevo en unos segundos.'
+  if (status >= 500) return 'Error temporal del servidor. Intenta de nuevo más tarde.'
+  if (status === 403) return 'No tienes permiso para acceder a este recurso.'
+  if (status === 401) return 'Sesión expirada. Inicia sesión de nuevo.'
+  if (status === 400) {
+    // Try to extract a Strapi error message if available
+    if (body && typeof body === 'object' && 'error' in body) {
+      const err = (body as Record<string, unknown>).error
+      if (err && typeof err === 'object' && 'message' in err) {
+        return String((err as Record<string, string>).message)
+      }
+    }
+    return 'La solicitud no es válida. Verifica los datos e intenta de nuevo.'
+  }
+  return 'Ocurrió un error inesperado. Intenta de nuevo más tarde.'
+}
+
+/**
  * Función central para hacer llamadas a la API de Strapi.
  * @param endpoint - El endpoint de la API a consultar (ej. '/products').
  * @param query - Un objeto con los parámetros de la query (ej. { populate: '*' }).
- * @returns La propiedad 'data' de la respuesta de la API.
+ * @returns The full Strapi API response (data + meta).
  */
-async function fetchApi<T>(
+async function fetchApiFull<T>(
   endpoint: string,
   query?: Record<string, string>
-): Promise<T> {
+): Promise<StrapiApiResponse<T>> {
   const apiUrl =
     process.env.NEXT_PUBLIC_STRAPI_API_URL ||
     process.env.STRAPI_API_URL ||
@@ -44,21 +73,42 @@ async function fetchApi<T>(
     })
   }
 
-  console.log(`Fetching from URL: ${url.toString()}`)
+  const traceId = generateTraceId()
 
-  try {
-    const response = await fetch(url.toString(), { cache: 'no-store' })
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch API: ${response.status} ${response.statusText}`
-      )
+  const response = await fetch(url.toString(), {
+    cache: 'no-store',
+    headers: {
+      'X-Trace-Id': traceId,
+    },
+  })
+
+  if (!response.ok) {
+    let body: unknown
+    try {
+      body = await response.json()
+    } catch {
+      body = undefined
     }
-    const data: StrapiApiResponse<T> = await response.json()
-    return data.data
-  } catch (error) {
-    console.error('API fetch error:', error)
-    throw error // Relanza el error para que el componente que llama pueda manejarlo
+    const friendlyMessage = mapApiError(response.status, response.statusText, body)
+    const error = new Error(friendlyMessage)
+    ;(error as Error & { status: number; traceId: string }).status = response.status
+    ;(error as Error & { status: number; traceId: string }).traceId = traceId
+    throw error
   }
+
+  const data: StrapiApiResponse<T> = await response.json()
+  return data
+}
+
+/**
+ * Legacy helper that returns only the data array (backward-compatible).
+ */
+async function fetchApi<T>(
+  endpoint: string,
+  query?: Record<string, string>
+): Promise<T> {
+  const result = await fetchApiFull<T>(endpoint, query)
+  return result.data
 }
 
 // Ahora creamos funciones específicas usando nuestro helper
@@ -117,32 +167,8 @@ export async function getProducts(
   }
   query['sort[1]'] = 'id:asc'
 
-  const data = await fetchApi<StrapiProduct[]>('/products', query)
-
-  // fetchApi returns data.data (the array), but we need meta.pagination too.
-  // We need to call fetchApi differently to get the full response with meta.
-  // Let's use a direct approach for paginated calls.
-  const apiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
-    process.env.STRAPI_API_URL ||
-    'http://127.0.0.1:1337'
-
-  const url = new URL(`/api/products`, apiUrl)
-  Object.entries(query).forEach(([key, value]) => {
-    url.searchParams.set(key, value)
-  })
-
-  const response = await fetch(url.toString(), { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch products: ${response.status} ${response.statusText}`
-    )
-  }
-
-  const fullResponse: {
-    data: StrapiProduct[]
-    meta: { pagination: PaginationMeta }
-  } = await response.json()
+  // Single fetch — use fetchApiFull to get both data and meta in one call
+  const fullResponse = await fetchApiFull<StrapiProduct[]>('/products', query)
 
   return {
     products: fullResponse.data,
