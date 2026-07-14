@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
 import { getTraceId } from '@/lib/trace'
 import { requireUser } from '@/lib/auth/validate-request'
-import { normalizeStrapiOrder } from '@/features/orders'
 
-interface OrderLookupResponse {
+interface OrderDetailsResponse {
   data: Array<{
-    id: number | string
+    id: number
     documentId?: string
-    attributes?: Record<string, unknown>
+    orderId?: string
     [key: string]: unknown
   }>
 }
@@ -51,7 +50,7 @@ export async function GET(
       )
     }
 
-    let payload: OrderLookupResponse
+    let payload: OrderDetailsResponse
     try {
       payload = await response.json()
     } catch {
@@ -62,23 +61,9 @@ export async function GET(
     }
 
     const orders = payload.data ?? []
+    const ownedOrder = orders.find((o) => o.orderId === orderId)
 
-    // Strapi v4 wraps order fields inside `attributes`. Normalize to flat shape.
-    const matchingOrder = orders.find(
-      (o) => normalizeStrapiOrder(o).orderId === orderId
-    )
-
-    if (!matchingOrder) {
-      return NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
-
-    const normalized = normalizeStrapiOrder(matchingOrder)
-    const orderOwner = normalized.user as { id?: number } | undefined
-
-    if (!orderOwner || orderOwner.id !== user.id) {
+    if (!ownedOrder || (ownedOrder as { user?: { id?: number } }).user?.id !== user.id) {
       return NextResponse.json(
         { error: 'Pedido no encontrado' },
         { status: 404, headers: { 'X-Trace-Id': traceId } }
@@ -86,7 +71,7 @@ export async function GET(
     }
 
     return NextResponse.json(
-      { data: normalized },
+      { data: ownedOrder },
       { headers: { 'X-Trace-Id': traceId } }
     )
   } catch {
