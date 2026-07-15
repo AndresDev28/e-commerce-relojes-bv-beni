@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.2.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.1.0...relojes-bv-beni-v1.2.0) (2026-07-15)
+
+
+### Features
+
+* **api:** add X-Trace-Id and friendly error mapping to fetch calls ([dd33131](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/dd33131ef40be5f9355f9553e6cfa8186fba3619))
+* **auth:** add session cookie helpers and auth route handlers ([f3be631](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/f3be631561ca3aea8b9e6781b2d9196957d352aa))
+* **checkout:** add assembleOrderData service for order payload transformation ([c9b5136](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/c9b51368e6e9c11d4d92bf890fea058d69046ce4))
+* **favorites:** add /api/favorites route with GET and PUT handlers ([580168e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/580168e8d55620a6f3be37f61389fe0243cadc4b))
+* **favorites:** add favorites feature services (get + update) ([2136c0e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/2136c0eeec930ab53c132a872794d57124b31dac))
+* **favorites:** add useFavoritesApi hook for cookie-based favorites access ([6f61766](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/6f61766cceca27a9f48b4678c0fd0e88d306dc32))
+* **orders:** add getOrderByIdService with 14-test suite (PR-1a) ([fc2e0e5](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/fc2e0e5dc507a2e20b83a5c0a4700c1b4ac6175c))
+* **orders:** add requestCancellationService with 18-test suite (PR-2a) ([db0ae1d](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/db0ae1dd511bf5fabeb0c6e8684e52d1f1b00fea))
+* **orders:** add useOrderById hook for cookie-based order fetching ([b9967ec](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/b9967ec93e597236dd1f56e02cfaf1fb11c847c9))
+* **orders:** extract getOrderByIdService (Slice A — orders-services-refactor) ([2a6b113](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/2a6b113986eee9f680ff9a4ed833e8fbcd4f2857))
+* **orders:** extract requestCancellationService + 500-char reason cap (Slice B — orders-services-refactor) ([10e0ac3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/10e0ac3720ea17f53543119ffeaa45aef18a04eb))
+* **security:** JWT validation, IDOR prevention, and X-Trace-Id in /api/orders ([3f21214](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/3f21214ba6b28463506087a245403d683fd0766a))
+* **security:** thin /api/orders route delegating to features/orders service ([94014b3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/94014b3bd56b1dfdda083cd9d5f5328a047ab7d7))
+* **trace:** export newTraceId for client-side call sites ([5b0df42](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/5b0df4286b03a6139a6a6c27d8673c0f72be6059))
+
+
+### Bug Fixes
+
+* **auth:** use SESSION_COOKIE constant in session route ([b606d43](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/b606d439d8971db7f38c69f9e6a7aa3187f323e0))
+* **ci:** move timeout-minutes to job level (workflow-level not supported) ([29e0ffb](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/29e0ffb6425d32f90974055cac05c742ad2c9f8b))
+* **favorites:** remove unused FavoritesList import ([efaee5a](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/efaee5a2d248a58276705320b4b6522ce47273f9))
+* **lint:** allow empty catch blocks, fix unused-vars patterns (^ -&gt; ^_), strip comments ([2ca6d86](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/2ca6d86c4b9997e04495359aaeb5f98a5c7e296f))
+* **lint:** override no-unused-vars for ShopLoopHead and api.ts (pre-existing debt) ([5075244](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/507524492d52f6c6b99dc0c97c98800262c0e93a))
+* **orders:** remove comment from requestCancellation service ([aa70d2c](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/aa70d2cdb29e2d3c77adb227e84a381a5b9235d7))
+* **orders:** unwrap Strapi v4 attributes envelope in order detail and cancellation routes ([91da557](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/91da5572a026d3ac07bd41e7c8aae2ad705f4c29))
+* **orders:** unwrap Strapi v4 attributes envelope in order detail and cancellation routes ([e701323](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/e701323f52fb309d0023b80f15570de86c9bc5ac))
+* **orders:** unwrap Strapi v4 attributes envelope in order detail and cancellation routes ([2b8006a](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/2b8006a25c50471f0ebf9acfafe5f7e2a5744d15))
+* remove unused catch binding in useOrderById and unused variable in useFavorites ([dc2bd6f](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/dc2bd6f3ce3291b08eef8ddc78bcc5ac112b9334))
+* **security:** remove console leaks, harden CSP, add PR1 artifacts ([160e3cb](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/160e3cbc24664f2d902f7d581754d6f4670bd3e9))
+* **security:** use CSPRNG for trace id fallback ([9ca6bf5](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/9ca6bf5ae4d3d463a2f54f691aa736093c19f063))
+* **test:** mock getStripeServer for CI, run only unit tests in CI ([6b4ba07](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/6b4ba07ecf453e07159781d7dd7119ed8acbf620))
+
 ## [1.1.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.0.0...relojes-bv-beni-v1.1.0) (2026-06-19)
 
 
