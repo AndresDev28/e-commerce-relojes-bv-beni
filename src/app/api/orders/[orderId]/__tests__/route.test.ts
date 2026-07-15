@@ -26,12 +26,23 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET } from '../route'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE } from '@/lib/auth/session'
+import * as ordersFeature from '@/features/orders'
 
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337',
 }))
+
+vi.mock('@/features/orders', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/orders')>()
+  return {
+    ...actual,
+    getOrderByIdService: vi.fn(),
+  }
+})
+
+const getOrderByIdServiceMock = vi.mocked(ordersFeature.getOrderByIdService)
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -93,11 +104,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404 }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-NONEXISTENT'
@@ -127,11 +139,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404 }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -186,11 +199,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -253,11 +262,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -312,12 +317,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: async () => 'Internal Server Error',
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },
+          { status: 502 }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -391,16 +396,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user1@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          data: [
-            { orderId: 'ORD-USER1-001' },
-            { orderId: 'ORD-USER1-002' },
-          ],
-        }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404 }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-USER2-999'
@@ -472,11 +473,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'attacker@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404 }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-SENSITIVE-DATA'
@@ -520,11 +522,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404 }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-DOES-NOT-EXIST'
@@ -570,11 +573,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 42, email: 'owner@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-OWNER-123'
@@ -643,11 +642,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
           json: async () => ({ id: 1, email: 'user@example.com' }),
         } as Response)
 
-        vi.mocked(global.fetch).mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ data: [] }),
-        } as Response)
+        getOrderByIdServiceMock.mockResolvedValueOnce({
+          error: NextResponse.json(
+            { error: 'Pedido no encontrado' },
+            { status: 404 }
+          ),
+        })
 
         const request = new NextRequest(
           `http://localhost:3000/api/orders/${encodeURIComponent(maliciousOrderId)}`
@@ -690,11 +690,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
           json: async () => ({ id: 1, email: 'attacker@example.com' }),
         } as Response)
 
-        vi.mocked(global.fetch).mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ data: [] }),
-        } as Response)
+        getOrderByIdServiceMock.mockResolvedValueOnce({
+          error: NextResponse.json(
+            { error: 'Pedido no encontrado' },
+            { status: 404 }
+          ),
+        })
 
         const request = new NextRequest(
           `http://localhost:3000/api/orders/${orderId}`
@@ -794,11 +795,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-STRUCTURE-TEST'
@@ -851,11 +848,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404 }
+        ),
+      })
 
       const request404 = new NextRequest(
         'http://localhost:3000/api/orders/ORD-NOT-FOUND'
