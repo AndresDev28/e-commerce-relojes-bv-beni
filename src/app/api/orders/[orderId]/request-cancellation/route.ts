@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { API_URL } from '@/lib/constants'
 import { getTraceId } from '@/lib/trace'
 import { requireUser } from '@/lib/auth/validate-request'
-import { normalizeStrapiOrder } from '@/features/orders'
-
-interface CancellationBody {
-  reason?: unknown
-}
-
-interface OrderLookupResponse {
-  data: Array<{
-    id: number | string
-    documentId?: string
-    attributes?: Record<string, unknown>
-    [key: string]: unknown
-  }>
-}
-
-const CANCELLABLE_STATUSES = ['pending', 'paid', 'processing'] as const
+import { requestCancellationService } from '@/features/orders'
 
 export async function POST(
   request: NextRequest,
@@ -28,13 +12,12 @@ export async function POST(
   try {
     const authResult = await requireUser(request)
     if ('error' in authResult) return authResult.error
-    const { user, jwtToken } = authResult
 
     const { orderId } = await params
 
-    let body: CancellationBody
+    let body: { reason?: unknown }
     try {
-      body = (await request.json()) as CancellationBody
+      body = (await request.json()) as { reason?: unknown }
     } catch {
       return NextResponse.json(
         { error: 'Solicitud inválida.' },
@@ -50,104 +33,29 @@ export async function POST(
       )
     }
 
-    const lookupUrl = `${API_URL}/api/orders?filters[orderId][$eq]=${encodeURIComponent(orderId)}&populate=*`
-    let lookupResponse: Response
-    try {
-      lookupResponse = await fetch(lookupUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwtToken}`,
-          'X-Trace-Id': traceId,
+    if (reason.length > 500) {
+      return NextResponse.json(
+        {
+          error:
+            'El motivo de la cancelación no puede superar los 500 caracteres. Reduce el texto a 500 caracteres como máximo y vuelve a intentarlo para que podamos procesar tu solicitud.',
         },
-      })
-    } catch {
-      return NextResponse.json(
-        { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
-        { status: 502, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
-
-    if (!lookupResponse.ok) {
-      return NextResponse.json(
-        { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
-        { status: 502, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
-
-    let payload: OrderLookupResponse
-    try {
-      payload = await lookupResponse.json()
-    } catch {
-      return NextResponse.json(
-        { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
-        { status: 502, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
-
-    const rawOrder = payload.data?.[0]
-    if (!rawOrder) {
-      return NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
-
-    // Strapi v4 wraps order fields inside `attributes`. Normalize to flat shape.
-    const order = normalizeStrapiOrder(rawOrder)
-    const orderData = order as { orderId?: string; orderStatus?: string; user?: { id?: number }; documentId?: string; id: number | string }
-
-    if (orderData.orderId !== orderId || !orderData.user || orderData.user.id !== user.id) {
-      return NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
-
-    if (!orderData.orderStatus || !CANCELLABLE_STATUSES.includes(orderData.orderStatus as typeof CANCELLABLE_STATUSES[number])) {
-      return NextResponse.json(
-        { error: `No se puede cancelar un pedido en estado: ${orderData.orderStatus}` },
         { status: 400, headers: { 'X-Trace-Id': traceId } }
       )
     }
 
-    const documentId = orderData.documentId ?? String(orderData.id)
-    let updateResponse: Response
-    try {
-      updateResponse = await fetch(`${API_URL}/api/orders/${documentId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwtToken}`,
-          'X-Trace-Id': traceId,
-        },
-        body: JSON.stringify({
-          data: {
-            orderStatus: 'cancellation_requested',
-            cancellationReason: reason.substring(0, 1000),
-            cancellationDate: new Date().toISOString(),
-            statusChangeNote: `El cliente ha solicitado la cancelación del pedido. Motivo: ${reason}`,
-          },
-        }),
-      })
-    } catch {
-      return NextResponse.json(
-        { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
-        { status: 502, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
+    const result = await requestCancellationService({
+      user: authResult.user,
+      jwtToken: authResult.jwtToken,
+      traceId,
+      orderId,
+      reason,
+    })
 
-    if (!updateResponse.ok) {
-      return NextResponse.json(
-        { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
-        { status: 502, headers: { 'X-Trace-Id': traceId } }
-      )
-    }
+    if ('error' in result) return result.error
 
-    return NextResponse.json(
-      { success: true, message: 'Solicitud de cancelación enviada correctamente' },
-      { headers: { 'X-Trace-Id': traceId } }
-    )
+    return NextResponse.json(result.data, {
+      headers: { 'X-Trace-Id': traceId },
+    })
   } catch {
     return NextResponse.json(
       { error: 'Ocurrió un error inesperado. Inténtalo de nuevo.' },
