@@ -1,0 +1,48 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 15 (App Router) + React 19 + TypeScript 5 (strict)
+  CMS: Strapi (headless, backend at relojes-bv-beni-api.onrender.com)
+  Payments: Stripe 20 + @stripe/react-stripe-js
+  Email: Resend 6 + React Email 5
+  Styling: Tailwind CSS 3 + @tailwindcss/typography
+  Architecture: Screaming Architecture (features: cart, catalog, checkout, favorites, orders)
+  Conventions: Atomic Design, X-Trace-Id on all API calls, friendly error mapping
+
+testing:
+  strict_tdd: true
+  test_command: "npx vitest run --maxWorkers=2"
+  coverage_command: "npm run test:coverage"
+  e2e_command: "npm run test:e2e"
+  framework: vitest
+  layers:
+    unit: true
+    integration: true
+    e2e: true
+    storybook: true
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns and Screaming Architecture
+      - Never run raw `npx vitest` — always use `--maxWorkers=2`
+      - Include X-Trace-Id header on all API calls
+    tdd: true
+    test_command: "npx vitest run --maxWorkers=2"
+  verify:
+    test_command: "npx vitest run --maxWorkers=2"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

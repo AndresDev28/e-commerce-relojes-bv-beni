@@ -26,12 +26,23 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET } from '../route'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE } from '@/lib/auth/session'
+import * as ordersFeature from '@/features/orders'
 
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337',
 }))
+
+vi.mock('@/features/orders', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/orders')>()
+  return {
+    ...actual,
+    getOrderByIdService: vi.fn(),
+  }
+})
+
+const getOrderByIdServiceMock = vi.mocked(ordersFeature.getOrderByIdService)
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -93,11 +104,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-NONEXISTENT'
@@ -111,6 +123,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(404)
       expect(data.error).toBe('Pedido no encontrado')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
   })
 
@@ -127,11 +140,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -145,6 +159,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(404)
       expect(data.error).toBe('Pedido no encontrado')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
   })
 
@@ -186,11 +201,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -207,6 +218,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data.data.items).toHaveLength(1)
       expect(data.data.total).toBe(99.99)
       expect(data.data.orderStatus).toBe('paid')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
 
     it('should return complete order data including items details', async () => {
@@ -253,11 +265,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -277,6 +285,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data.data.items[0].images).toEqual(['/images/reloj1.jpg'])
       expect(data.data.subtotal).toBe(259.97)
       expect(data.data.total).toBe(259.97)
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
   })
 
@@ -312,12 +321,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: async () => 'Internal Server Error',
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },
+          { status: 502, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-1234567890-A'
@@ -331,6 +340,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(502)
       expect(data.error).toBe('No pudimos cargar tu pedido. Inténtalo de nuevo.')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
 
     it('should handle unexpected errors gracefully', async () => {
@@ -350,6 +360,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(502)
       expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
   })
 
@@ -391,16 +402,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user1@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          data: [
-            { orderId: 'ORD-USER1-001' },
-            { orderId: 'ORD-USER1-002' },
-          ],
-        }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-USER2-999'
@@ -418,6 +425,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         expect(data.error).not.toContain('another user')
         expect(data.error).not.toContain('permission')
         expect(data.error).not.toContain('unauthorized')
+        expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
 
     /**
@@ -472,11 +480,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'attacker@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-SENSITIVE-DATA'
@@ -501,6 +510,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(responseBody).not.toContain('customer')
 
       expect(data).toEqual({ error: 'Pedido no encontrado' })
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
 
     /**
@@ -520,11 +530,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-DOES-NOT-EXIST'
@@ -538,6 +549,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
       expect(response.status).toBe(404)
       expect(data.error).toBe('Pedido no encontrado')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
 
     /**
@@ -570,11 +582,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 42, email: 'owner@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-OWNER-123'
@@ -590,6 +598,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data.data.orderId).toBe('ORD-OWNER-123')
       expect(data.data.user.id).toBe(42)
       expect(data.data.total).toBe(299.99)
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
   })
 
@@ -643,11 +652,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
           json: async () => ({ id: 1, email: 'user@example.com' }),
         } as Response)
 
-        vi.mocked(global.fetch).mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ data: [] }),
-        } as Response)
+        getOrderByIdServiceMock.mockResolvedValueOnce({
+          error: NextResponse.json(
+            { error: 'Pedido no encontrado' },
+            { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+          ),
+        })
 
         const request = new NextRequest(
           `http://localhost:3000/api/orders/${encodeURIComponent(maliciousOrderId)}`
@@ -661,6 +671,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
         expect(response.status).toBe(404)
         expect(data.error).toBe('Pedido no encontrado')
+        expect(response.headers.get('X-Trace-Id')).toBeTruthy()
       }
     })
 
@@ -690,11 +701,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
           json: async () => ({ id: 1, email: 'attacker@example.com' }),
         } as Response)
 
-        vi.mocked(global.fetch).mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ data: [] }),
-        } as Response)
+        getOrderByIdServiceMock.mockResolvedValueOnce({
+          error: NextResponse.json(
+            { error: 'Pedido no encontrado' },
+            { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+          ),
+        })
 
         const request = new NextRequest(
           `http://localhost:3000/api/orders/${orderId}`
@@ -708,6 +720,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
 
         expect(response.status).toBe(404)
         expect(data).toEqual({ error: 'Pedido no encontrado' })
+        expect(response.headers.get('X-Trace-Id')).toBeTruthy()
       }
     })
 
@@ -740,6 +753,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data.error).not.toContain('deleted')
       expect(data.error).not.toContain('not found')
       expect(data.error).not.toContain('does not exist')
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
   })
 
@@ -794,11 +808,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [mockOrder] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({ data: mockOrder as never })
 
       const request = new NextRequest(
         'http://localhost:3000/api/orders/ORD-STRUCTURE-TEST'
@@ -824,6 +834,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(data.data.items[0]).toHaveProperty('quantity')
 
       expect(data.data.user.id).toBe(1)
+      expect(response.headers.get('X-Trace-Id')).toBeTruthy()
     })
 
     /**
@@ -844,6 +855,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(response401.status).toBe(401)
       expect(data401).toHaveProperty('error')
       expect(typeof data401.error).toBe('string')
+      expect(response401.headers.get('X-Trace-Id')).toBeTruthy()
 
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
@@ -851,11 +863,12 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
         json: async () => ({ id: 1, email: 'user@example.com' }),
       } as Response)
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: [] }),
-      } as Response)
+      getOrderByIdServiceMock.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': 'test-trace-id' } }
+        ),
+      })
 
       const request404 = new NextRequest(
         'http://localhost:3000/api/orders/ORD-NOT-FOUND'
@@ -870,6 +883,7 @@ describe('[ORD-09] GET /api/orders/:orderId', () => {
       expect(response404.status).toBe(404)
       expect(data404).toHaveProperty('error')
       expect(typeof data404.error).toBe('string')
+      expect(response404.headers.get('X-Trace-Id')).toBeTruthy()
 
       expect(Object.keys(data401)).toEqual(['error'])
       expect(Object.keys(data404)).toEqual(['error'])
