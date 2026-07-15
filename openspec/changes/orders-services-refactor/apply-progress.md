@@ -84,9 +84,38 @@ None — implementation matches design byte-for-byte. Route is 34 lines (design 
 ## Issues Found
 - Git repository has corrupt openspec objects in the object store (same issue as PR-1a). Commit succeeded after unstaging openspec from index. Openspec files are untracked and intact on disk.
 
-## Remaining Tasks
+## Remaining Tasks (after Slice A on this branch)
 - [ ] B1.1 RED — requestCancellationService test
 - [ ] B1.2 GREEN — requestCancellationService impl + CANCELLABLE_STATUSES relocate
 - [ ] B2.1 RED — cancellation route test (GREENFIELD)
 - [ ] B2.2 GREEN — cancellation route slim + 500-char cap (only external behavior change)
-- [ ] V1/V2 — verification
+- [ ] V1 — `npx vitest run --maxWorkers=2` full suite green; grep route files assert ZERO references to `fetch`, `normalizeStrapiOrder`, `CANCELLABLE_STATUSES` (cancellation route); routes contain only transport + validation (cancellation).
+- [ ] V2 — confirm byte-identity of 200/401/404/502 statuses + all Spanish strings + response shapes for BOTH routes match pre-refactor EXCEPT the NEW 500-char reason cap.
+
+## W-01 Fix: X-Trace-Id Test Coverage Gap [TEST-ONLY]
+
+**What**: Added 14 X-Trace-Id response header assertions to `src/app/api/orders/[orderId]/__tests__/route.test.ts` to close the test coverage gap flagged in verify-report W-01.
+
+**Why**: The verify phase found that the [orderId] route test had only 1 X-Trace-Id assertion (on requireUser fetch at line 455) and ZERO `response.headers.get('X-Trace-Id')` assertions on the 200/404/500/502 responses. The cancellation route test has 30 such assertions. The CODE was correct (route sets X-Trace-Id on every response), but the test coverage gap meant a regression removing X-Trace-Id from success/error responses wouldn't be caught.
+
+**Where**: 
+- Modified: `src/app/api/orders/[orderId]/__tests__/route.test.ts` (test-only, no application code changes)
+- Updated service error mocks to include `headers: { 'X-Trace-Id': 'test-trace-id' }` to match the real service behavior
+
+**Changes**:
+- Added `expect(response.headers.get('X-Trace-Id')).toBeTruthy()` to 14 test cases:
+  - 2 × 200 success responses (lines 219, 285)
+  - 7 × 404 responses (lines 126, 162, 428, 513, 552, 674, 723)
+  - 3 × 502 responses (lines 311, 343, 358)
+  - 2 × 401 responses (lines 876, 886)
+- Updated 9 service error mocks to include X-Trace-Id header (matching cancellation test pattern)
+
+**Test Results**:
+- Focused test: `npx vitest run --maxWorkers=2 src/app/api/orders/[orderId]/__tests__/route.test.ts` → 19/19 passed
+- Full suite: `npx vitest run --maxWorkers=2 src/app/api/orders/ src/features/orders/` → 213/213 passed (10 files)
+
+**Rollback Boundary**: `git revert <commit>` removes the 14 X-Trace-Id assertions and restores the 9 service mocks to their pre-fix state. All application code (route.ts, service files) unchanged.
+
+**Assertions Added**: 14 response header assertions + 9 mock header updates = 23 total changes
+
+**Status**: ✅ Complete. Test coverage gap closed. No behavior changes.
