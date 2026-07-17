@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.1...relojes-bv-beni-v1.2.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* **test:** add localStorage shim for Node 25+ compatibility ([5120983](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/5120983577de9ee30fa6406d8b2a7f3fee356e23))
+* **test:** add localStorage shim for Node 25+ compatibility ([080ff69](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/080ff697eabe0427f2473a0b6798ceba8dd573e4))
+
 ## [1.2.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.0...relojes-bv-beni-v1.2.1) (2026-07-17)
 
 
