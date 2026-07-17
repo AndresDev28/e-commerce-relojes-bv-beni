@@ -296,6 +296,70 @@ describe('requestCancellationService', () => {
         expect(result.error.headers.get('X-Trace-Id')).toBe('trace-xyz')
       }
     })
+
+    it('returns 502 when GET lookup payload is malformed-but-200 ({ data: [null] }) — and 502 (NOT 404) when malformed element precedes a valid sibling', async () => {
+      const { requestCancellationService } = await import(
+        '../requestCancellationService'
+      )
+
+      // Case 1: single null element → 502
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [null] }),
+      } as unknown as Response)
+
+      const result1 = await requestCancellationService(baseParams)
+      expect('error' in result1).toBe(true)
+      if ('error' in result1) {
+        expect(result1.error.status).toBe(502)
+        const body1 = await result1.error.json()
+        expect(body1.error).toBe(
+          'No pudimos enviar la solicitud. Inténtalo de nuevo.'
+        )
+        expect(result1.error.headers.get('X-Trace-Id')).toBe('trace-xyz')
+      }
+      // Only 1 fetch call — GET lookup malformed, no PUT
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+
+      // Case 2 (edge-case ordering): [null, <valid-other-order>] → 502, NOT 404.
+      // normalizeStrapiOrder(null) throws INSIDE .find BEFORE matchingOrder is assigned,
+      // so the valid sibling is never reached — result MUST be 502.
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            null,
+            {
+              id: 99,
+              documentId: 'doc-other',
+              attributes: {
+                orderId: 'ORD-OTHER-VALID',
+                orderStatus: 'paid',
+                user: { id: 42 },
+                items: [],
+                subtotal: 50,
+                shipping: 5,
+                total: 55,
+                createdAt: '2025-01-01T00:00:00.000Z',
+              },
+            },
+          ],
+        }),
+      } as unknown as Response)
+
+      const result2 = await requestCancellationService(baseParams)
+      expect('error' in result2).toBe(true)
+      if ('error' in result2) {
+        expect(result2.error.status).toBe(502)
+        const body2 = await result2.error.json()
+        expect(body2.error).toBe(
+          'No pudimos enviar la solicitud. Inténtalo de nuevo.'
+        )
+        expect(result2.error.headers.get('X-Trace-Id')).toBe('trace-xyz')
+      }
+      // Only 1 fetch call — GET lookup malformed, no PUT
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('404 — IDOR non-owner (never 403)', () => {
