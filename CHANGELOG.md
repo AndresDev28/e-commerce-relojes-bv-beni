@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.0...relojes-bv-beni-v1.2.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* **ci:** skip security workflow on release-please PRs ([45171b4](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/45171b44f779a15e9a9412a5a276bf4a761bd921))
+* **ci:** skip security workflow on release-please PRs ([81f1e12](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/81f1e123f8f64c73c767c9296077a937bd4be219))
+
 ## [1.2.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.1.0...relojes-bv-beni-v1.2.0) (2026-07-15)
 
 
