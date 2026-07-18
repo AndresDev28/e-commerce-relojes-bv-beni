@@ -92,7 +92,7 @@ export async function getOrderByIdService(params: {
     }
 
     return { data: normalized }
-  } catch (err: unknown) {
+  } catch (_err: unknown) {
     return {
       error: NextResponse.json(
         { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },

@@ -134,7 +134,7 @@ export async function requestCancellationService(params: {
         ),
       }
     }
-  } catch (err: unknown) {
+  } catch (_err: unknown) {
     return {
       error: NextResponse.json(
         { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
