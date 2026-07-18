@@ -71,23 +71,7 @@ export async function requestCancellationService(params: {
     }
   }
 
-  const orders = payload.data ?? []
-
-  const matchingOrder = orders.find(
-    (o) => normalizeStrapiOrder(o).orderId === orderId
-  )
-
-  if (!matchingOrder) {
-    return {
-      error: NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
-      ),
-    }
-  }
-
-  const normalized = normalizeStrapiOrder(matchingOrder)
-  const orderData = normalized as {
+  let orderData: {
     orderId?: string
     orderStatus?: string
     user?: { id?: number }
@@ -95,33 +79,66 @@ export async function requestCancellationService(params: {
     id: number | string
   }
 
-  // IDOR — ownership check
-  if (
-    orderData.orderId !== orderId ||
-    !orderData.user ||
-    orderData.user.id !== user.id
-  ) {
-    return {
-      error: NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
-      ),
-    }
-  }
+  try {
+    const orders = payload.data ?? []
 
-  // Cancellable status check — between CALL 1 and CALL 2
-  if (
-    !orderData.orderStatus ||
-    !CANCELLABLE_STATUSES.includes(
-      orderData.orderStatus as (typeof CANCELLABLE_STATUSES)[number]
+    const matchingOrder = orders.find(
+      (o) => normalizeStrapiOrder(o).orderId === orderId
     )
-  ) {
+
+    if (!matchingOrder) {
+      return {
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': traceId } }
+        ),
+      }
+    }
+
+    const normalized = normalizeStrapiOrder(matchingOrder)
+    orderData = normalized as {
+      orderId?: string
+      orderStatus?: string
+      user?: { id?: number }
+      documentId?: string
+      id: number | string
+    }
+
+    // IDOR — ownership check
+    if (
+      orderData.orderId !== orderId ||
+      !orderData.user ||
+      orderData.user.id !== user.id
+    ) {
+      return {
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': traceId } }
+        ),
+      }
+    }
+
+    // Cancellable status check — between CALL 1 and CALL 2
+    if (
+      !orderData.orderStatus ||
+      !CANCELLABLE_STATUSES.includes(
+        orderData.orderStatus as (typeof CANCELLABLE_STATUSES)[number]
+      )
+    ) {
+      return {
+        error: NextResponse.json(
+          {
+            error: `No se puede cancelar un pedido en estado: ${orderData.orderStatus}`,
+          },
+          { status: 400, headers: { 'X-Trace-Id': traceId } }
+        ),
+      }
+    }
+  } catch (_err: unknown) {
     return {
       error: NextResponse.json(
-        {
-          error: `No se puede cancelar un pedido en estado: ${orderData.orderStatus}`,
-        },
-        { status: 400, headers: { 'X-Trace-Id': traceId } }
+        { error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.' },
+        { status: 502, headers: { 'X-Trace-Id': traceId } }
       ),
     }
   }

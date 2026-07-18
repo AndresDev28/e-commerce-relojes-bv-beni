@@ -1,8 +1,10 @@
-# Order Detail Service Spec
+# Delta for Order Detail Service
 
-> Established domain. Originally created in `orders-services-refactor` (archived 2026-07-15). Amended by `debt-03-orders-malformed-payload-502` (2026-07-17) — MODIFIED `getOrderByIdService Contract` to catch malformed-but-200 payloads as service 502, ADDED `Malformed-Payload 502 Test Coverage` requirement. Cross-cutting specs `api-traceability` and `secure-route-authorization` are preserved byte-identically and are NOT modified here. Externally observable behavior of `GET /api/orders/[orderId]` MUST stay byte-identical to the pre-refactor route **except** for the malformed-payload case (500 → service 502).
+> DEBT-03 — fix **RES-001**. Amends `openspec/specs/order-detail-service/spec.md` requirement `getOrderByIdService Contract`. The `Strapi failure — 502 byte-identical` scenario is **SPLIT**: (a) network / non-ok / JSON-parse failures stay byte-identical 502 (KEPT); (b) malformed-but-HTTP-200 payloads (e.g. `{ data: [null] }`) that today leak as a route-level 500 `'Ocurrió un error inesperado. Inténtalo de nuevo.'` now return a **service-level 502** with the EXISTING verbatim Spanish string. `api-traceability` + `secure-route-authorization` stay byte-identical.
+>
+> **Non-goals (MUST NOT creep in):** making `normalizeStrapiOrder` null-safe (masks as misleading 404, violates RES-001); touching network / non-ok / JSON-parse 502 paths (byte-identical); a dedicated `normalizeStrapiOrder.test.ts` (deferred); DEBT-04; any INF/SEO/SL ticket; the legacy `requestCancellation.ts` client wrapper.
 
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: getOrderByIdService Contract
 
@@ -42,31 +44,6 @@ The feature layer MUST expose `getOrderByIdService({ user, jwtToken, traceId, or
 - GIVEN any invocation
 - WHEN it issues its Strapi fetch or builds an error `NextResponse`
 - THEN `X-Trace-Id` equals `traceId` on the fetch and on every 404/502 response, including the new 502
-
-### Requirement: Order Detail Route Thin Delivery Layer
-
-`GET /api/orders/[orderId]` MUST contain only `getTraceId`, `requireUser`, `await params`, delegation to `getOrderByIdService`, `if ('error' in result) return result.error`, a success `NextResponse.json(result.data, { headers: { 'X-Trace-Id': traceId } })`, and a top-level `500` catch. The route MUST NOT contain `fetch`, URL construction, `normalizeStrapiOrder`, ownership checks, or `CANCELLABLE_STATUSES`. Status codes, Spanish strings, and body shapes MUST be byte-identical to the pre-refactor route.
-
-#### Scenario: Route delegates success and errors unchanged
-- GIVEN the slimmed route receives a request
-- WHEN it delegates to `getOrderByIdService`
-- THEN 200/401/404/502 responses match the pre-refactor route byte-for-byte
-- AND the route source contains zero `fetch`/`normalizeStrapiOrder` references
-
-### Requirement: [orderId] Route Test Re-anchoring
-
-The existing 878-line `src/app/api/orders/[orderId]/__tests__/route.test.ts` suite MUST be re-anchored to mock `getOrderByIdService` instead of `global.fetch`. All original status-code, Spanish-string, and body-shape assertions MUST be preserved. Assertions that `global.fetch` was called with the Strapi URL and `X-Trace-Id`/`Authorization` headers MUST migrate into `getOrderByIdService` unit tests (mocking `global.fetch`).
-
-#### Scenario: Route suite mocks the service
-- GIVEN the re-anchored `[orderId]` suite
-- WHEN it runs under `npx vitest run --maxWorkers=2`
-- THEN it mocks `getOrderByIdService` and asserts byte-identical 200/401/404/502 responses
-- AND no test in the route suite mocks `global.fetch` directly
-
-#### Scenario: Service test owns fetch-with-trace assertions
-- GIVEN a new `getOrderByIdService` unit test
-- WHEN the service issues its fetch
-- THEN it asserts `global.fetch` received the Strapi URL plus `Authorization` and `X-Trace-Id` headers
 
 ## ADDED Requirements
 

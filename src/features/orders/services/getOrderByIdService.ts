@@ -63,32 +63,41 @@ export async function getOrderByIdService(params: {
     }
   }
 
-  const orders = payload.data ?? []
+  try {
+    const orders = payload.data ?? []
 
-  const matchingOrder = orders.find(
-    (o) => normalizeStrapiOrder(o).orderId === orderId
-  )
+    const matchingOrder = orders.find(
+      (o) => normalizeStrapiOrder(o).orderId === orderId
+    )
 
-  if (!matchingOrder) {
+    if (!matchingOrder) {
+      return {
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': traceId } }
+        ),
+      }
+    }
+
+    const normalized = normalizeStrapiOrder(matchingOrder)
+    const orderOwner = normalized.user as { id?: number } | undefined
+
+    if (!orderOwner || orderOwner.id !== user.id) {
+      return {
+        error: NextResponse.json(
+          { error: 'Pedido no encontrado' },
+          { status: 404, headers: { 'X-Trace-Id': traceId } }
+        ),
+      }
+    }
+
+    return { data: normalized }
+  } catch (_err: unknown) {
     return {
       error: NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
+        { error: 'No pudimos cargar tu pedido. Inténtalo de nuevo.' },
+        { status: 502, headers: { 'X-Trace-Id': traceId } }
       ),
     }
   }
-
-  const normalized = normalizeStrapiOrder(matchingOrder)
-  const orderOwner = normalized.user as { id?: number } | undefined
-
-  if (!orderOwner || orderOwner.id !== user.id) {
-    return {
-      error: NextResponse.json(
-        { error: 'Pedido no encontrado' },
-        { status: 404, headers: { 'X-Trace-Id': traceId } }
-      ),
-    }
-  }
-
-  return { data: normalized }
 }
