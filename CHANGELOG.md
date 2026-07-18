@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.2...relojes-bv-beni-v1.2.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **orders:** catch normalizeStrapiOrder throw → service 502 on malformed 200 ([30bc8fd](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/30bc8fde77a4a61567d542cf378a52392267ede4))
+* **orders:** rename unused catch err → _err to satisfy ESLint rule ([f90f5ad](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/f90f5ad0bcf6bf941ed1e3bad40470c02f5bbc3f))
+
 ## [1.2.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.1...relojes-bv-beni-v1.2.2) (2026-07-17)
 
 
