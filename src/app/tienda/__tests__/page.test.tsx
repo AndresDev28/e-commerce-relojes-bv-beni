@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Breadcrumb } from '@/types/breadcrumb'
-import ProductsPage from '../page'
+import CatalogContent from '../CatalogContent'
 
 interface ShopLoopHeadMockProps {
   breadcrumbs: Breadcrumb[]
@@ -51,7 +51,12 @@ function getBreadcrumbNames() {
   return screen.getAllByTestId('breadcrumb-item').map(item => item.textContent)
 }
 
-describe('/tienda breadcrumbs', () => {
+const noCategories: Array<{ name: string; slug: string }> = []
+const categoriesWithCronometros = [
+  { name: 'Cronómetros', slug: 'cronometros' },
+]
+
+describe('CatalogContent — /tienda breadcrumbs (client component)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     setSearchParams('')
@@ -61,60 +66,101 @@ describe('/tienda breadcrumbs', () => {
     cleanup()
   })
 
-  it('keeps two items and hides the slug while categories are unresolved', () => {
-    setSearchParams('category=cronometros')
-    testState.getCategories.mockReturnValue(new Promise<never>(() => {}))
+  it('uses the SSR breadcrumb on first render (no flicker, no client re-fetch needed)', () => {
+    // Server wrapper pre-computes the SSR breadcrumb with full category data.
+    const ssrBreadcrumbs: Breadcrumb[] = [
+      { name: 'Inicio', href: '/' },
+      { name: 'Tienda', href: '/tienda' },
+      { name: 'Cronómetros', href: '/tienda?category=cronometros' },
+    ]
 
-    render(<ProductsPage />)
+    render(
+      <CatalogContent
+        ssrCategories={categoriesWithCronometros}
+        ssrCategorySlug="cronometros"
+        ssrBreadcrumbs={ssrBreadcrumbs}
+      />
+    )
+
+    // First render uses ssrBreadcrumbs verbatim — no need to wait for client re-fetch.
+    expect(getBreadcrumbNames()).toEqual(['Inicio', 'Tienda', 'Cronómetros'])
+  })
+
+  it('keeps two items when no category is selected and no SSR categories provided', () => {
+    const ssrBreadcrumbs: Breadcrumb[] = [
+      { name: 'Inicio', href: '/' },
+      { name: 'Tienda', href: '/tienda' },
+    ]
+
+    render(
+      <CatalogContent
+        ssrCategories={noCategories}
+        ssrCategorySlug={null}
+        ssrBreadcrumbs={ssrBreadcrumbs}
+      />
+    )
 
     expect(getBreadcrumbNames()).toEqual(['Inicio', 'Tienda'])
-    expect(screen.queryByText('cronometros')).not.toBeInTheDocument()
   })
 
-  it('uses the category display name after categories resolve', async () => {
-    setSearchParams('category=cronometros')
-    testState.getCategories.mockResolvedValue([
+  it('uses live URL categorySlug after client navigation (different from SSR)', async () => {
+    // SSR knew about category=A; URL now says category=B. Live slug wins.
+    const ssrBreadcrumbs: Breadcrumb[] = [
+      { name: 'Inicio', href: '/' },
+      { name: 'Tienda', href: '/tienda' },
+      { name: 'Vintage Round', href: '/tienda?category=vintage-round' },
+    ]
+    const liveCategories = [
+      { name: 'Vintage Round', slug: 'vintage-round' },
       { name: 'Cronómetros', slug: 'cronometros' },
-    ])
+    ]
 
-    render(<ProductsPage />)
-
-    await waitFor(() => {
-      expect(getBreadcrumbNames()).toEqual(['Inicio', 'Tienda', 'Cronómetros'])
-    })
-  })
-
-  it('falls back to the raw slug when resolved categories have no match', async () => {
-    setSearchParams('category=legacy-line')
-    testState.getCategories.mockResolvedValue([
-      { name: 'Cronómetros', slug: 'cronometros' },
-    ])
-
-    render(<ProductsPage />)
-
-    await waitFor(() => {
-      expect(getBreadcrumbNames()).toEqual(['Inicio', 'Tienda', 'legacy-line'])
-    })
-  })
-
-  it('ignores sort and page query parameters', async () => {
-    const categories = [{ name: 'Cronómetros', slug: 'cronometros' }]
-    testState.getCategories.mockResolvedValue(categories)
+    // Set the mock BEFORE render so the useEffect-fetch resolves to it.
+    testState.getCategories.mockResolvedValue(liveCategories)
     setSearchParams('category=cronometros')
 
-    const firstRender = render(<ProductsPage />)
+    render(
+      <CatalogContent
+        ssrCategories={[{ name: 'Vintage Round', slug: 'vintage-round' }]}
+        ssrCategorySlug="vintage-round"
+        ssrBreadcrumbs={ssrBreadcrumbs}
+      />
+    )
 
-    await waitFor(() => {
-      expect(getBreadcrumbNames()).toHaveLength(3)
-    })
-    const categoryOnly = getBreadcrumbNames()
-    firstRender.unmount()
+    // First paint: liveCategorySlug='cronometros' but categories still SSR.
+    //   → render falls back to useMemo result with categories=[Vintage Round]
+    //     → no match for 'cronometros' → raw slug label "cronometros"
+    // After useEffect re-fetch + setState: categories=[Vintage Round, Cronómetros]
+    //   → useMemo re-derives with categorySlug='cronometros' → match → "Cronómetros"
+    await waitFor(
+      () => {
+        expect(getBreadcrumbNames()).toEqual([
+          'Inicio',
+          'Tienda',
+          'Cronómetros',
+        ])
+      },
+      { timeout: 2000 }
+    )
+  })
 
+  it('ignores sort and page query parameters (only category affects crumbs)', () => {
+    const ssrBreadcrumbs: Breadcrumb[] = [
+      { name: 'Inicio', href: '/' },
+      { name: 'Tienda', href: '/tienda' },
+      { name: 'Cronómetros', href: '/tienda?category=cronometros' },
+    ]
+    // Mock a search params that has sort/page (should be ignored).
     setSearchParams('category=cronometros&sort=price-asc&page=2')
-    render(<ProductsPage />)
 
-    await waitFor(() => {
-      expect(getBreadcrumbNames()).toEqual(categoryOnly)
-    })
+    render(
+      <CatalogContent
+        ssrCategories={categoriesWithCronometros}
+        ssrCategorySlug="cronometros"
+        ssrBreadcrumbs={ssrBreadcrumbs}
+      />
+    )
+
+    expect(getBreadcrumbNames()).toEqual(['Inicio', 'Tienda', 'Cronómetros'])
   })
 })
