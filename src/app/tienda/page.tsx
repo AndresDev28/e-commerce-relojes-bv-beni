@@ -1,16 +1,21 @@
 'use client'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ProductCard, ShopLoopHead } from '@/features/catalog'
 import { useProducts } from '@/features/catalog/hooks/useProducts'
 import { getCategories } from '@/lib/api'
-import { useEffect, useState } from 'react'
 import type { StrapiCategory } from '@/types'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 function CatalogContent() {
   const { products, pagination, isLoading, hasMore, loadMore } = useProducts()
+  const searchParams = useSearchParams()
+  const categorySlug = searchParams.get('category')
 
   // Fetch categories once on mount
-  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([])
+  const [categories, setCategories] = useState<
+    { name: string; slug: string }[]
+  >([])
 
   useEffect(() => {
     async function fetchCategories() {
@@ -28,10 +33,15 @@ function CatalogContent() {
     fetchCategories()
   }, [])
 
-  const breadcrumbs = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Tienda', href: '/tienda' },
-  ]
+  /**
+   * Breadcrumbs depend only on the resolved categories and category slug.
+   * Tracking both prevents stale labels while intentionally ignoring unrelated
+   * sort and page query parameters.
+   */
+  const breadcrumbs = useMemo(
+    () => buildBreadcrumbs({ route: 'tienda', categorySlug, categories }),
+    [categories, categorySlug]
+  )
 
   // totalResults uses pagination.total when available, otherwise current products length
   const totalResults = pagination?.total ?? products.length

@@ -10,6 +10,8 @@ import { useFavorites } from '@/features/favorites'
 import { Heart } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
+import type { Breadcrumb } from '@/types/breadcrumb'
+import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 
 // interface Product {
 //   id: string
@@ -22,10 +24,12 @@ import { Product } from '@/types'
 
 interface ProductDetailClientProps {
   product: Product
+  breadcrumbs: Breadcrumb[]
 }
 
 export default function ProductDetailClient({
   product,
+  breadcrumbs,
 }: ProductDetailClientProps) {
   // Validar que el producto tenga al menos una imagen
   const validImages =
@@ -66,6 +70,7 @@ export default function ProductDetailClient({
 
   return (
     <div className="container mx-auto p-4 md:p-8">
+      <Breadcrumbs breadcrumbs={breadcrumbs} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* === COLUMNA IZQUIERDA: GALERÍA DE IMÁGENES === */}
         <div className="flex flex-col gap-4">

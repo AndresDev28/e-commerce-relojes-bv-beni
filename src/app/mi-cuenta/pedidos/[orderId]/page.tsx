@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { OrderDetail, useOrderById } from '@/features/orders'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Button from '@/app/components/ui/Button'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 type PageState = 'loading' | 'error' | 'forbidden' | 'not-found' | 'success'
 
@@ -52,12 +53,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     }
   }
 
-  const breadcrumbs = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Mi Cuenta', href: '/mi-cuenta' },
-    { name: 'Mis Pedidos', href: '/mi-cuenta/pedidos' },
-    { name: orderId, href: `/mi-cuenta/pedidos/${orderId}` },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'pedido-detail', orderId })
 
   if (pageState === 'loading') {
     return (

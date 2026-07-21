@@ -4,15 +4,13 @@ import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/app/components/ui/Button'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function FavoritesPage() {
   // Extraemos del contexto lo que necesitamos
   const { favorites, isLoading, clearFavorites } = useFavorites()
 
-  const breadcrumbs = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Favoritos', href: '/favoritos' },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'favoritos' })
 
   console.log('Productos favoritos:', favorites)
 

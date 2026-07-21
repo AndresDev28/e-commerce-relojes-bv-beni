@@ -5,12 +5,7 @@ import { ArrowUpDown, ChevronDown } from 'lucide-react'
 import Button from '@/app/components/ui/Button'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import type { StrapiCategory } from '@/types'
-
-// Define la estructura de un solo breadcrumb, asegurando que cada uno tenga un nombre visible y una URL de destino.
-interface Breadcrumb {
-  name: string
-  href: string
-}
+import type { Breadcrumb } from '@/types/breadcrumb'
 
 // Define las props que el componente ShopLoopHead espera recibir.
 interface ShopLoopHeadProps {

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ProductDetailClient } from '@/features/catalog'
 import { Product, StrapiImage } from '@/types'
 import { getProductBySlug } from '@/lib/api'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default async function ProductDetailPage({
   params,
@@ -18,6 +19,14 @@ export default async function ProductDetailPage({
   if (!strapiProduct) {
     notFound()
   }
+
+  const breadcrumbs = buildBreadcrumbs({
+    route: 'tienda-product',
+    product: {
+      ...strapiProduct,
+      href: `/tienda/${strapiProduct.slug}`,
+    },
+  })
 
   // 3. Transformamos los datos (normalización robusta, igual que en la lista)
   // Normalizamos relación de media: soportar 'image' o 'images' y que sea objeto o array
@@ -57,5 +66,5 @@ export default async function ProductDetailPage({
     stock: strapiProduct.stock || 0,
   }
   // 4. Pasar datos  limpios al Client Component
-  return <ProductDetailClient product={product} />
+  return <ProductDetailClient product={product} breadcrumbs={breadcrumbs} />
 }
