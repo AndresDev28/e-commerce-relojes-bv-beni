@@ -8,6 +8,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/app/components/ui/Button'
 import { CartItemRow } from '@/features/cart'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function CartPage() {
   const router = useRouter()
@@ -36,10 +37,7 @@ export default function CartPage() {
     return null
   }
 
-  const breadcrumbs = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Carrito', href: '/carrito' },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'carrito' })
 
   console.log('Items en el carrito:', cartItems)
   // --- Vista de Carrito Vacío ---

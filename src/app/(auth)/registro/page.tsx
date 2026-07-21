@@ -1,17 +1,15 @@
 import RegisterForm from '@/app/components/forms/RegisterForm'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function Registerpage() {
-  const breadcrums = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Registro', href: '/registro' },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'registro' })
 
   return (
     <div className="flex flex-col min-h-screen bg-dark text-light p-4">
       {/* Breadcrumbs */}
       <div className="container mx-auto p-4">
-        <Breadcrumbs breadcrumbs={breadcrums} />
+        <Breadcrumbs breadcrumbs={breadcrumbs} />
       </div>
 
       {/* Contenedor principal */}

@@ -13,6 +13,7 @@ import {
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import Button from '@/app/components/ui/Button'
 import Link from 'next/link'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 import { loadStripe } from '@stripe/stripe-js'
 import type { PaymentIntent } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
@@ -35,11 +36,7 @@ export default function CheckoutPage() {
   const { total } = useCheckoutTotals(cartItems)
   const [stripePromise] = useState(getStripePromise)
 
-  const breadcrumbs = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Cesta', href: '/carrito' },
-    { name: 'Finalizar Compra', href: '/checkout' },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'checkout' })
 
   useEffect(() => {
     if (authLoading || !isHydrated) return

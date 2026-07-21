@@ -1,17 +1,15 @@
 import LoginForm from '@/app/components/forms/LoginFrom'
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function LoginPage() {
-  const breadcrums = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Login', href: '/login' },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'login' })
 
   return (
     <div className="flex flex-col min-h-screen bg-dark text-light p-4">
       {/* Breadcrumbs */}
       <div className="container mx-auto p-4">
-        <Breadcrumbs breadcrumbs={breadcrums} />
+        <Breadcrumbs breadcrumbs={breadcrumbs} />
       </div>
       {/* Contenedor principal */}
       <div className="flex-grow flex items-center justify-center">

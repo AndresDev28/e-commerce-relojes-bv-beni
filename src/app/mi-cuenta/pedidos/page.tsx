@@ -2,13 +2,10 @@
 
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import OrderHistory from '@/features/orders/components/OrderHistory'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function OrdersPage() {
-  const breadcrumbs = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Mi Cuenta', href: '/mi-cuenta' },
-    { name: 'Mis Pedidos', href: '/mi-cuenta/pedidos' },
-  ]
+  const breadcrumbs = buildBreadcrumbs({ route: 'pedidos' })
 
   return (
     <div className="container mx-auto px-4 py-8">
