@@ -2,14 +2,16 @@
 
 ## Review Workload Forecast
 
-Estimated changed lines: 340–385. 400-line budget risk: Low. Chained PRs recommended: No. Delivery strategy: ask-on-risk. Chain strategy: pending. Fallback if overshoot: PR#1 = WU1+WU2+WU3, PR#2 = WU4+WU5+WU6+WU7.
+Estimated changed lines: 370–435. 400-line budget risk: High. Chained PRs recommended: Yes. Delivery strategy: ask-on-risk. Chain strategy: stacked-to-main. Fallback if overshoot: PR#1 = WU1+WU2+WU3, PR#2 = WU4+WU5+WU6+WU7, PR#3 = WU8.
 
-Decision needed before apply: No
-Chained PRs recommended: No
-Chain strategy: pending
-400-line budget risk: Low
+Decision needed before apply: Yes (review workload guard fired; user chose split into 3 chained PRs with stacked-to-main)
+Chained PRs recommended: Yes
+Chain strategy: stacked-to-main
+400-line budget risk: High
 
 > Home page OUT of scope (#6). Tests first; impl only after failing test.
+>
+> WU8 covers the home page wiring previously deferred by decision #6.
 
 ## WU1 (A) — Type single source
 
@@ -57,3 +59,9 @@ Chain strategy: pending
 
 - [ ] G1 GREEN: `src/features/catalog/components/ShopLoopHead.tsx` — remove local `interface Breadcrumb`; add import.
 - [ ] G2 VERIFY: suite green; DRY test confirms exactly one declaration. Rollback: revert file; DRY test fails as signal.
+
+## WU8 (H) — Home page wiring
+
+- [ ] H1 RED: create `src/app/__tests__/` dir; write `src/app/__tests__/page.test.tsx` — mock `getProducts`/`getCategories` (return `[]`, rendering prerequisite); render `Home`; assert `<Breadcrumbs>` receives `[{name:'Inicio', href:'/'}]` via `buildBreadcrumbs({route:'home'})` integration (no breadcrumb-specific mocks).
+- [ ] H2 GREEN: modify `src/app/page.tsx` — import `buildBreadcrumbs` from `@/utils/breadcrumbs`; call `buildBreadcrumbs({ route: 'home' })` server-side (no `useMemo` — server component); render `<Breadcrumbs breadcrumbs={breadcrumbs} />` above `<HeroSection />`.
+- [ ] H3 VERIFY: `npx vitest run --maxWorkers=2 src/app/__tests__/page.test.tsx`; suite green. Rollback: revert `src/app/page.tsx` + remove `src/app/__tests__/page.test.tsx`.
