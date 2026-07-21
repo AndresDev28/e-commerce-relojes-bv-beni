@@ -9,6 +9,8 @@ Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
 
+> **size:exception for PR#1**: actual measured diff at apply time was **916 code lines** (planning files 688 lines excluded — those travel separately). The WU2 builder (`src/utils/breadcrumbs.ts` 268 lines + test 390 lines) is larger than originally forecast. Maintainer (user) accepted the exception 2026-07-21; rationale logged. PR#2 and PR#3 remain within budget.
+
 > Home page OUT of scope (#6). Tests first; impl only after failing test.
 >
 > WU8 covers the home page wiring previously deferred by decision #6.
