@@ -23,11 +23,17 @@ export default function CartPage() {
     }
   }, [authLoading, user, router])
 
-  // Mostrar loading mientras valida
+  // Breadcrumbs computados una sola vez (mismo valor en SSR y cliente) — disponibles en todos los branches
+  const breadcrumbs = buildBreadcrumbs({ route: 'carrito' })
+
+  // Mostrar loading mientras valida (breadcrumbs visibles en SSR/loading)
   if (authLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs breadcrumbs={buildBreadcrumbs({ route: 'carrito' })} />
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        </div>
       </div>
     )
   }
@@ -36,8 +42,6 @@ export default function CartPage() {
   if (!user) {
     return null
   }
-
-  const breadcrumbs = buildBreadcrumbs({ route: 'carrito' })
 
   console.log('Items en el carrito:', cartItems)
   // --- Vista de Carrito Vacío ---
