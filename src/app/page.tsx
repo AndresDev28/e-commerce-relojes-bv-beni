@@ -1,18 +1,22 @@
 // 'use client' // Necesario para hooks en páginas de next.js
 export const dynamic = 'force-dynamic'
 import React from 'react'
+import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
 import HeroSection from '@/app/components/HeroSection'
 import { FeaturedProducts, CategoryGrid } from '@/features/catalog'
 import TrustSection from '@/app/components/TrustSection'
 import { getProducts, getCategories } from '@/lib/api'
+import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 // 1. Agregamos async
 export default async function Home() {
   const products = await getProducts()
   const categories = await getCategories()
+  const breadcrumbs = buildBreadcrumbs({ route: 'home' })
 
   return (
     <>
+      <Breadcrumbs breadcrumbs={breadcrumbs} />
       <HeroSection />
       <CategoryGrid categories={categories} />
       {/* 3. Pasamos los productos reales como prop */}
