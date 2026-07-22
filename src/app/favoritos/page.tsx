@@ -12,8 +12,6 @@ export default function FavoritesPage() {
 
   const breadcrumbs = buildBreadcrumbs({ route: 'favoritos' })
 
-  console.log('Productos favoritos:', favorites)
-
   // --- Estado de Carga ---
   if (isLoading) {
     return (

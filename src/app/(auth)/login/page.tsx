@@ -1,4 +1,4 @@
-import LoginForm from '@/components/forms/LoginFrom'
+import LoginForm from '@/components/forms/LoginForm'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 

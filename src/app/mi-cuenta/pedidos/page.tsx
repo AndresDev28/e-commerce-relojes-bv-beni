@@ -1,7 +1,7 @@
 'use client'
 
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
-import OrderHistory from '@/features/orders/components/OrderHistory'
+import { OrderHistory } from '@/features/orders'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function OrdersPage() {

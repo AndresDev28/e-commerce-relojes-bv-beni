@@ -43,7 +43,6 @@ export default function CartPage() {
     return null
   }
 
-  console.log('Items en el carrito:', cartItems)
   // --- Vista de Carrito Vacío ---
   if (cartItems.length === 0) {
     return (
