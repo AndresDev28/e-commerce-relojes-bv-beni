@@ -5,7 +5,7 @@ import { useFavorites } from '@/features/favorites'
 import { useCart } from '@/features/cart'
 import { Product } from '@/types'
 import { Heart, ShoppingCart } from 'lucide-react'
-import Button from '@/app/components/ui/Button'
+import Button from '@/components/ui/Button'
 
 interface FavoriteItemProps {
   product: Product

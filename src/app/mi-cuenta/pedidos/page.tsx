@@ -1,6 +1,6 @@
 'use client'
 
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import OrderHistory from '@/features/orders/components/OrderHistory'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 

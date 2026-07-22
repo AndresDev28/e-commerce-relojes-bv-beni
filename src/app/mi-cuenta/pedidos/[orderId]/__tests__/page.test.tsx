@@ -30,7 +30,7 @@ vi.mock('next/head', () => ({
   ),
 }))
 
-vi.mock('@/app/components/ui/Breadcrumbs', () => ({
+vi.mock('@/components/ui/Breadcrumbs', () => ({
   default: ({
     breadcrumbs,
   }: {

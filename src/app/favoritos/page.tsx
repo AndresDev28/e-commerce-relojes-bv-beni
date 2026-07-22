@@ -1,9 +1,9 @@
 'use client'
 import { useFavorites, FavoriteItemRow } from '@/features/favorites'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Link from 'next/link'
 import Image from 'next/image'
-import Button from '@/app/components/ui/Button'
+import Button from '@/components/ui/Button'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function FavoritesPage() {

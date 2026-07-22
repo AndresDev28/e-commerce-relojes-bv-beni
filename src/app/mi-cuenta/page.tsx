@@ -1,7 +1,7 @@
 'use client'
 import { useAuth } from '@/context/AuthContext'
-import Button from '../components/ui/Button'
-import Spinner from '../components/ui/Spinner'
+import Button from '@/components/ui/Button'
+import Spinner from '@/components/ui/Spinner'
 import Link from 'next/link'
 
 export default function MyAccountPage() {

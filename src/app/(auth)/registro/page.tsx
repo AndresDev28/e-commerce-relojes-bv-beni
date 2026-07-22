@@ -1,5 +1,5 @@
-import RegisterForm from '@/app/components/forms/RegisterForm'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import RegisterForm from '@/components/forms/RegisterForm'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function Registerpage() {

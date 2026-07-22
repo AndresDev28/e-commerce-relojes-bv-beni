@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import QuantitySelector from '@/app/components/ui/QuantitySelector'
-import Button from '@/app/components/ui/Button'
+import QuantitySelector from '@/components/ui/QuantitySelector'
+import Button from '@/components/ui/Button'
 import { CheckSquare, XCircle } from 'lucide-react'
 import { useCart } from '@/features/cart'
 import { useFavorites } from '@/features/favorites'
@@ -11,7 +11,7 @@ import { Heart } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
 import type { Breadcrumb } from '@/types/breadcrumb'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 
 // interface Product {
 //   id: string

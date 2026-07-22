@@ -20,7 +20,7 @@
 
 import Link from 'next/link'
 import type { OrderData } from '@/lib/api/orders'
-import StatusBadge from '@/app/components/ui/StatusBadge'
+import StatusBadge from '@/components/ui/StatusBadge'
 import { shouldShowStatusIcon, OrderStatus } from '@/types'
 import { getDeliveryEstimate } from '@/lib/utils/delivery'
 

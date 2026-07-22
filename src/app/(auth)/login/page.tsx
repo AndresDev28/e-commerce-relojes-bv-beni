@@ -1,5 +1,5 @@
-import LoginForm from '@/app/components/forms/LoginFrom'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import LoginForm from '@/components/forms/LoginFrom'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
 export default function LoginPage() {

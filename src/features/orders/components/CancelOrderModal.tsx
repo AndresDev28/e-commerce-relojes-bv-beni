@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
-import Modal from '@/app/components/ui/Modal'
-import Button from '@/app/components/ui/Button'
+import Modal from '@/components/ui/Modal'
+import Button from '@/components/ui/Button'
 import { requestOrderCancellation } from '@/features/orders'
 
 interface CancelOrderModalProps {

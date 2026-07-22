@@ -9,7 +9,7 @@ interface MockModalProps {
     title: string
 }
 
-vi.mock('@/app/components/ui/Modal', () => {
+vi.mock('@/components/ui/Modal', () => {
     return {
         default: ({ isOpen, children, title }: MockModalProps) => {
             if (!isOpen) return null
