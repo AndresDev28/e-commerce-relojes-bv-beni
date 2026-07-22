@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.3.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.3...relojes-bv-beni-v1.3.0) (2026-07-21)
+
+
+### Features
+
+* **ux-breadcrumbs:** add planning artifacts to branch ([5c87f8b](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/5c87f8bde9aa4f4e50c6fae5b296f2a1abe6ca74))
+* **ux-breadcrumbs:** add WU1+WU2+WU3 base (PR[#1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/1)) + record size:exception ([f46c342](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/f46c342a8317aedc0aae20f6861e95ec11272b10))
+* **ux-breadcrumbs:** add WU4 (D) — Static routes wired + typo fix ([7010dde](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/7010dde93e34ee908c90df4b9f4d8c27df1a36be))
+* **ux-breadcrumbs:** add WU5 (E) — /tienda category-aware wiring ([1502b5b](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/1502b5bbdb62ff263b522218a751d2c1f312a392))
+* **ux-breadcrumbs:** add WU6 (F) — /tienda/[slug] SSR product-detail wiring ([0f53e2c](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/0f53e2ce5d446c20b0508db58468172c6647bba5))
+* **ux-breadcrumbs:** add WU7 (G) — ShopLoopHead drops local duplicate ([df16e6b](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/df16e6bda536633e91a48221eeb121a9533e84e5))
+* **ux-breadcrumbs:** add WU8 (H) — Home page wiring ([20d39fc](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/20d39fcda492c0a7e9694dbe71584760d81f108c))
+* **ux-breadcrumbs:** add WU8 (home page wiring) + update forecast to chained split ([2432076](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/2432076af7ea078da23a320aa8a407bb3ba59282))
+* **ux-breadcrumbs:** PR[#1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/1) base — Breadcrumb type + builder + a11y (size:exception) ([64864d7](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/64864d7a12a8f3b660301092dafb3510cf1e05d8))
+* **ux-breadcrumbs:** PR[#2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/2) wiring — 8 routes + /tienda + product detail + DRY cleanup ([5421740](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/542174062e72972c28e1382314304921f392e977))
+* **ux-breadcrumbs:** PR[#3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/3) home — WU8 wiring + chain complete ([370ec06](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/370ec066abcfd6df1cf6d5c501f1ff90854b54af))
+
+
+### Bug Fixes
+
+* **breadcrumbs:** pre-fetch /tienda categories SSR; render migas on /carrito loading ([66340de](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/66340de7b98796eebeadc6128ce41bed98af65fd))
+* **breadcrumbs:** pre-fetch categories SSR for /tienda; render migas on /carrito loading ([ad7ffd9](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/ad7ffd93bcbdbb9f792dc0ab0f71788f737bf53e))
+* **deps:** bump brace-expansion to 2.1.2 (CVE-2026-13149) ([575ad8e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/575ad8e0a6fcbbedca0bcbb5c645a9e98162e9a6))
+* **deps:** bump brace-expansion to 2.1.2 to fix CVE-2026-13149 (DoS) ([5e18f9f](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/5e18f9f531ba5dd2259347d383a2f7092f886b0b))
+* **deps:** pin Storybook packages to 9.0.16 to resolve version mismatch ([f846c79](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/f846c79ead71047c9edc02bf5366f113794ec35d))
+* **deps:** pin Storybook packages to 9.0.16 to resolve version mismatch ([ac51797](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/ac51797eef06fc23b6a818a5010d35553412847c))
+
 ## [1.2.3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.2...relojes-bv-beni-v1.2.3) (2026-07-18)
 
 
