@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.3.0...relojes-bv-beni-v1.3.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **deps:** override sharp to ^0.35.0 to address GHSA-f88m-g3jw-g9cj ([e95f375](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/e95f37548e980fda05cce0b6ccf24c88dd98e6bf))
+* **deps:** override sharp to ^0.35.0 to address GHSA-f88m-g3jw-g9cj ([52845da](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/52845dae98d53535281bd5df5c00b4b6c062e3c6))
+* **deps:** upgrade next to 15.5.21 + override fast-uri to 3.1.3 for DEBT-09 CVEs ([3fc921e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/3fc921eff13e014e7cb5719df545d0e9a3219ad2))
+
 ## [1.3.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.2.3...relojes-bv-beni-v1.3.0) (2026-07-21)
 
 
