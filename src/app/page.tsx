@@ -1,10 +1,10 @@
 // 'use client' // Necesario para hooks en páginas de next.js
 export const dynamic = 'force-dynamic'
 import React from 'react'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
-import HeroSection from '@/app/components/HeroSection'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
+import HeroSection from '@/components/HeroSection'
 import { FeaturedProducts, CategoryGrid } from '@/features/catalog'
-import TrustSection from '@/app/components/TrustSection'
+import TrustSection from '@/components/TrustSection'
 import { getProducts, getCategories } from '@/lib/api'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 

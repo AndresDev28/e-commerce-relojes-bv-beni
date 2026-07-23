@@ -1,8 +1,8 @@
-import RegisterForm from '@/app/components/forms/RegisterForm'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import RegisterForm from '@/components/forms/RegisterForm'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
-export default function Registerpage() {
+export default function RegisterPage() {
   const breadcrumbs = buildBreadcrumbs({ route: 'registro' })
 
   return (
@@ -14,9 +14,9 @@ export default function Registerpage() {
 
       {/* Contenedor principal */}
       <div className="flex-grow flex items-center justify-center">
-        {/* Sección te branding */}
+        {/* Sección de branding */}
 
-        {/* Tarjeta de login */}
+        {/* Tarjeta de registro */}
         <div className="w-full max-w-md p-8 space-y-4 bg-[#1C1C1E] rounded-lg shadow-lg">
           {/* Encabezado de la tarjeta */}
           <div>

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import AppShell from './components/AppShell'
+import AppShell from '@/components/AppShell'
 import { Oswald, Lora } from 'next/font/google'
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper'
 import { CartProvider } from '@/features/cart'
 import { FavoritesProvider } from '@/features/favorites'
 import StripeProviderWrapper from '@/components/providers/StripeProviderWrapper'
-import CookieBanner from '@/app/components/ui/CookieBanner'
+import CookieBanner from '@/components/ui/CookieBanner'
 import './globals.css'
 
 // Configuramos fuentes y sus variables CSS

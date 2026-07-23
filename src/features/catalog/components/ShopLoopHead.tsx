@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ArrowUpDown, ChevronDown } from 'lucide-react'
-import Button from '@/app/components/ui/Button'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import Button from '@/components/ui/Button'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import type { StrapiCategory } from '@/types'
 import type { Breadcrumb } from '@/types/breadcrumb'
 

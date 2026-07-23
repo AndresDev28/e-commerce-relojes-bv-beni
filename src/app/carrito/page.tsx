@@ -3,10 +3,10 @@ import { useCart } from '@/features/cart'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Link from 'next/link'
 import Image from 'next/image'
-import Button from '@/app/components/ui/Button'
+import Button from '@/components/ui/Button'
 import { CartItemRow } from '@/features/cart'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
@@ -43,7 +43,6 @@ export default function CartPage() {
     return null
   }
 
-  console.log('Items en el carrito:', cartItems)
   // --- Vista de Carrito Vacío ---
   if (cartItems.length === 0) {
     return (

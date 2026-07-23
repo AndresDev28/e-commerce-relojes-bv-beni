@@ -30,7 +30,7 @@
 
 import { useState } from 'react'
 import type { OrderData } from '@/lib/api/orders'
-import StatusBadge from '@/app/components/ui/StatusBadge'
+import StatusBadge from '@/components/ui/StatusBadge'
 import OrderTimeline from './OrderTimeline'
 import CancelOrderModal from './CancelOrderModal'
 import { formatPaymentMethod } from '@/utils'

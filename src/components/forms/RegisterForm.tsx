@@ -1,9 +1,9 @@
 'use client'
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import Input from '@/app/components/ui/Input'
-import Button from '@/app/components/ui/Button'
-import Spinner from '@/app/components/ui/Spinner'
+import Input from '@/components/ui/Input'
+import Button from '@/components/ui/Button'
+import Spinner from '@/components/ui/Spinner'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 

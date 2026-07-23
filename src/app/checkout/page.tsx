@@ -10,8 +10,8 @@ import {
   useCreateOrder,
   useCheckoutTotals,
 } from '@/features/checkout'
-import Breadcrumbs from '@/app/components/ui/Breadcrumbs'
-import Button from '@/app/components/ui/Button'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
+import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 import { loadStripe } from '@stripe/stripe-js'

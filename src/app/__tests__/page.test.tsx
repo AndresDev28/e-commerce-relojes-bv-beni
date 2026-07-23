@@ -1,7 +1,7 @@
 import { Children, isValidElement, type ReactElement, type ReactNode } from 'react'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import Breadcrumbs from '../components/ui/Breadcrumbs'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Home from '../page'
 import type { Breadcrumb } from '@/types/breadcrumb'
 
