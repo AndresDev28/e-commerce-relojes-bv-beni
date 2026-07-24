@@ -2,6 +2,12 @@ import LoginForm from '@/components/forms/LoginForm'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
+/**
+ * @remarks
+ * Route-level page component. Prop-less by design — derives all data from
+ * hooks/contexts (e.g., useAuth, useCart) per the "pages own no props"
+ * convention (DEBT-05 #8). Renders UI only; no business logic.
+ */
 export default function LoginPage() {
   const breadcrumbs = buildBreadcrumbs({ route: 'login' })
 

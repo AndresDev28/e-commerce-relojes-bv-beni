@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/features/cart'
@@ -14,18 +14,18 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
-import { loadStripe } from '@stripe/stripe-js'
 import type { PaymentIntent } from '@stripe/stripe-js'
-import { Elements } from '@stripe/react-stripe-js'
-import { getStripePublishableKey } from '@/lib/stripe/config'
 
-const getStripePromise = () => {
-  if (typeof window === 'undefined') {
-    return null
-  }
-  return loadStripe(getStripePublishableKey())
-}
-
+/**
+ * @remarks
+ * Route-level page component. Prop-less by design — derives all data from
+ * hooks/contexts (e.g., useAuth, useCart) per the "pages own no props"
+ * convention (DEBT-05 #8). Renders UI only; no business logic.
+ *
+ * Stripe context flows from `RootLayout → StripeProviderWrapper` (singleton).
+ * No page-level `<Elements>` wrapper is needed — `CheckoutForm` reads from
+ * the layout provider via `useStripe()` / `useElements()`.
+ */
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
@@ -34,7 +34,6 @@ export default function CheckoutPage() {
     clearCart,
   })
   const { total } = useCheckoutTotals(cartItems)
-  const [stripePromise] = useState(getStripePromise)
 
   const breadcrumbs = buildBreadcrumbs({ route: 'checkout' })
 
@@ -122,14 +121,12 @@ export default function CheckoutPage() {
                 Información de Pago
               </h2>
 
-              <Elements stripe={stripePromise}>
-                <CheckoutForm
-                  amount={total}
-                  cartItems={cartItems}
-                  onSuccess={handleSuccess}
-                  onError={handleError}
-                />
-              </Elements>
+              <CheckoutForm
+                amount={total}
+                cartItems={cartItems}
+                onSuccess={handleSuccess}
+                onError={handleError}
+              />
 
               <div className="mt-6 pt-6 border-t border-neutral-light">
                 <Link href="/tienda">

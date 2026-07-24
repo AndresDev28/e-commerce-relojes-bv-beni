@@ -10,6 +10,12 @@ import Button from '@/components/ui/Button'
 import { CartItemRow } from '@/features/cart'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
+/**
+ * @remarks
+ * Route-level page component. Prop-less by design — derives all data from
+ * hooks/contexts (e.g., useAuth, useCart) per the "pages own no props"
+ * convention (DEBT-05 #8). Renders UI only; no business logic.
+ */
 export default function CartPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
