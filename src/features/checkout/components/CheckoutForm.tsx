@@ -5,7 +5,6 @@ import {
   handleStripeError,
   getErrorSuggestion,
 } from '@/lib/stripe/errorHandler'
-import ErrorMessage from '@/components/ui/ErrorMessage'
 import { retryWithBackoff } from '@/lib/stripe/retryHandler'
 import { newTraceId } from '@/lib/trace'
 import type { RetryResult } from '@/lib/stripe/retryHandler'
@@ -16,7 +15,17 @@ interface CheckoutFormProps {
   amount: number
   cartItems: CartItem[]
   onSuccess?: (paymentIntent: PaymentIntent) => void
-  onError?: (error: string) => void
+  /**
+   * Page-level error callback. Called with the already-localized Spanish
+   * message produced by `handleStripeError(...)`. The page is the sole
+   * owner of the payment-failure alert surface (D1, DEBT-05 #8). The form
+   * is silent and does not render its own inline alert — exactly one
+   * alert appears in the DOM for each payment failure.
+   *
+   * Contract (R7): signature is stable. Future slices MUST NOT change
+   * the parameter type — the page tests depend on this shape.
+   */
+  onError?: (localizedMessage: string) => void
 }
 
 export default function CheckoutForm({
@@ -151,10 +160,19 @@ export default function CheckoutForm({
     } catch (error) {
       setIsRetrying(false)
       const processedError = handleStripeError(error)
-      setErrorMessage(processedError.localizedMessage)
-      const suggestion = getErrorSuggestion(processedError.code)
-      setErrorSuggestion(suggestion)
-      onError?.(processedError.localizedMessage)
+      if (onError) {
+        // Page owns the alert surface (D1, DEBT-05 #8). Forward the
+        // already-localized message via onError and skip the form's
+        // internal error-state updates so we don't render a second alert
+        // for the same Stripe event.
+        onError(processedError.localizedMessage)
+      } else {
+        // No page-level consumer: fall back to the form's internal
+        // error-state so the legacy inline rendering path still has data.
+        setErrorMessage(processedError.localizedMessage)
+        const suggestion = getErrorSuggestion(processedError.code)
+        setErrorSuggestion(suggestion)
+      }
     } finally {
       setIsProcessing(false)
       setIsRetrying(false)
@@ -195,18 +213,6 @@ export default function CheckoutForm({
           <CardElement options={cardElementOptions} />
         </div>
       </div>
-
-      {errorMessage && (
-        <ErrorMessage
-          message={errorMessage}
-          variant="error"
-          suggestion={errorSuggestion}
-          onDismiss={() => {
-            setErrorMessage('')
-            setErrorSuggestion(undefined)
-          }}
-        />
-      )}
 
       {isRetrying && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">

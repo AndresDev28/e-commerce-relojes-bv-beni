@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/features/cart'
@@ -12,6 +12,7 @@ import {
 } from '@/features/checkout'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Button from '@/components/ui/Button'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 import Link from 'next/link'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 import type { PaymentIntent } from '@stripe/stripe-js'
@@ -34,6 +35,11 @@ export default function CheckoutPage() {
     clearCart,
   })
   const { total } = useCheckoutTotals(cartItems)
+  // Page-owned payment error (DEBT-05 #8, D1). CheckoutForm calls onError
+  // with the already-localized Spanish message; we render exactly one
+  // <ErrorMessage> as the canonical surface. Cleared on every successful
+  // submission (R8) so a stale alert never lingers after a retry.
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   const breadcrumbs = buildBreadcrumbs({ route: 'checkout' })
 
@@ -69,14 +75,28 @@ export default function CheckoutPage() {
   }
 
   const handleSuccess = (paymentIntent: PaymentIntent) => {
+    // R8 mitigation: clear any prior payment error so a stale alert does
+    // not linger after a successful retry.
+    setPaymentError(null)
     createOrder(paymentIntent, cartItems)
   }
 
-  const handleError = (_error: string) => {}
+  const handleError = (error: string) => {
+    setPaymentError(error)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <Breadcrumbs breadcrumbs={breadcrumbs} />
+
+      {paymentError && (
+        <ErrorMessage
+          variant="error"
+          message={paymentError}
+          className="mt-6"
+          onDismiss={() => setPaymentError(null)}
+        />
+      )}
 
       <div className="max-w-6xl mx-auto mt-8">
         <h1 className="text-3xl font-sans font-bold text-dark mb-8">
