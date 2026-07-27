@@ -8,6 +8,13 @@ import TrustSection from '@/components/TrustSection'
 import { getProducts, getCategories } from '@/lib/api'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 
+/**
+ * @remarks
+ * Route-level page component. Prop-less by design — derives all data from
+ * hooks/contexts (e.g., useAuth, useCart) per the "pages own no props"
+ * convention (DEBT-05 #8). Renders UI only; no business logic.
+ */
+
 // 1. Agregamos async
 export default async function Home() {
   const products = await getProducts()

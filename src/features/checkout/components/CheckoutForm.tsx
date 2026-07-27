@@ -3,9 +3,7 @@ import { useState, FormEvent, useEffect } from 'react'
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js'
 import {
   handleStripeError,
-  getErrorSuggestion,
 } from '@/lib/stripe/errorHandler'
-import ErrorMessage from '@/components/ui/ErrorMessage'
 import { retryWithBackoff } from '@/lib/stripe/retryHandler'
 import { newTraceId } from '@/lib/trace'
 import type { RetryResult } from '@/lib/stripe/retryHandler'
@@ -16,7 +14,17 @@ interface CheckoutFormProps {
   amount: number
   cartItems: CartItem[]
   onSuccess?: (paymentIntent: PaymentIntent) => void
-  onError?: (error: string) => void
+  /**
+   * Page-level error callback. Called with the already-localized Spanish
+   * message produced by `handleStripeError(...)`. The page is the sole
+   * owner of the payment-failure alert surface (D1, DEBT-05 #8). The form
+   * is silent and does not render its own inline alert — exactly one
+   * alert appears in the DOM for each payment failure.
+   *
+   * Contract (R7): signature is stable. Future slices MUST NOT change
+   * the parameter type — the page tests depend on this shape.
+   */
+  onError?: (localizedMessage: string) => void
 }
 
 export default function CheckoutForm({
@@ -26,11 +34,9 @@ export default function CheckoutForm({
   onError,
 }: CheckoutFormProps) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
   const [retryCount, setRetryCount] = useState(0)
   const [isRetrying, setIsRetrying] = useState(false)
   const maxRetries = 3
-  const [errorSuggestion, setErrorSuggestion] = useState<string | undefined>()
   const [isMobile, setIsMobile] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [isLoadingIntent, setIsLoadingIntent] = useState(false)
@@ -74,7 +80,7 @@ export default function CheckoutForm({
         const data = await response.json()
         setClientSecret(data.clientSecret)
       } catch (error) {
-        setErrorMessage(
+        onError?.(
           error instanceof Error
             ? error.message
             : 'No se pudo inicializar el pago. Por favor, recarga la página.'
@@ -84,7 +90,7 @@ export default function CheckoutForm({
       }
     }
     fetchPaymentIntent()
-  }, [cartItems, amount])
+  }, [cartItems, amount, onError])
 
   const performPayment = async () => {
     if (!stripe || !elements) {
@@ -126,8 +132,6 @@ export default function CheckoutForm({
     }
 
     setIsProcessing(true)
-    setErrorMessage('')
-    setErrorSuggestion(undefined)
     setRetryCount(0)
     setIsRetrying(false)
     try {
@@ -151,9 +155,10 @@ export default function CheckoutForm({
     } catch (error) {
       setIsRetrying(false)
       const processedError = handleStripeError(error)
-      setErrorMessage(processedError.localizedMessage)
-      const suggestion = getErrorSuggestion(processedError.code)
-      setErrorSuggestion(suggestion)
+      // Page owns the alert surface (D1, DEBT-05 #8). Forward the
+      // already-localized message via onError. The form is silent and
+      // does not render its own inline alert — exactly one alert
+      // appears in the DOM for each payment failure.
       onError?.(processedError.localizedMessage)
     } finally {
       setIsProcessing(false)
@@ -195,18 +200,6 @@ export default function CheckoutForm({
           <CardElement options={cardElementOptions} />
         </div>
       </div>
-
-      {errorMessage && (
-        <ErrorMessage
-          message={errorMessage}
-          variant="error"
-          suggestion={errorSuggestion}
-          onDismiss={() => {
-            setErrorMessage('')
-            setErrorSuggestion(undefined)
-          }}
-        />
-      )}
 
       {isRetrying && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">

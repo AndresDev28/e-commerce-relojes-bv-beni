@@ -12,20 +12,21 @@ import {
 } from '@/features/checkout'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Button from '@/components/ui/Button'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 import Link from 'next/link'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
-import { loadStripe } from '@stripe/stripe-js'
 import type { PaymentIntent } from '@stripe/stripe-js'
-import { Elements } from '@stripe/react-stripe-js'
-import { getStripePublishableKey } from '@/lib/stripe/config'
 
-const getStripePromise = () => {
-  if (typeof window === 'undefined') {
-    return null
-  }
-  return loadStripe(getStripePublishableKey())
-}
-
+/**
+ * @remarks
+ * Route-level page component. Prop-less by design — derives all data from
+ * hooks/contexts (e.g., useAuth, useCart) per the "pages own no props"
+ * convention (DEBT-05 #8). Renders UI only; no business logic.
+ *
+ * Stripe context flows from `RootLayout → StripeProviderWrapper` (singleton).
+ * No page-level `<Elements>` wrapper is needed — `CheckoutForm` reads from
+ * the layout provider via `useStripe()` / `useElements()`.
+ */
 export default function CheckoutPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
@@ -34,7 +35,11 @@ export default function CheckoutPage() {
     clearCart,
   })
   const { total } = useCheckoutTotals(cartItems)
-  const [stripePromise] = useState(getStripePromise)
+  // Page-owned payment error (DEBT-05 #8, D1). CheckoutForm calls onError
+  // with the already-localized Spanish message; we render exactly one
+  // <ErrorMessage> as the canonical surface. Cleared on every successful
+  // submission (R8) so a stale alert never lingers after a retry.
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   const breadcrumbs = buildBreadcrumbs({ route: 'checkout' })
 
@@ -70,14 +75,28 @@ export default function CheckoutPage() {
   }
 
   const handleSuccess = (paymentIntent: PaymentIntent) => {
+    // R8 mitigation: clear any prior payment error so a stale alert does
+    // not linger after a successful retry.
+    setPaymentError(null)
     createOrder(paymentIntent, cartItems)
   }
 
-  const handleError = (_error: string) => {}
+  const handleError = (error: string) => {
+    setPaymentError(error)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <Breadcrumbs breadcrumbs={breadcrumbs} />
+
+      {paymentError && (
+        <ErrorMessage
+          variant="error"
+          message={paymentError}
+          className="mt-6"
+          onDismiss={() => setPaymentError(null)}
+        />
+      )}
 
       <div className="max-w-6xl mx-auto mt-8">
         <h1 className="text-3xl font-sans font-bold text-dark mb-8">
@@ -122,14 +141,12 @@ export default function CheckoutPage() {
                 Información de Pago
               </h2>
 
-              <Elements stripe={stripePromise}>
-                <CheckoutForm
-                  amount={total}
-                  cartItems={cartItems}
-                  onSuccess={handleSuccess}
-                  onError={handleError}
-                />
-              </Elements>
+              <CheckoutForm
+                amount={total}
+                cartItems={cartItems}
+                onSuccess={handleSuccess}
+                onError={handleError}
+              />
 
               <div className="mt-6 pt-6 border-t border-neutral-light">
                 <Link href="/tienda">
