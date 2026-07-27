@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.3.1...relojes-bv-beni-v1.4.0) (2026-07-27)
+
+
+### Features
+
+* **checkout:** page-level ErrorMessage owns Stripe payment alerts ([d7f0c23](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/d7f0c2369120e75d6b6eefae366d1b48da83b23b))
+* **checkout:** page-level ErrorMessage owns Stripe payment alerts ([f3affe5](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/f3affe5c4cf2d7a7ac3f80005acf2f4580b02c6d))
+
+
+### Bug Fixes
+
+* **deps:** override brace-expansion to ^5.0.8 for CVE-2026-14257 ([793dbaa](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/793dbaafb0f325416737198efb21609925f209e0))
+* **deps:** override postcss to ^8.5.18 for GHSA-r28c-9q8g-f849 ([7c5839e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/7c5839e20e14f77e4436be7623855112157e3fc8))
+
 ## [1.3.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.3.0...relojes-bv-beni-v1.3.1) (2026-07-23)
 
 
