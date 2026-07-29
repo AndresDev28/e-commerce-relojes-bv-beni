@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "npm run build && vitest run --maxWorkers=2",
     "test:watch": "vitest --maxWorkers=2",
     "test:ui": "vitest --ui --maxWorkers=2",
