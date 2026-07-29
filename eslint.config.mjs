@@ -61,6 +61,11 @@ const config = [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      // Override next/core-web-vitals's default 'warn' on react-hooks/exhaustive-deps
+      // to 'error'. Enforced as a CI gate so missing-deps useEffect hooks surface
+      // before merge (closes the silent-leak pattern allowed in Slice B).
+      // See Engram #1411 / REQ-LCF-4.
+      'react-hooks/exhaustive-deps': 'error',
     },
     settings: {
       react: { version: 'detect' },
