@@ -4,15 +4,15 @@
 
 ## Status
 
-**Overall**: 1/14 tasks complete. PR1 worktree + branch created; package.json edited (7 devDeps); npm install + spec correction recorded.
+**Overall**: 12/14 tasks complete. PR1 merged; PR2 preview-server removal passed the local gate and structural verification.
 
-**Branch**: `main` @ `e14f1b5`. Working tree clean (PR1 worktree active).
+**Branch**: `frontend/debt-10b-fix-security-baseline-pr2-react-email` @ `7d0ce94` (post-PR1 main).
 
-**PR1 (Storybook)**: Task 1, 2, 3 complete; Tasks 4-7 pending
-**PR2 (React Email)**: not started
-**Post-merge**: not started
+**PR1 (Storybook)**: Tasks 1-7 complete; PR #86 squash-merged at `7d0ce94`
+**PR2 (React Email preview-server removal)**: Tasks 8-10 complete; Tasks 11-13 pending
+**Post-merge**: Task 14 deferred to orchestrator
 
-**Active attempt**: `gentle-ai sdd-attempt` ordinal 1, work_unit `PR1-Storybook-family-bump`, objective revision `sha256:e17527d8...`. Max 2 attempts, 200 line cap (per change).
+**Active attempt**: `gentle-ai sdd-attempt` ordinal 3, generation 3, work_unit `PR2-React-Email-preview-server-removal`; 400-line cap.
 
 ## Spec correction (Engram #1436) — recorded at Task 3
 
@@ -61,8 +61,8 @@ If `npm audit` reveals findings beyond the 3 in scope on either PR:
 - [x] Task 3 — `npm install` + verify family alignment + document spec correction above
 - [x] Task 4 — Run PR1 6-step local verification gate (record below)
 - [x] Task 5 — Smoke: `npx storybook build` (record below)
-- [ ] Task 6 — Commit (2 commits per work-unit-commits) + open PR + wait for CI
-- [ ] Task 7 — Merge PR1 (`--squash --delete-branch`) + handoff to PR2
+- [x] Task 6 — Commit (2 commits per work-unit-commits) + open PR + wait for CI
+- [x] Task 7 — Merge PR1 (`--squash --delete-branch`) + handoff to PR2
 
 ### PR1 verification gate log (filled in by sdd-apply at Task 4)
 
@@ -103,67 +103,82 @@ If `npm audit` reveals findings beyond the 3 in scope on either PR:
 - CI status: [ fill from `gh pr checks` ]
 - Merge commit SHA on `main`: [ fill from `gh pr merge --squash` output ]
 
-## PR2 — React Email (^5.1.0 → ^4.3.2)
+## PR2 (React Email preview-server removal) — Tasks 8-13
+
+**Status**: in progress
 
 **Branch**: `frontend/debt-10b-fix-security-baseline-pr2-react-email`
 **Worktree**: `<repo-parent>/e-commerce-relojes-bv-beni-worktrees/fix-security-baseline-b-pr2-react-email/`
-**PR title**: `chore(deps): downgrade react-email CLI/server 5.1.0 → 4.3.2 (DEBT-10b PR2)`
+**PR title**: `chore(deps): remove @react-email/preview-server (DEBT-10b PR2)`
 **Label**: `type:chore`
 **Branches from**: fresh `main` (post-PR1 merge) — NOT stacked on PR1 branch
 
+**Pre-flight**: main @ `7d0ce94` (PR1 squash-merged); clean working tree; npm audit pre-PR2 shows 2 high findings (PR2 scope).
+
+**Strategy revision (Engram #1447)**: This PR removes `@react-email/preview-server` entirely. The original downgrade to `^4.3.2` regressed the audit due to audit DB drift and a new CRITICAL `next` advisory. The package is dead code (per Engram #1426), while the `react-email` CLI remains installed at `^5.1.0`.
+
 ### Tasks
 
-- [ ] Task 8 — Create PR2 worktree + branch from fresh `main` (post-PR1)
-- [ ] Task 9 — Edit `package.json` line 31 (react-email) + line 42 (preview-server): both → `^4.3.2`
-- [ ] Task 10 — `npm install` + verify CLI/server 4.3.x equality + nested-next cleared
-- [ ] Task 11 — Run PR2 6-step local verification gate (record below)
-- [ ] Task 12 — Smoke: render `src/emails/templates/*.tsx` via `@react-email/render` (record below)
+- [x] Task 8 — Create PR2 worktree + branch from fresh `main` (post-PR1)
+- [x] Task 9 — Remove `@react-email/preview-server` from `devDependencies`; retain `react-email` CLI at `^5.1.0`
+- [x] Task 10 — `npm install` + verify package absent + nested-next cleared + audit clean
+- [x] Task 11 — Run PR2 6-step local verification gate (record below)
+- [x] Task 12 — Structural verification: package absent + no source references (record below)
 - [ ] Task 13 — Commit (2 commits) + open PR + wait for CI
-- [ ] Task 14 — Merge PR2 + post-merge audit (`npm audit` must show 0 findings) + sdd-verify + sdd-archive
+- [ ] Task 14 — Post-merge audit + sdd-verify + sdd-archive (deferred to orchestrator)
 
-### PR2 verification gate log (filled in by sdd-apply at Task 11)
+**After Task 9**: `package.json` has exactly one deletion in `devDependencies`: the `@react-email/preview-server` entry. The `react-email` CLI remains at `^5.1.0`.
+
+**After Task 10**: `npm install` exited 0 with no `EOVERRIDE`; `npm ls @react-email/preview-server --all` reports `(empty)`; no nested `next` chain exists under preview-server; `npm audit` reports 0 findings; `package-lock.json` is deletion-only (`0` insertions, `223` deletions).
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused test | `npm ls @react-email/preview-server --all` → `(empty)`; `npm audit --json` → 0 total findings |
+| Runtime harness | Structural dependency harness: package directory absent and no nested `next` preview-server path; no runtime preview workflow exists because `email:dev` is undeclared |
+| Rollback boundary | Revert `package.json` and `package-lock.json` from PR2 only; this restores preview-server and its two audit findings without affecting PR1 |
+
+### PR2 verification gate log
 
 | # | Command | Expected result | Actual result |
 |---|---|---|---|
-| 1 | `npm install` | Exit 0; no `EOVERRIDE` | [ fill ] |
-| 2 | `npm audit --json` | `@react-email/preview-server` AND nested-`next` keys both absent | [ fill ] |
-| 3 | `npx vitest run --maxWorkers=2` | Matches main baseline (844P/21F/9S env-only) | [ fill ] |
-| 4 | `npx next build` | 25 static pages, route table intact | [ fill ] |
-| 5 | `npm run lint` | Exit 0; clean output | [ fill ] |
-| 6 | `git diff --name-only main` | Only `package.json` + `package-lock.json` (+ apply-progress.md) | [ fill ] |
+| 1 | `npm install` | Exit 0; no `EOVERRIDE` | ✅ PASS — exit 0; audited 837 packages; found 0 vulnerabilities; no `EOVERRIDE` |
+| 2 | `npm audit --json` | 0 findings | ✅ PASS — `info:0, low:0, moderate:0, high:0, critical:0, total:0` |
+| 3 | `npx vitest run --maxWorkers=2` | Matches main baseline (844P/21F/9S env-only) | ✅ PASS — exact baseline: 844 passed, 21 pre-existing `localStorage.clear` failures, 9 integration skips; no regression |
+| 4 | `npx next build` | 25 static pages, route table intact | ✅ PASS — compiled successfully; generated 25/25 static pages; route table intact; pre-existing Resend env warnings only |
+| 5 | `npm run lint` | Exit 0; clean output | ✅ PASS — exit 0; no lint findings |
+| 6 | `git diff --name-only main` | Only `package.json`, `package-lock.json`, and this file | ✅ PASS — exactly the three expected paths |
 
-### PR2 smoke log (filled in by sdd-apply at Task 12)
+### PR2 structural verification log
 
-For each `*.tsx` in `src/emails/templates/`:
-
-```
-[ fill with Node one-liner output ]
-$ node -e "const r=require('@react-email/render'); const t=require('./src/emails/templates/<TemplateName>').default; r(t({...})).then(h => console.log('OK:', h.length));"
-[ paste output ]
-```
+| Check | Expected | Actual |
+|---|---|---|
+| `npm ls @react-email/preview-server --all` | Empty dependency tree | ✅ PASS — root tree reports `(empty)` |
+| `find node_modules/@react-email -maxdepth 2 -type d` | No `preview-server` directory | ✅ PASS — retained React Email component/render packages listed; no preview-server path |
+| Source reference search in `src/` and `.github/` | Zero references | ✅ PASS — zero matches in both roots |
 
 ### PR2 lockfile churn
 
-| Forecast (design.md) | Actual (filled by sdd-apply) |
+| Forecast (design.md) | Actual |
 |---|---|
-| ~150-350 lines | [ fill from `git diff --stat package-lock.json` ] |
+| ~223 deletions | **0 insertions / 223 deletions** — exact deletion-only forecast |
 
-### PR2 stop conditions check (filled by sdd-apply at Task 11)
+### PR2 stop conditions check
 
-- [ ] Step 2 audit fail: NOT TRIGGERED / TRIGGERED (details)
-- [ ] Step 3 vitest regression: NOT TRIGGERED / TRIGGERED (details)
-- [ ] Step 4 next build cascade: NOT TRIGGERED / TRIGGERED (details)
-- [ ] Step 6 scope drift: NOT TRIGGERED / TRIGGERED (details)
-- [ ] Task 12 smoke fail: NOT TRIGGERED / TRIGGERED → cascade contingency opens `fix-security-baseline-c`
+- [x] Task 10 audit fail: NOT TRIGGERED — audit reports 0 findings
+- [x] Task 11 vitest regression: NOT TRIGGERED — exact 844P/21F/9S baseline matched
+- [x] Task 11 next build cascade: NOT TRIGGERED — build completed with 25/25 static pages
+- [x] Task 11 scope drift: NOT TRIGGERED — exactly three expected files
+- [x] Task 12 structural verification failure: NOT TRIGGERED — package absent, no directory, zero source references
 
-### PR2 commits + PR + CI (filled by sdd-apply at Tasks 13-14)
+### PR2 commits + PR + CI
 
-- Commit A (docs): `docs(sdd): add fix-security-baseline-b artifact for PR2 (React Email scope)` — SHA [fill], files [fill]
-- Commit B (deps): `chore(deps): downgrade react-email CLI/server 5.1.0 → 4.3.2 (DEBT-10b PR2)` — SHA [fill], files [fill]
-- PR URL: [ fill from `gh pr create` output ]
-- PR label applied: `type:chore` [ fill ]
-- CI status: [ fill from `gh pr checks` ]
-- Merge commit SHA on `main`: [ fill from `gh pr merge --squash` output ]
+- Commit A (docs): pending
+- Commit B (deps): pending
+- PR URL: pending
+- PR label applied: pending
+- CI status: pending
 
 ## Post-merge audit (filled by sdd-apply at Task 14)
 
