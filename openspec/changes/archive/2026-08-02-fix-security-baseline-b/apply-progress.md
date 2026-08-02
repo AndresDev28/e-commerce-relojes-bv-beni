@@ -124,8 +124,8 @@ If `npm audit` reveals findings beyond the 3 in scope on either PR:
 - [x] Task 10 — `npm install` + verify package absent + nested-next cleared + audit clean
 - [x] Task 11 — Run PR2 6-step local verification gate (record below)
 - [x] Task 12 — Structural verification: package absent + no source references (record below)
-- [ ] Task 13 — Commit (2 commits) + open PR + wait for CI
-- [ ] Task 14 — Post-merge audit + sdd-verify + sdd-archive (deferred to orchestrator)
+- [x] Task 13 — Commit (2 commits) + open PR #87 + wait for CI Trivy ✅ (DONE — 9/9 CI green, PR #87 at https://github.com/AndresDev28/e-commerce-relojes-bv-beni/pull/87)
+- [x] Task 14 — Merge PR2 (`--squash --delete-branch`) + post-merge audit + sdd-verify + sdd-archive ✅ (DONE — PR #87 merged at `b38d018`, `npm audit` 0 findings, sdd-verify PASS 8/8 Requirements 12/12 Scenarios, sdd-archive in progress)
 
 **After Task 9**: `package.json` has exactly one deletion in `devDependencies`: the `@react-email/preview-server` entry. The `react-email` CLI remains at `^5.1.0`.
 
