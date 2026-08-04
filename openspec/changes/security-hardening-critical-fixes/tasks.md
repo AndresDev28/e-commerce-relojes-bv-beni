@@ -46,23 +46,38 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Session Infrastructure (PR 3a)
 
-- [ ] 3.1 Create `src/lib/auth/session.ts` — `setSessionCookie`, `clearSessionCookie`, `readSessionJwt`, `SESSION_COOKIE` constant
-- [ ] 3.2 Create `src/app/api/auth/login/route.ts` — proxy to Strapi `/auth/local`, set httpOnly cookie on success
-- [ ] 3.3 Create `src/app/api/auth/register/route.ts` — proxy to Strapi `/auth/local/register`, set cookie on success
-- [ ] 3.4 Create `src/app/api/auth/logout/route.ts` — clear session cookie
-- [ ] 3.5 Create `src/app/api/auth/session/route.ts` — read cookie, call Strapi `/users/me`, return user or unauthenticated
-- [ ] 3.6 Rewrite `src/context/AuthContext.tsx`: remove localStorage JWT; hydrate from `/api/auth/session`; call auth routes
-- [ ] 3.7 Update `vitest.config.ts`: exclude `**/*.integration.test.ts` from unit project glob
-- [ ] 3.8 Write unit tests for session.ts helpers, auth routes, and AuthContext hydration
-- [ ] 3.9 Propagate `X-Trace-Id` (via `getTraceId`) in all new auth routes: login, register, logout, session; echo in response headers
+- [x] 3.1 Create `src/lib/auth/session.ts` — `setSessionCookie`, `clearSessionCookie`, `readSessionJwt`, `SESSION_COOKIE` constant
+  - Evidence: `src/lib/auth/session.ts` ships `SESSION_COOKIE = 'bv_session'` and the three cookie helpers (PR #58 merged on `main` as `834aab1`).
+- [x] 3.2 Create `src/app/api/auth/login/route.ts` — proxy to Strapi `/auth/local`, set httpOnly cookie on success
+  - Evidence: `src/app/api/auth/login/route.ts` proxies `POST /auth/local` and calls `setSessionCookie` on success (PR #58 `834aab1`).
+- [x] 3.3 Create `src/app/api/auth/register/route.ts` — proxy to Strapi `/auth/local/register`, set cookie on success
+  - Evidence: `src/app/api/auth/register/route.ts` proxies `POST /auth/local/register` and calls `setSessionCookie` on success (PR #58 `834aab1`).
+- [x] 3.4 Create `src/app/api/auth/logout/route.ts` — clear session cookie
+  - Evidence: `src/app/api/auth/logout/route.ts` calls `clearSessionCookie` and returns 204 (PR #58 `834aab1`).
+- [x] 3.5 Create `src/app/api/auth/session/route.ts` — read cookie, call Strapi `/users/me`, return user or unauthenticated
+  - Evidence: `src/app/api/auth/session/route.ts` reads the cookie via `readSessionJwt`, calls Strapi `/users/me`, and returns `{authenticated: false}` when no cookie (PR #58 `834aab1`).
+- [x] 3.6 Rewrite `src/context/AuthContext.tsx`: remove localStorage JWT; hydrate from `/api/auth/session`; call auth routes
+  - Evidence: `src/context/AuthContext.tsx` now hydrates from `/api/auth/session` and uses `/api/auth/login|register|logout`; localStorage JWT path removed (PR #58 `834aab1`).
+- [x] 3.7 Update `vitest.config.ts`: exclude `**/*.integration.test.ts` from unit project glob
+  - Evidence: `vitest.config.ts` unit project `include: ['src/**/__tests__/**/*.{test,spec}.{js,ts,tsx}']` paired with `exclude: ['**/*.integration.test.{ts,tsx}']` (PR #58 `834aab1`).
+- [x] 3.8 Write unit tests for session.ts helpers, auth routes, and AuthContext hydration
+  - Evidence: `src/lib/auth/__tests__/session.test.ts`, `src/app/api/auth/{login,register,logout,session}/__tests__/route.test.ts`, and `src/context/__tests__/AuthContext.test.tsx` ship as PR #58 `834aab1`.
+- [x] 3.9 Propagate `X-Trace-Id` (via `getTraceId`) in all new auth routes: login, register, logout, session; echo in response headers
+  - Evidence: every route under `src/app/api/auth/**/route.ts` calls `getTraceId(request)` and sets the response `X-Trace-Id` header (PR #58 `834aab1`).
 
 ## Phase 4: Consumer Migration (PR 3b)
 
-- [ ] 4.1 Switch `src/app/api/orders/route.ts` from Authorization header to cookie (use `readSessionJwt`); add POST handler for createOrder proxy
-- [ ] 4.2 Switch `src/app/api/orders/[orderId]/route.ts` and `.../request-cancellation/route.ts` from header to cookie
-- [ ] 4.3 Create `src/app/api/favorites/route.ts` — GET/PUT favorites proxy reading the cookie
+- [x] 4.1 Switch `src/app/api/orders/route.ts` from Authorization header to cookie (use `readSessionJwt`); add POST handler for createOrder proxy
+  - Evidence: `src/app/api/orders/route.ts` uses `readSessionJwt` and exposes GET/POST handlers backed by `getOrdersListService`/`createOrderService` (PR #58 `834aab1`).
+- [x] 4.2 Switch `src/app/api/orders/[orderId]/route.ts` and `.../request-cancellation/route.ts` from header to cookie
+  - Evidence: `src/app/api/orders/[orderId]/route.ts` and `src/app/api/orders/[orderId]/request-cancellation/route.ts` read the cookie via `readSessionJwt` instead of the Authorization header (PR #58 `834aab1`).
+- [x] 4.3 Create `src/app/api/favorites/route.ts` — GET/PUT favorites proxy reading the cookie
+  - Evidence: `src/app/api/favorites/route.ts` exposes GET/PUT and gates both via `requireUser` (PR #58 `834aab1`).
 - [x] 4.4 Drop `jwtToken` param from `src/lib/api/orders.ts` `createOrder` and `getUserOrders`; call Next routes
   - Evidence: `src/lib/api/orders.ts` runtime helpers removed (type contracts kept); approved by `src/lib/api/__tests__/orders.public-api.test.ts` (3/3 GREEN). Landed on `frontend/security-hardening-critical-fixes-pr-4a-remove-legacy-jwt-orders` as commit `995a926` (refactor) preceded by `a961b0c` (legacy test artifacts).
-- [ ] 4.5 Update all consumer files referencing `jwt` from `useAuth()` — rely on cookie (check `src/features/orders/`, `src/features/checkout/`, `src/features/favorites/`)
-- [ ] 4.6 Write unit tests for cookie-based route handlers and consumer migration
-- [ ] 4.7 Propagate `X-Trace-Id` (via `getTraceId`) in `/api/orders/[orderId]`, `/api/orders/[orderId]/request-cancellation`, and `/api/favorites` routes; echo in response headers
+- [x] 4.5 Update all consumer files referencing `jwt` from `useAuth()` — rely on cookie (check `src/features/orders/`, `src/features/checkout/`, `src/features/favorites/`)
+  - Evidence: PR #58 `834aab1` removed every `jwtToken` reference in `src/features/orders/`, `src/features/checkout/`, and `src/features/favorites/`; consumers route through the `/api/*` Next handlers and `AuthContext` (cookie-based).
+- [x] 4.6 Write unit tests for cookie-based route handlers and consumer migration
+  - Evidence: PR #58 `834aab1` shipped cookie-based unit tests for `/api/orders/*`; PR4b adds favorites coverage — `src/features/favorites/services/__tests__/getFavoritesService.test.ts` (5/5 GREEN, commit `05cdcc6`), `src/features/favorites/services/__tests__/updateFavoritesService.test.ts` (8/8 GREEN, commit `ddccb44`), and `src/app/api/favorites/__tests__/route.test.ts` (10/10 GREEN, commit `3869542`).
+- [x] 4.7 Propagate `X-Trace-Id` (via `getTraceId`) in `/api/orders/[orderId]`, `/api/orders/[orderId]/request-cancellation`, and `/api/favorites` routes; echo in response headers
+  - Evidence: every branch of `src/app/api/orders/[orderId]/route.ts`, `src/app/api/orders/[orderId]/request-cancellation/route.ts`, and `src/app/api/favorites/route.ts` returns `X-Trace-Id` in the response headers via `getTraceId` (PR #58 `834aab1` for orders; PR4b covers `/api/favorites` via the tests committed at `3869542`).
