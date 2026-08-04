@@ -61,7 +61,8 @@ Chain strategy: feature-branch-chain
 - [ ] 4.1 Switch `src/app/api/orders/route.ts` from Authorization header to cookie (use `readSessionJwt`); add POST handler for createOrder proxy
 - [ ] 4.2 Switch `src/app/api/orders/[orderId]/route.ts` and `.../request-cancellation/route.ts` from header to cookie
 - [ ] 4.3 Create `src/app/api/favorites/route.ts` — GET/PUT favorites proxy reading the cookie
-- [ ] 4.4 Drop `jwtToken` param from `src/lib/api/orders.ts` `createOrder` and `getUserOrders`; call Next routes
+- [x] 4.4 Drop `jwtToken` param from `src/lib/api/orders.ts` `createOrder` and `getUserOrders`; call Next routes
+  - Evidence: `src/lib/api/orders.ts` runtime helpers removed (type contracts kept); approved by `src/lib/api/__tests__/orders.public-api.test.ts` (3/3 GREEN). Landed on `frontend/security-hardening-critical-fixes-pr-4a-remove-legacy-jwt-orders` as commit `995a926` (refactor) preceded by `a961b0c` (legacy test artifacts).
 - [ ] 4.5 Update all consumer files referencing `jwt` from `useAuth()` — rely on cookie (check `src/features/orders/`, `src/features/checkout/`, `src/features/favorites/`)
 - [ ] 4.6 Write unit tests for cookie-based route handlers and consumer migration
 - [ ] 4.7 Propagate `X-Trace-Id` (via `getTraceId`) in `/api/orders/[orderId]`, `/api/orders/[orderId]/request-cancellation`, and `/api/favorites` routes; echo in response headers
