@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.0...relojes-bv-beni-v1.4.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* **deps:** patch socket.io-parser, fast-uri, and brace-expansion via overrides ([#93](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/93)) ([b61e7e6](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/b61e7e6ddf21c028961986eb7491ecc0c924bf5a))
+
 ## [1.4.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.3.1...relojes-bv-beni-v1.4.0) (2026-07-27)
 
 
