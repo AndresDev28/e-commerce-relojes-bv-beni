@@ -22,10 +22,4 @@ describe('lib/api/orders public API', () => {
     expect((ordersModule as Record<string, unknown>).getUserOrders).toBeUndefined()
   })
 
-  it('keeps the type contracts that consumers still import', () => {
-    const typeKeys = ['OrderData', 'OrderResponse', 'CreateOrderData', 'PaymentInfo']
-    for (const key of typeKeys) {
-      expect(key in ordersModule || true).toBe(true)
-    }
-  })
 })
