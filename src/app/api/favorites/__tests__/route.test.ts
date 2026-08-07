@@ -326,4 +326,27 @@ describe('PUT /api/favorites', () => {
 
     expect(response.headers.get('X-Trace-Id')).toBe('trace-from-caller-put')
   })
+
+  it('[FAV-W-8] returns 502 when requireUser gets a non-ok response from /api/users/me on PUT', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/favorites', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(['p-1']),
+    })
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
+    const response = await PUT(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
+    expect(response.headers.get('X-Trace-Id')).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
+  })
 })
