@@ -4,7 +4,7 @@ import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAut
 import type { Product } from '@/types'
 
 const mockPush = vi.fn()
-const mockPathname = '/tienda'
+let mockPathname = '/tienda'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -32,6 +32,7 @@ const mockProduct: Product = {
 describe('useFavoriteAuthPrompt', () => {
   beforeEach(() => {
     mockPush.mockClear()
+    mockPathname = '/tienda'
   })
 
   afterEach(() => {
@@ -116,12 +117,8 @@ describe('useFavoriteAuthPrompt', () => {
     })
 
     it('goToLogin encodes detail page paths correctly', async () => {
-      // Override pathname for this test
-      const detailPathname = '/tienda/reloj-elegante'
-      vi.doMock('next/navigation', () => ({
-        useRouter: () => ({ push: mockPush }),
-        usePathname: () => detailPathname,
-      }))
+      // Override pathname for this test (let binding updates the mock closure)
+      mockPathname = '/tienda/reloj-elegante'
 
       const { useAuth } = await import('@/context/AuthContext')
       vi.mocked(useAuth).mockReturnValue({ user: null, isLoading: false } as any)
@@ -137,9 +134,13 @@ describe('useFavoriteAuthPrompt', () => {
         clearFavorites: vi.fn(),
       } as any)
 
-      // Since pathname is mocked at module level, this test uses the same mockPathname
-      // For the detail page, we write a separate test that would need separate mocking.
-      // The main path test (above) suffices for RED.
+      const { result } = renderHook(() => useFavoriteAuthPrompt())
+
+      act(() => {
+        result.current.goToLogin()
+      })
+
+      expect(mockPush).toHaveBeenCalledWith('/login?redirect=%2Ftienda%2Freloj-elegante')
     })
 
     it('showAuthPrompt clears to false when user becomes non-null', async () => {
