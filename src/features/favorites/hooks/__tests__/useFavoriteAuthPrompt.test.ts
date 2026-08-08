@@ -145,7 +145,7 @@ describe('useFavoriteAuthPrompt', () => {
     it('showAuthPrompt clears to false when user becomes non-null', async () => {
       const { useAuth } = await import('@/context/AuthContext')
       let user: any = null
-      vi.mocked(useAuth).mockImplementation(() => ({ user, isLoading: false }))
+      vi.mocked(useAuth).mockImplementation(() => ({ user, isLoading: false } as any))
 
       const { useFavorites } = await import('@/features/favorites')
       vi.mocked(useFavorites).mockReturnValue({
