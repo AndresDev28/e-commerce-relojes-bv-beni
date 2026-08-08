@@ -8,15 +8,16 @@ import {
 import { useAuth } from '@/context/AuthContext'
 import { Product } from '@/types'
 import { useFavoritesApi } from '@/features/favorites/hooks/useFavorites'
+import type { FavoriteMutationResult } from '@/features/favorites/types'
 
 interface FavoritesContextType {
   favorites: Product[]
-  addToFavorites: (product: Product) => Promise<void>
-  removeFromFavorites: (productId: string) => Promise<void>
+  addToFavorites: (product: Product) => Promise<FavoriteMutationResult>
+  removeFromFavorites: (productId: string) => Promise<FavoriteMutationResult>
   isFavorite: (productId: string) => boolean
   isLoading: boolean
   error: string | null
-  clearFavorites: () => Promise<void>
+  clearFavorites: () => Promise<FavoriteMutationResult>
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(
@@ -37,28 +38,31 @@ export const FavoritesProvider = ({ children }: FavoritesProviderProps) => {
     }
   }, [user, fetchFavorites])
 
-  const addToFavorites = async (product: Product) => {
-    if (!user) return
-    if (favorites.some(p => p.id === product.id)) return
+  const addToFavorites = async (product: Product): Promise<FavoriteMutationResult> => {
+    if (!user) return { ok: false, reason: 'unauthenticated' }
+    if (favorites.some(p => p.id === product.id)) return { ok: true }
 
     const updated = [product, ...favorites]
     await updateFavorites(updated)
+    return { ok: true }
   }
 
-  const removeFromFavorites = async (productId: string) => {
-    if (!user) return
-    if (!favorites.some(p => p.id === productId)) return
+  const removeFromFavorites = async (productId: string): Promise<FavoriteMutationResult> => {
+    if (!user) return { ok: false, reason: 'unauthenticated' }
+    if (!favorites.some(p => p.id === productId)) return { ok: true }
 
     const updated = favorites.filter(p => p.id !== productId)
     await updateFavorites(updated)
+    return { ok: true }
   }
 
   const isFavorite = (productId: string) =>
     favorites.some(p => p.id === productId)
 
-  const clearFavorites = async () => {
-    if (!user) return
+  const clearFavorites = async (): Promise<FavoriteMutationResult> => {
+    if (!user) return { ok: false, reason: 'unauthenticated' }
     await updateFavorites([])
+    return { ok: true }
   }
 
   const value: FavoritesContextType = {

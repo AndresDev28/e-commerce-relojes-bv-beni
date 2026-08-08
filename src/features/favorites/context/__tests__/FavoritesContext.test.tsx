@@ -200,8 +200,11 @@ describe('FavoritesContext', () => {
         await captured!.addToFavorites(mockProduct)
 
       expect(result).toEqual({ ok: true })
-      expect(captured!.isFavorite('prod-1')).toBe(true)
-      expect(captured!.favorites).toContainEqual(mockProduct)
+
+      await waitFor(() => {
+        expect(captured!.isFavorite('prod-1')).toBe(true)
+        expect(captured!.favorites).toContainEqual(mockProduct)
+      })
 
       // Verify PUT was called
       const putCall = vi.mocked(global.fetch).mock.calls.find(
@@ -239,7 +242,10 @@ describe('FavoritesContext', () => {
         await captured!.removeFromFavorites('prod-1')
 
       expect(result).toEqual({ ok: true })
-      expect(captured!.isFavorite('prod-1')).toBe(false)
+
+      await waitFor(() => {
+        expect(captured!.isFavorite('prod-1')).toBe(false)
+      })
     })
 
     it('addToFavorites is a no-op for an already favorited product and returns { ok: true }', async () => {
@@ -330,7 +336,10 @@ describe('FavoritesContext', () => {
       const result: FavoriteMutationResult = await captured!.clearFavorites()
 
       expect(result).toEqual({ ok: true })
-      expect(captured!.favorites).toEqual([])
+
+      await waitFor(() => {
+        expect(captured!.favorites).toEqual([])
+      })
     })
   })
 })
