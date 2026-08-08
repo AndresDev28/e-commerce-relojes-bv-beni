@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET, PUT } from '../route'
 import { NextRequest } from 'next/server'
 import { SESSION_COOKIE } from '@/lib/auth/session'
+import { MAX_FAVORITES } from '@/features/favorites/services/getFavoritesService'
 
 vi.mock('@/lib/constants', () => ({
   API_URL: 'http://localhost:1337',
@@ -121,6 +122,40 @@ describe('GET /api/favorites', () => {
 
     expect(response.headers.get('X-Trace-Id')).toBe('trace-from-caller-get')
   })
+
+  it('[FAV-R-5] returns 502 when requireUser gets a non-ok response from /api/users/me', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/favorites')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
+    expect(response.headers.get('X-Trace-Id')).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
+  })
+
+  it('[FAV-R-6] returns 502 when requireUser fetch throws a network error', async () => {
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('network down'))
+
+    const request = new NextRequest('http://localhost:3000/api/favorites')
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
+    expect(response.headers.get('X-Trace-Id')).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
+  })
 })
 
 // --- PUT /api/favorites ---
@@ -181,6 +216,29 @@ describe('PUT /api/favorites', () => {
 
     expect(response.status).toBe(400)
     expect(data.error).toBe('La lista de favoritos no es válida.')
+  })
+
+  it('[FAV-W-7] returns 400 when favorites list exceeds MAX_FAVORITES', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 42, email: 'user@example.com' }),
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/favorites', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Array.from({ length: MAX_FAVORITES + 1 }, (_, i) => String(i))),
+    })
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
+    const response = await PUT(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe(`La lista de favoritos no puede tener más de ${MAX_FAVORITES} elementos.`)
+    expect(response.headers.get('X-Trace-Id')).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
   })
 
   it('[FAV-W-4] returns 200 with the new favorites on success', async () => {
@@ -267,5 +325,28 @@ describe('PUT /api/favorites', () => {
     const response = await PUT(request)
 
     expect(response.headers.get('X-Trace-Id')).toBe('trace-from-caller-put')
+  })
+
+  it('[FAV-W-8] returns 502 when requireUser gets a non-ok response from /api/users/me on PUT', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/favorites', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(['p-1']),
+    })
+    request.cookies.set(SESSION_COOKIE, 'valid-jwt-token')
+    const response = await PUT(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(data.error).toBe('No pudimos verificar tu sesión. Inténtalo de nuevo.')
+    expect(response.headers.get('X-Trace-Id')).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
   })
 })
