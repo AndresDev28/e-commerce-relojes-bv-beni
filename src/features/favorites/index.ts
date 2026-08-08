@@ -1,5 +1,6 @@
 export { default as FavoriteItemRow } from './components/FavoriteItemRow'
 export * from './context/FavoritesContext'
+export type { FavoriteMutationResult } from './types'
 export { useFavoritesApi } from './hooks/useFavorites'
 export {
   getFavoritesService,
