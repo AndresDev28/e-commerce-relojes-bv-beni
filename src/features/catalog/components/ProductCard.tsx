@@ -5,6 +5,8 @@ import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
 import { Product } from '@/types'
 import { useFavorites } from '@/features/favorites'
+import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAuthPrompt'
+import { FavoriteAuthPrompt } from '@/features/favorites/components/FavoriteAuthPrompt'
 import { useCart } from '@/features/cart'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
@@ -44,13 +46,13 @@ const ProductCard = (props: ProductCardProps) => {
     }
   }
 
-  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { isFavorite } = useFavorites()
+  const { showAuthPrompt, handleToggleFavorite, goToLogin } = useFavoriteAuthPrompt()
   const productId = 'product' in props ? props.product.id : undefined
   const favorite = productId ? isFavorite(productId) : false
-  const handleToggleFavorite = () => {
+  const onToggleFavorite = () => {
     if (!productId || !('product' in props)) return
-    if (favorite) removeFromFavorites(productId)
-    else addToFavorites(props.product)
+    handleToggleFavorite(props.product)
   }
 
   const handleViewDetails = () => {
@@ -90,7 +92,7 @@ const ProductCard = (props: ProductCardProps) => {
         <ProductActionIcon
           icon={Heart}
           label={favorite ? 'Quitar' : 'Favoritos'}
-          onClick={handleToggleFavorite}
+          onClick={onToggleFavorite}
         />
         <div className="border-r h-8 border-neutral-light"></div>
         <ProductActionIcon
@@ -106,6 +108,13 @@ const ProductCard = (props: ProductCardProps) => {
           onClick={handleViewDetails}
         />
       </div>
+
+      {/* Auth prompt for anonymous favorites */}
+      {showAuthPrompt && (
+        <div className="px-4 pb-3 pt-1">
+          <FavoriteAuthPrompt onLogin={goToLogin} />
+        </div>
+      )}
     </div>
   )
 }

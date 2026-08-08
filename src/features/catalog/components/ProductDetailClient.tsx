@@ -7,6 +7,8 @@ import Button from '@/components/ui/Button'
 import { CheckSquare, XCircle } from 'lucide-react'
 import { useCart } from '@/features/cart'
 import { useFavorites } from '@/features/favorites'
+import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAuthPrompt'
+import { FavoriteAuthPrompt } from '@/features/favorites/components/FavoriteAuthPrompt'
 import { Heart } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
@@ -40,7 +42,8 @@ export default function ProductDetailClient({
   const [quantity, setQuantity] = useState(1)
   const isOutOfStock = product.stock === 0
   const { addToCart } = useCart()
-  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { isFavorite } = useFavorites()
+  const { showAuthPrompt, handleToggleFavorite, goToLogin } = useFavoriteAuthPrompt()
   const favorite = isFavorite(product.id)
 
   const handleIncrement = () => {
@@ -61,11 +64,7 @@ export default function ProductDetailClient({
   }
 
   const toggleFavorite = () => {
-    if (favorite) {
-      removeFromFavorites(product.id)
-    } else {
-      addToFavorites(product)
-    }
+    handleToggleFavorite(product)
   }
 
   return (
@@ -215,6 +214,7 @@ export default function ProductDetailClient({
               >
                 <Heart className={favorite ? 'fill-current' : ''} />
               </button>
+              {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
             </div>
           </div>
         </div>
