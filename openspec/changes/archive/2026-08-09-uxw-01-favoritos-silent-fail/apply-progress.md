@@ -120,3 +120,12 @@ Pre-existing failures (NOT caused by this change):
 ## Current HEAD
 
 `861640a` on branch `frontend/UXW-01-favoritos-silent-fail`
+
+## Continuation Batch 4 (2026-08-09): out-of-scope defensive coding fix
+
+- **Trigger**: QA tester discovered TC-05 (/favoritos page) crashes when a favorited product's Strapi payload omits the `images` field.
+- **Scope**: 3 components (FavoriteItemRow, OrderDetail, ProductCard) + 1 type (`Product.images` relaxed to optional) + CartItemRow bonus fix + 2 new RED tests (FavoriteItemRow, OrderDetail).
+- **Commit**: `20e83c6 fix(favorites): defend against undefined product.images across 3 components`
+- **Status**: pre-existing bug, NOT introduced by UXW-01 (UXW-01 didn't touch any of these files). Filed as scope-creep because shipping UXW-01 with the favorites page still crashing would have been irresponsible.
+- **Tests after fix**: 100/100 favorites+orders tests pass (was 99/99 before batch 4). tsc clean. Zero new regressions.
+- **Known debt remaining**: CartItemRow and ProductCard have no test suites for the undefined-images defensive path. Follow-up ticket recommended.
