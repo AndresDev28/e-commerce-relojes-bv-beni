@@ -106,6 +106,17 @@ Pre-existing failures (NOT caused by this change):
 
 **All 17 tasks complete (17/17). Ready for sdd-verify.**
 
+## Continuation Batch 2 (2026-08-08): test-quality fix
+
+- **Trigger**: sdd-verify FAIL on CRITICAL — empty `it()` block in `useFavoriteAuthPrompt.test.ts:118-143`
+- **Scope**: test-only, 1 file, 11 insertions / 10 deletions
+- **Fix**: Changed `mockPathname` from `const` to `let` so the mock closure can be reassigned per-test, added `renderHook` + `act` + `expect(mockPush).toHaveBeenCalledWith('/login?redirect=%2Ftienda%2Freloj-elegante')` to the previously-empty test block
+- **Commit 6** (new sha): `861640a` — `test(favorites): rewrite empty detail-path redirect test with real assertions`
+- **Tests after fix**: same 43/43 pass, but the detail-path redirect test now ACTUALLY asserts (was a false green before)
+- **Typecheck**: still exit 0
+- **Spec R2 status**: PARTIAL → COMPLIANT
+- **Ready for**: sdd-verify re-run
+
 ## Current HEAD
 
-`03acb40` on branch `frontend/UXW-01-favoritos-silent-fail`
+`861640a` on branch `frontend/UXW-01-favoritos-silent-fail`
