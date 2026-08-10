@@ -216,8 +216,14 @@ export default function ProductDetailClient({
               </button>
               {/* Auth prompt for anonymous favorites.
                   The aria-live region stays mounted even when the prompt is
-                  hidden so the screen reader can detect the change. */}
-              <div role="status" aria-live="polite">
+                  hidden so the screen reader can detect the change.
+                  aria-label ensures the empty region appears in Chrome's
+                  accessibility tree. */}
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label="Notificaciones de favoritos"
+              >
                 {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
               </div>
             </div>

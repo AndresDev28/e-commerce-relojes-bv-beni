@@ -112,8 +112,15 @@ const ProductCard = (props: ProductCardProps) => {
 
       {/* Auth prompt for anonymous favorites.
           The aria-live region stays mounted even when the prompt is hidden
-          so screen readers can detect the content change when it appears. */}
-      <div role="status" aria-live="polite" className="px-4 pb-3 pt-1">
+          so screen readers can detect the content change when it appears.
+          aria-label ensures the empty region appears in Chrome's accessibility
+          tree (Chrome filters empty role="status" elements without a name). */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Notificaciones de favoritos"
+        className="px-4 pb-3 pt-1"
+      >
         {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
       </div>
     </div>
