@@ -167,3 +167,20 @@ QA verification of the aria-live region was blocked by an Orca setup issue. Adde
 - **Test**: NEW `tests/e2e/favorites-anonymous-access.spec.ts` with 2 tests (anon sees empty state, anon clicks CTA → /tienda).
 - **Verification**: 2/2 new E2E tests pass, 6/6 total favorites E2E tests pass, 254/254 features tests pass, tsc clean.
 - **Lesson**: when a layout wraps with auth-protection, check if the page itself already handles the anonymous case. Avoid double-gating.
+
+### Batch 8 (2026-08-09): TC-14 fix — error feedback on API failure
+
+- **Trigger**: QA tester reported TC-14 fails — clicking the heart when Strapi is down shows no error message ("no hace nada, no rompe nada pero no aparece ningún error").
+- **Root cause**: `useFavoritesApi` set `error: string | null` on failure and `FavoritesContext` exposed it, but `ProductCard` and `ProductDetailClient` only destructured `isFavorite` from the context. The error was captured but never rendered.
+- **Fix**: 
+  - Added `clearError()` to `useFavoritesApi` hook
+  - Exposed `clearError` in `FavoritesContext`
+  - `ProductCard` + `ProductDetailClient` now render `<ErrorMessage variant="error" onDismiss={clearError}>` when `favoritesError` is set
+  - ErrorMessage uses `role="alert"` + `aria-live="assertive"` (correct semantic for failures, opposite of the auth prompt's polite status)
+  - Error auto-clears on next successful mutation (setError(null) at start of updateFavorites)
+- **Test**: NEW `tests/e2e/favorites-error-feedback.spec.ts` with 2 tests:
+  - Authenticated user taps heart when PUT fails → ErrorMessage appears with correct text + role
+  - User clicks heart again → error clears
+  - ErrorMessage has a dismiss button that closes the error
+- **Verification**: 8/8 favorites E2E tests pass (4 TC-07 + 2 TC-11 + 2 TC-14), 254/254 features tests pass, tsc clean, 0 regressions.
+- **Lesson**: when you add error state to a context, every consumer must explicitly destructure and render it. Silent error swallowing is a common UX dead-end.
