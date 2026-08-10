@@ -28,8 +28,8 @@ const ProductCard = (props: ProductCardProps) => {
   const name = 'product' in props ? props.product.name : props.name
   const price = 'product' in props ? props.product.price : props.price
 
-  // Usa la primera imagen disponible; admite string o array
-  const mainImageUrl = Array.isArray(rawImages) ? rawImages[0] : rawImages
+  // Usa la primera imagen disponible; admite string, array, o undefined (Strapi a veces omite el campo)
+  const mainImageUrl = (Array.isArray(rawImages) ? rawImages[0] : rawImages) ?? '/images/placeholder.png'
 
   const { addToCart } = useCart()
   const isOutOfStock = 'product' in props ? props.product.stock === 0 : false
@@ -93,6 +93,7 @@ const ProductCard = (props: ProductCardProps) => {
           icon={Heart}
           label={favorite ? 'Quitar' : 'Favoritos'}
           onClick={onToggleFavorite}
+          filled={favorite}
         />
         <div className="border-r h-8 border-neutral-light"></div>
         <ProductActionIcon
