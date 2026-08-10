@@ -154,3 +154,7 @@ Pre-existing failures (NOT caused by this change):
 ### Batch 6 follow-up: aria-label added for Chrome accessibility tree visibility
 
 QA tester confirmed TC-07 still fails -- the wrapper is in the DOM (verified via code) but Chrome's accessibility tree filters empty `role="status"` elements without an accessible name. Added `aria-label="Notificaciones de favoritos"` to both wrappers (ProductCard + ProductDetailClient) so the empty region appears in the tree AND screen readers can identify it by name. Sub-commit on top of batch 6.
+
+### Batch 6 follow-up #2: Playwright E2E regression for TC-07
+
+QA verification of the aria-live region was blocked by an Orca setup issue. Added a Playwright E2E suite (`tests/e2e/favorites-auth-prompt-a11y.spec.ts`) that asserts the integration directly: the wrapper is in the DOM before tapping, has the correct attributes, gets populated after tapping, and the prompt is local to the tapped card. 4/4 tests pass on chromium. This is more reliable than manual SR testing and gives the team a CI-ready check.
