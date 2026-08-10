@@ -158,3 +158,12 @@ QA tester confirmed TC-07 still fails -- the wrapper is in the DOM (verified via
 ### Batch 6 follow-up #2: Playwright E2E regression for TC-07
 
 QA verification of the aria-live region was blocked by an Orca setup issue. Added a Playwright E2E suite (`tests/e2e/favorites-auth-prompt-a11y.spec.ts`) that asserts the integration directly: the wrapper is in the DOM before tapping, has the correct attributes, gets populated after tapping, and the prompt is local to the tapped card. 4/4 tests pass on chromium. This is more reliable than manual SR testing and gives the team a CI-ready check.
+
+### Batch 7 (2026-08-09): TC-11 fix — anonymous user access to /favoritos
+
+- **Trigger**: QA tester reported TC-11 fails — anonymous user navigating directly to /favoritos sees loading + redirect to home. Expected: empty state with "Aún no tienes favoritos" instead.
+- **Root cause**: `src/app/favoritos/layout.tsx` wrapped the page with `<ProtectedRoute>` which redirects anonymous users to '/'. The page itself already handles the anonymous case gracefully (empty state branch). The wrapper was redundant.
+- **Fix**: deleted `src/app/favoritos/layout.tsx`. The page handles anonymous state via its own empty-state branch.
+- **Test**: NEW `tests/e2e/favorites-anonymous-access.spec.ts` with 2 tests (anon sees empty state, anon clicks CTA → /tienda).
+- **Verification**: 2/2 new E2E tests pass, 6/6 total favorites E2E tests pass, 254/254 features tests pass, tsc clean.
+- **Lesson**: when a layout wraps with auth-protection, check if the page itself already handles the anonymous case. Avoid double-gating.
