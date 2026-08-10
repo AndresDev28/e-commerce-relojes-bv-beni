@@ -150,3 +150,7 @@ Pre-existing failures (NOT caused by this change):
 - **Tests after fix**: 254/254 features tests pass. tsc clean. 0 regressions.
 - **Lesson**: `aria-live` regions must be persistent in the DOM for screen readers to detect content changes. Conditional rendering of the entire live region breaks SR announcement — a subtle UX bug that escapes unit tests.
 - **To verify**: QA needs to re-test TC-07 with VoiceOver/NVDA to confirm the announcement works.
+
+### Batch 6 follow-up: aria-label added for Chrome accessibility tree visibility
+
+QA tester confirmed TC-07 still fails -- the wrapper is in the DOM (verified via code) but Chrome's accessibility tree filters empty `role="status"` elements without an accessible name. Added `aria-label="Notificaciones de favoritos"` to both wrappers (ProductCard + ProductDetailClient) so the empty region appears in the tree AND screen readers can identify it by name. Sub-commit on top of batch 6.
