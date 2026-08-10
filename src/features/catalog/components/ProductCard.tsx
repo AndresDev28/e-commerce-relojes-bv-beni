@@ -110,12 +110,12 @@ const ProductCard = (props: ProductCardProps) => {
         />
       </div>
 
-      {/* Auth prompt for anonymous favorites */}
-      {showAuthPrompt && (
-        <div className="px-4 pb-3 pt-1">
-          <FavoriteAuthPrompt onLogin={goToLogin} />
-        </div>
-      )}
+      {/* Auth prompt for anonymous favorites.
+          The aria-live region stays mounted even when the prompt is hidden
+          so screen readers can detect the content change when it appears. */}
+      <div role="status" aria-live="polite" className="px-4 pb-3 pt-1">
+        {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
+      </div>
     </div>
   )
 }

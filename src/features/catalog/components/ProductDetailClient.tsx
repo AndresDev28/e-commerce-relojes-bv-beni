@@ -214,7 +214,12 @@ export default function ProductDetailClient({
               >
                 <Heart className={favorite ? 'fill-current' : ''} />
               </button>
-              {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
+              {/* Auth prompt for anonymous favorites.
+                  The aria-live region stays mounted even when the prompt is
+                  hidden so the screen reader can detect the change. */}
+              <div role="status" aria-live="polite">
+                {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
+              </div>
             </div>
           </div>
         </div>

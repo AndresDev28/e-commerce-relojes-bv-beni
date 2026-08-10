@@ -8,12 +8,14 @@ describe('FavoriteAuthPrompt', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders with role="status" and aria-live="polite"', () => {
+  it('does NOT carry its own role/aria-live attributes (parent owns the live region)', () => {
+    // Contract: the aria-live region must ALWAYS be in the DOM for screen readers
+    // to detect content changes. The component itself is just the visible content;
+    // the parent (ProductCard/ProductDetailClient) wraps it in a role="status"
+    // element that stays mounted even when the prompt is hidden.
     render(<FavoriteAuthPrompt onLogin={vi.fn()} />)
 
-    const status = screen.getByRole('status')
-    expect(status).toBeInTheDocument()
-    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('displays the prompt message "Iniciá sesión para guardar favoritos"', () => {
