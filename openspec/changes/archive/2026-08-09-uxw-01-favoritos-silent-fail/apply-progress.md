@@ -129,3 +129,13 @@ Pre-existing failures (NOT caused by this change):
 - **Status**: pre-existing bug, NOT introduced by UXW-01 (UXW-01 didn't touch any of these files). Filed as scope-creep because shipping UXW-01 with the favorites page still crashing would have been irresponsible.
 - **Tests after fix**: 100/100 favorites+orders tests pass (was 99/99 before batch 4). tsc clean. Zero new regressions.
 - **Known debt remaining**: CartItemRow and ProductCard have no test suites for the undefined-images defensive path. Follow-up ticket recommended.
+
+## Continuation Batch 5 (2026-08-09): TC-03 visual fix (ProductCard heart fill)
+
+- **Trigger**: QA tester reported TC-03 fails — heart icon on /tienda grid never fills in when authenticated user toggles favorite. The label changes correctly; the icon does not.
+- **Root cause**: `ProductActionIcon` did not accept a `filled` prop. The icon always rendered as outline Heart regardless of state. Pre-existing bug (ProductDetailClient handled it correctly with `fill-current`).
+- **Scope**: 1 component extended (`ProductActionIcon` + `filled` prop), 1 component wired (`ProductCard` passes `filled={favorite}`), 1 new test suite (8 tests for `ProductActionIcon`).
+- **Commit**: `15581e8 fix(catalog): fill ProductCard heart icon when favorite is active`
+- **Tests after fix**: 254/254 features tests pass (added 8 new ProductActionIcon tests). Full suite: 904/925 (same 21 pre-existing out-of-scope failures; 0 new regressions).
+- **Strict TDD**: RED test for `filled` prop first (2 failed), then fix (8 passed).
+- **Lesson**: when a component delegates icon rendering to a wrapper, the wrapper must accept the visual state contract. Missing prop = silent visual regression.
