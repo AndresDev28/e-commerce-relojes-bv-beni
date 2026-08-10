@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.1...relojes-bv-beni-v1.4.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* **favorites:** surface inline feedback + login redirect for anonymous users ([#98](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/98)) ([b7a3568](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/b7a35682cd9fc8bb6f06b3aeb3489fabb88ac5f8))
+
 ## [1.4.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.0...relojes-bv-beni-v1.4.1) (2026-08-04)
 
 
