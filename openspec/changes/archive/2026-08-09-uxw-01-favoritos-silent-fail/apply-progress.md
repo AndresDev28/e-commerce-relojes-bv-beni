@@ -139,3 +139,14 @@ Pre-existing failures (NOT caused by this change):
 - **Tests after fix**: 254/254 features tests pass (added 8 new ProductActionIcon tests). Full suite: 904/925 (same 21 pre-existing out-of-scope failures; 0 new regressions).
 - **Strict TDD**: RED test for `filled` prop first (2 failed), then fix (8 passed).
 - **Lesson**: when a component delegates icon rendering to a wrapper, the wrapper must accept the visual state contract. Missing prop = silent visual regression.
+
+## Continuation Batch 6 (2026-08-09): TC-07 a11y fix (aria-live region permanence)
+
+- **Trigger**: QA tester reported TC-07 fails — Chrome accessibility tools show "No Aria Attributes" on the prompt, screen reader doesn't announce it.
+- **Root cause**: `aria-live="polite"` requires the live region to be in the DOM BEFORE its content changes. The original pattern was `{showAuthPrompt && <FavoriteAuthPrompt ... />}` which created the role="status" element only when the prompt was visible. Screen readers couldn't detect the change because the element itself was brand new.
+- **Fix**: move `role="status"` + `aria-live="polite"` to a wrapper that is ALWAYS mounted. Only the inner content is conditional. The screen reader now tracks the live region from the start.
+- **Scope**: 1 component simplified (FavoriteAuthPrompt no longer carries aria attributes), 2 components wrapped (ProductCard, ProductDetailClient), 1 test updated (FavoriteAuthPrompt contract).
+- **Commit**: `80348d0 fix(catalog): mount aria-live region permanently so screen readers detect the prompt`
+- **Tests after fix**: 254/254 features tests pass. tsc clean. 0 regressions.
+- **Lesson**: `aria-live` regions must be persistent in the DOM for screen readers to detect content changes. Conditional rendering of the entire live region breaks SR announcement — a subtle UX bug that escapes unit tests.
+- **To verify**: QA needs to re-test TC-07 with VoiceOver/NVDA to confirm the announcement works.
