@@ -11,7 +11,7 @@ export interface Product {
   id: string // O number, pero string (UUID) es más robusto
   name: string
   price: number // Corregido el typo
-  images: string[]
+  images?: string[] // Strapi sometimes omits the field; components must defend
   href: string // La URL de la imagen principal
   description: string
   category?: string

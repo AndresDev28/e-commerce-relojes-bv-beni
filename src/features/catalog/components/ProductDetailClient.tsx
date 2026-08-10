@@ -7,11 +7,14 @@ import Button from '@/components/ui/Button'
 import { CheckSquare, XCircle } from 'lucide-react'
 import { useCart } from '@/features/cart'
 import { useFavorites } from '@/features/favorites'
+import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAuthPrompt'
+import { FavoriteAuthPrompt } from '@/features/favorites/components/FavoriteAuthPrompt'
 import { Heart } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
 import type { Breadcrumb } from '@/types/breadcrumb'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 
 // interface Product {
 //   id: string
@@ -40,7 +43,8 @@ export default function ProductDetailClient({
   const [quantity, setQuantity] = useState(1)
   const isOutOfStock = product.stock === 0
   const { addToCart } = useCart()
-  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { isFavorite, error: favoritesError, clearError } = useFavorites()
+  const { showAuthPrompt, handleToggleFavorite, goToLogin } = useFavoriteAuthPrompt()
   const favorite = isFavorite(product.id)
 
   const handleIncrement = () => {
@@ -61,11 +65,7 @@ export default function ProductDetailClient({
   }
 
   const toggleFavorite = () => {
-    if (favorite) {
-      removeFromFavorites(product.id)
-    } else {
-      addToFavorites(product)
-    }
+    handleToggleFavorite(product)
   }
 
   return (
@@ -215,6 +215,30 @@ export default function ProductDetailClient({
               >
                 <Heart className={favorite ? 'fill-current' : ''} />
               </button>
+              {/* Auth prompt for anonymous favorites.
+                  The aria-live region stays mounted even when the prompt is
+                  hidden so the screen reader can detect the change.
+                  aria-label ensures the empty region appears in Chrome's
+                  accessibility tree. */}
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label="Notificaciones de favoritos"
+              >
+                {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
+              </div>
+
+              {/* Error feedback when the favorites API fails (e.g., Strapi down).
+                  ErrorMessage uses role="alert" + aria-live="assertive" which is
+                  the correct semantic for an error. The next successful mutation
+                  OR the dismiss button clears the error. */}
+              {favoritesError && (
+                <ErrorMessage
+                  message={favoritesError}
+                  variant="error"
+                  onDismiss={clearError}
+                />
+              )}
             </div>
           </div>
         </div>

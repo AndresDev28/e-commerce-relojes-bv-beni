@@ -5,7 +5,10 @@ import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
 import { Product } from '@/types'
 import { useFavorites } from '@/features/favorites'
+import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAuthPrompt'
+import { FavoriteAuthPrompt } from '@/features/favorites/components/FavoriteAuthPrompt'
 import { useCart } from '@/features/cart'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
 type ProductCardProps =
@@ -26,8 +29,8 @@ const ProductCard = (props: ProductCardProps) => {
   const name = 'product' in props ? props.product.name : props.name
   const price = 'product' in props ? props.product.price : props.price
 
-  // Usa la primera imagen disponible; admite string o array
-  const mainImageUrl = Array.isArray(rawImages) ? rawImages[0] : rawImages
+  // Usa la primera imagen disponible; admite string, array, o undefined (Strapi a veces omite el campo)
+  const mainImageUrl = (Array.isArray(rawImages) ? rawImages[0] : rawImages) ?? '/images/placeholder.png'
 
   const { addToCart } = useCart()
   const isOutOfStock = 'product' in props ? props.product.stock === 0 : false
@@ -44,13 +47,13 @@ const ProductCard = (props: ProductCardProps) => {
     }
   }
 
-  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { isFavorite, error: favoritesError, clearError } = useFavorites()
+  const { showAuthPrompt, handleToggleFavorite, goToLogin } = useFavoriteAuthPrompt()
   const productId = 'product' in props ? props.product.id : undefined
   const favorite = productId ? isFavorite(productId) : false
-  const handleToggleFavorite = () => {
+  const onToggleFavorite = () => {
     if (!productId || !('product' in props)) return
-    if (favorite) removeFromFavorites(productId)
-    else addToFavorites(props.product)
+    handleToggleFavorite(props.product)
   }
 
   const handleViewDetails = () => {
@@ -90,7 +93,8 @@ const ProductCard = (props: ProductCardProps) => {
         <ProductActionIcon
           icon={Heart}
           label={favorite ? 'Quitar' : 'Favoritos'}
-          onClick={handleToggleFavorite}
+          onClick={onToggleFavorite}
+          filled={favorite}
         />
         <div className="border-r h-8 border-neutral-light"></div>
         <ProductActionIcon
@@ -106,6 +110,34 @@ const ProductCard = (props: ProductCardProps) => {
           onClick={handleViewDetails}
         />
       </div>
+
+      {/* Auth prompt for anonymous favorites.
+          The aria-live region stays mounted even when the prompt is hidden
+          so screen readers can detect the content change when it appears.
+          aria-label ensures the empty region appears in Chrome's accessibility
+          tree (Chrome filters empty role="status" elements without a name). */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Notificaciones de favoritos"
+        className="px-4 pb-3 pt-1"
+      >
+        {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
+      </div>
+
+      {/* Error feedback when the favorites API fails (e.g., Strapi down).
+          ErrorMessage uses role="alert" + aria-live="assertive" which is the
+          correct semantic for an error (not a status update). The next
+          successful mutation OR the dismiss button clears the error. */}
+      {favoritesError && (
+        <div className="px-4 pb-3">
+          <ErrorMessage
+            message={favoritesError}
+            variant="error"
+            onDismiss={clearError}
+          />
+        </div>
+      )}
     </div>
   )
 }
