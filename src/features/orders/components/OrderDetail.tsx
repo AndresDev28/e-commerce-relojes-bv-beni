@@ -290,7 +290,7 @@ export default function OrderDetail({ order }: OrderDetailProps) {
                 {/* Product image */}
                 <div className="flex-shrink-0 w-20 h-20 relative bg-white rounded-md overflow-hidden">
                   <Image
-                    src={item.images[0] || '/placeholder-watch.jpg'}
+                    src={item.images?.[0] || '/placeholder-watch.jpg'}
                     alt={item.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform"

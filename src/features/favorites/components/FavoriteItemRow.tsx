@@ -30,7 +30,7 @@ const FavoriteItemRow = ({ product }: FavoriteItemProps) => {
         {/* Imagen del Producto */}
         <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden bg-neutral-light">
           <Image
-            src={product.images[0] || '/images/placeholder.png'}
+            src={product.images?.[0] || '/images/placeholder.png'}
             alt={product.name}
             fill
             sizes="96px"

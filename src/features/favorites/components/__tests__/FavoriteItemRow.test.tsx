@@ -101,4 +101,25 @@ describe('FavoriteItemRow', () => {
     const removeButton = screen.getByTitle('Eliminar de favoritos')
     expect(removeButton).toBeInTheDocument()
   })
+
+  it('renders without crashing when product.images is undefined', () => {
+    // The Product type currently declares images: string[] but Strapi payloads
+    // sometimes omit the field. The component must defend against this so the
+    // /favoritos page does not blow up the whole list render.
+    const productWithoutImages = {
+      ...mockProduct,
+      images: undefined,
+    } as unknown as Product
+
+    expect(() =>
+      render(<FavoriteItemRow product={productWithoutImages} />)
+    ).not.toThrow()
+
+    // Product info still renders
+    expect(screen.getByText('Test Watch')).toBeInTheDocument()
+
+    // The image src falls back to the placeholder so the row is still useful
+    const img = screen.getByAltText('Test Watch')
+    expect(img).toHaveAttribute('src', '/images/placeholder.png')
+  })
 })

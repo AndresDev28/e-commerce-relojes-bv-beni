@@ -1,18 +1,187 @@
 ```yaml
 schema: gentle-ai.verify-result/v1
-evidence_revision: sha256:76616257256a3be9ec7e66f2fa2067d5b255fe99fd7b356a84c3c52607f14090
-verdict: pass_with_warnings
+evidence_revision: sha256:7865f8eb71052abb6f87caf93dee381889e2bcee28742aaff9bd79980a3c34e8
+verdict: pass
 blockers: 0
 critical_findings: 0
 requirements: 6/6
 scenarios: 10/10
 test_command: npx vitest run src/features/favorites --maxWorkers=2
 test_exit_code: 0
-test_output_hash: sha256:db876af136512806608e2ab2c2694a009ec701917f18c1a04c26e38de4304d6b
+test_output_hash: sha256:4a2f14077c1adc9b41a307f88bb339f0c9e0816471a33b23850f24be092705c1
 build_command: npx tsc --noEmit
 build_exit_code: 0
 build_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
+
+## Verification Report — v3 (FINAL — re-verify after barrel fix)
+
+**Change**: uxw-01-favoritos-silent-fail
+**Spec**: favorites spec v1 (`openspec/specs/favorites/spec.md`) — 6 requirements, 10 scenarios
+**Mode**: Strict TDD + Hybrid (OpenSpec file + Engram)
+**Branch**: `frontend/UXW-01-favoritos-silent-fail` · **HEAD**: `1e9880d` (9 commits — barrel + SDD docs added)
+**Re-verify trigger**: v2 returned **PASS WITH WARNINGS** on 1 WARNING — barrel `index.ts` did not export `useFavoriteAuthPrompt` / `FavoriteAuthPrompt` per design File Changes table. Commit `3ef6db3` added the two named re-exports; commit `1e9880d` added the SDD artifact trail.
+
+### v2 → v3 delta (why we re-ran)
+
+The fix commit `3ef6db3` (`feat(favorites): export useFavoriteAuthPrompt and FavoriteAuthPrompt from barrel`) is **production-only** — 1 file, +2 / -0. No test code changed, no behavior changed (consumers still import via deep paths today). The barrel now re-exports both the hook and the component using **named** exports, matching the named `export function FavoriteAuthPrompt` / `export function useFavoriteAuthPrompt` declarations in the source files (the prior v2 audit note that a `export { default as ... }` shape would have been wrong is confirmed — neither file has a default export).
+
+```text
+diff --git a/src/features/favorites/index.ts b/src/features/favorites/index.ts
++export { FavoriteAuthPrompt } from './components/FavoriteAuthPrompt'
++export { useFavoriteAuthPrompt } from './hooks/useFavoriteAuthPrompt'
+```
+
+### Build & Tests Execution (re-run on `1e9880d`)
+
+**Build (`npx tsc --noEmit`)**: ✅ Passed — exit 0, no output.
+```text
+$ npx tsc --noEmit
+TSC_EXIT=0
+build_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+```
+
+**Envelope test evidence — change-scope verify command** (declared in `tasks.md` work unit + `apply-progress`; exit attributable to THIS change): ✅ 43 passed / 0 failed / 0 skipped — exit 0.
+```text
+$ npx vitest run src/features/favorites --maxWorkers=2
+ Test Files  7 passed (7)
+      Tests  43 passed (43)
+ Duration  2.11s
+FOCUSED_EXIT:0
+focused_hash: sha256:4a2f14077c1adc9b41a307f88bb339f0c9e0816471a33b23850f24be092705c1
+```
+This is the command captured in the strict result envelope above (`test_command` / `test_exit_code` / `test_output_hash`).
+
+**Supplementary — full suite** (additional context; NOT the envelope command — 21 failures are pre-existing, outside the change diff, identical failure set to v1/v2): ⚠️ exit 1 — 21 failed / 885 passed / 9 skipped.
+```text
+$ npx vitest run --maxWorkers=2
+ Test Files  3 failed | 70 passed (73)
+      Tests  21 failed | 885 passed | 9 skipped (915)
+FULL_EXIT:1
+```
+The 21 failures are **pre-existing and out of scope** (none in the change diff; byte-identical set to v1/v2):
+- `src/__tests__/context/CartContext.test.tsx` (17) — jsdom `localStorage.clear is not a function`
+- `src/components/ui/__tests__/CookieBanner.test.tsx` (4) — jsdom `window.localStorage.clear is not a function`
+- `test/integration/email/order-status-change.integration.test.ts` — Strapi backend unreachable in CI
+
+**Backend contract (R5)**: existing `src/app/api/favorites/__tests__/route.test.ts` → 14/14 passed (unchanged; not in diff).
+**Coverage**: ➖ Not available — no coverage tool run (config `coverage_threshold: 0`; informational only).
+
+### Barrel Fix Verification (Step 3)
+
+`src/features/favorites/index.ts` (17 lines, HEAD `1e9880d`):
+```ts
+2: export { FavoriteAuthPrompt } from './components/FavoriteAuthPrompt'   // ✅ named, matches `export function FavoriteAuthPrompt`
+4: export { useFavoriteAuthPrompt } from './hooks/useFavoriteAuthPrompt'   // ✅ named, matches `export function useFavoriteAuthPrompt`
+5: export type { FavoriteMutationResult } from './types'                   // ✅ result type (already present)
+```
+- `FavoriteAuthPrompt.tsx:7` declares `export function FavoriteAuthPrompt` (named, **no default export**) → named re-export is the correct shape.
+- `useFavoriteAuthPrompt.ts:9` declares `export function useFavoriteAuthPrompt` (named, **no default export**) → named re-export is the correct shape.
+- A `export { default as ... }` re-export (mooted in v2 as a wrong attempt) would have failed to resolve — confirmed not used.
+
+**D7 (NEW): Barrel exports match design File Changes table** — design.md L53 specifies `index.ts` Modify → "Export prompt hook/component + result type". Barrel now exports all three → **COMPLIANT**.
+
+### Spec Compliance Matrix (re-confirmed — barrel fix touches no spec scenario)
+
+Spec source: `openspec/specs/favorites/spec.md` — **6 requirements, 10 scenarios** (validator-authoritative count).
+
+| Requirement | Scenario | Covering test(s) | Result |
+|-------------|----------|------------------|--------|
+| R1 Anonymous feedback | Heart tap on grid | `FavoritesContext.test.tsx` anon add `{ok:false}` + no-fetch; `useFavoriteAuthPrompt.test.ts` showAuthPrompt=true; `FavoriteAuthPrompt.test.tsx` role=status / aria-live=polite / CTA | ✅ COMPLIANT |
+| R1 Anonymous feedback | Heart tap on detail page | `FavoriteAuthPrompt.test.tsx` a11y (unit) + manual smoke 5.3 (page wiring) | ✅ COMPLIANT |
+| R2 Login redirect preserves origin | Sign-in from grid vs detail | `useFavoriteAuthPrompt.test.ts:95` → `/login?redirect=%2Ftienda` (grid) **AND** `:119-143` → `/login?redirect=%2Ftienda%2Freloj-elegante` (detail) — both renderHook + act + goToLogin | ✅ COMPLIANT |
+| R3 Authed mutation persists | Authed user adds a product | `FavoritesContext.test.tsx` authed add `{ok:true}` + PUT sent + `isFavorite('prod-1')===true` + containsEqual(mockProduct) | ✅ COMPLIANT |
+| R3 Authed mutation persists | Authed user removes a favorited product | `FavoritesContext.test.tsx` authed remove `{ok:true}` + PUT sent + `isFavorite('prod-1')===false` | ✅ COMPLIANT |
+| R3 Authed mutation persists | Re-tap is a no-op | `FavoritesContext.test.tsx` authed no-op-add `{ok:true}` + `fetch` not called | ✅ COMPLIANT |
+| R4 isFavorite anon contract | Anonymous and empty-list authed reads | `FavoritesContext.test.tsx` isFavorite→false (2 ids) + favorites===[] (companion non-empty asserts in authed suite) | ✅ COMPLIANT |
+| R5 Server authorization | Unauthenticated PUT (401) | `route.test.ts` (existing, unchanged) 14/14 | ✅ COMPLIANT |
+| R5 Server authorization | Authenticated PUT (200) | `route.test.ts` (existing, unchanged) 14/14 | ✅ COMPLIANT |
+| R6 Test coverage for favorites | Context, hook, and row tests cover both states | `FavoritesContext.test.tsx` (10) + `useFavorites.test.tsx` (3) + `FavoriteItemRow.test.tsx` (6) all pass; anon asserts visible `{ok:false, reason:'unauthenticated'}` | ✅ COMPLIANT |
+
+**Compliance summary**: **10/10 scenarios COMPLIANT, 0 PARTIAL, 0 UNTESTED, 0 FAILING. 6/6 requirements fully satisfied.** Unchanged from v2 (barrel fix is production DX-only, touches no scenario).
+
+### Coherence (Design) — D1-D6 unchanged + D7 NEW (barrel)
+
+Barrel fix touched 0 logic files (single barrel `+2`); D1-D6 hold verbatim from v2. D7 added to formally close the v2 barrel WARNING.
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| D1 Discriminated union `FavoriteMutationResult` | ✅ Yes | `types.ts` defines `{ok:true} \| {ok:false;reason:'unauthenticated'}`; all 3 mutations return it. Unchanged. |
+| D2 Inline status `role="status"`/`aria-live="polite"`, NOT `role="alert"` | ✅ Yes | `FavoriteAuthPrompt.tsx:9` uses `<span role="status" aria-live="polite">`; `ErrorMessage` not reused. Unchanged. |
+| D3 `usePathname()` + `encodeURIComponent` in feature hook | ✅ Yes | `useFavoriteAuthPrompt.ts` uses `usePathname()` + `router.push('/login?redirect='+encodeURIComponent(pathname))`. **Now also re-exported from barrel.** Unchanged logic. |
+| D4 Clear-on-auth in hook via `useEffect` watching `user` | ✅ Yes | `useFavoriteAuthPrompt.ts` `useEffect` sets `showAuthPrompt(false)` when `user` truthy; verified by `useFavoriteAuthPrompt.test.ts:146`. Unchanged. |
+| D5 RED-first tests with AuthProbe + `renderHook` | ✅ Yes | `FavoritesContext.test.tsx` uses `AuthProbe`; `useFavoriteAuthPrompt.test.ts` + `useFavorites.test.tsx` use `renderHook`. Unchanged (no test edits this batch). |
+| D6 No backend changes | ✅ Yes | Diff contains no `/api/favorites/route.ts`, no services, no backend edits; `route.test.ts` unchanged and green. |
+| **D7 (NEW) Barrel exports match design File Changes table** | ✅ Yes | `index.ts:53` design → "Export prompt hook/component + result type". Barrel now re-exports `FavoriteAuthPrompt` (component) + `useFavoriteAuthPrompt` (hook) + `FavoriteMutationResult` (type), all named. **v2 WARNING RESOLVED.** |
+
+**Design coherence**: **7/7** decisions followed (was 6/6 + 1 barrel deviation in v2; the deviation is now closed).
+
+### TDD Compliance (re-confirmed)
+
+| Check | Result | Details |
+|-------|--------|---------|
+| TDD Evidence reported | ✅ | "TDD Cycle Evidence" table present in apply-progress (17 rows) + Batch 2 + Batch 3 annotations. |
+| All tasks have tests | ✅ | 5 impl/scaffold tasks legitimately N/A; 7 test rows all REAL (R2 detail-path empty stub resolved in batch 2). |
+| RED confirmed (tests exist) | ✅ | All 5 test files exist in the codebase. |
+| GREEN confirmed (tests pass) | ✅ | 43/43 favorites tests pass at runtime on `1e9880d`. |
+| Triangulation adequate | ✅ | `useFavoriteAuthPrompt.test.ts` has 7 real cases; grid + detail path branches both asserted. |
+| Safety Net for modified files | ✅ | `index.ts` (the only file touched in batch 3) is a barrel — full favorites suite (= the import path tests exercise) ran green as safety net. |
+
+**TDD Compliance**: **6/6** checks passed (carried over from v2).
+
+### Test Layer Distribution
+
+| Layer | Tests | Files | Tools |
+|-------|-------|-------|-------|
+| Unit | 43 | 7 | vitest + @testing-library/react (jsdom) |
+| Integration | 0 (new) | 0 | — (existing `route.test.ts` reused for R5) |
+| E2E | 0 | 0 | playwright configured but not exercised this change |
+| **Total** | **43** | **7** | |
+
+### Changed File Coverage
+
+| File | Line % | Branch % | Uncovered Lines | Rating |
+|------|--------|----------|-----------------|--------|
+| Coverage analysis skipped — no coverage tool run for verification (config `coverage_threshold: 0`; informational only). | | | | |
+
+### Assertion Quality (Step 6 — re-scanned for new empty `it()` blocks)
+
+Batch 3 (`3ef6db3`) touched **only** `src/features/favorites/index.ts` — no test files modified. Re-scanned all 5 diff test files for tautologies, ghost loops, smoke-test-only blocks, and zero-assertion `it()` blocks: **no new empty blocks introduced** (none expected — no test edits). The previously-empty block at `useFavoriteAuthPrompt.test.ts:119-144` (resolved in batch 2) re-confirmed to contain `renderHook` + `act(() => result.current.goToLogin())` + `expect(mockPush).toHaveBeenCalledWith('/login?redirect=%2Ftienda%2Freloj-elegante')` (lines 137, 139-141, 143).
+
+| File | `it` blocks | `expect` calls | Empty blocks | Tautologies | Verdict |
+|------|------------|---------------|---------------|-------------|---------|
+| `context/__tests__/FavoritesContext.test.tsx` | 10 | 39 | 0 | 0 | ✅ clean |
+| `hooks/__tests__/useFavoriteAuthPrompt.test.ts` | 7 | 11 | 0 | 0 | ✅ clean |
+| `hooks/__tests__/useFavorites.test.tsx` | 3 | 11 | 0 | 0 | ✅ clean |
+| `components/__tests__/FavoriteAuthPrompt.test.tsx` | 4 | 5 | 0 | 0 | ✅ clean |
+| `components/__tests__/FavoriteItemRow.test.tsx` | 6 | 7 | 0 | 0 | ✅ clean |
+
+**Assertion quality**: ✅ All assertions verify real behavior — **0 CRITICAL, 0 WARNING**.
+
+### Quality Metrics
+
+**Linter**: ➖ Not run for verification (focused on changed scope; informational only).
+**Type Checker**: ✅ No errors — `npx tsc --noEmit` exit 0 (empty output).
+
+### Issues Found — v2 status tracked
+
+**CRITICAL** (0 — v1's 1 → RESOLVED in batch 2; not re-surfaced):
+1. ~~Empty no-op test masquerading as green~~ (`useFavoriteAuthPrompt.test.ts:118-143`). **RESOLVED** in `861640a`. Re-confirmed in v3 scan.
+
+**WARNING** (0 — v2's 1 → RESOLVED in batch 3):
+1. ~~Undocumented design barrel deviation~~. **RESOLVED** in `3ef6db3` — `index.ts` now re-exports `FavoriteAuthPrompt` + `useFavoriteAuthPrompt` (named, matching the named source exports). D7 promoted deviation → COMPLIANT. Barrel fix is production DX-only; no consumer currently switched to the barrel import, so no runtime/test regression risk.
+
+**SUGGESTION** (2 — both carried from v1/v2, non-blocking, both still valid):
+1. **Page-level integration coverage.** Prompt wiring into `ProductCard`/`ProductDetailClient` is still verified only by the manual smoke test (task 5.3). Consider one integration test per consumer asserting the prompt renders next to the heart on an anonymous toggle.
+2. **React `act(...)` warnings.** `FavoritesContext.test.tsx` still emits "An update to FavoritesProvider inside a test was not wrapped in act(...)" on authed async mutations (observed in v3 focused run). Wrapping mutating calls in `act`/`waitFor` would remove the stderr noise.
+
+### Verdict
+
+**PASS**
+
+Both prior blockers are closed: the v1 CRITICAL (empty no-op test) was resolved in batch 2 (`861640a`); the v2 WARNING (barrel export deviation) is resolved in batch 3 (`3ef6db3`). On `1e9880d`: 43/43 in-scope tests pass, `tsc` is clean, 6/6 requirements and 10/10 scenarios fully satisfied, TDD compliance 6/6, assertion quality 0 CRITICAL / 0 WARNING, design coherence 7/7 (D7 barrel closed). Two non-blocking SUGGESTIONs carry over (page-level integration coverage; React `act` warnings) — neither is CRITICAL or WARNING. Per the verdict rules (no CRITICAL and no WARNING → PASS), this change is **cleared for archive**. This is the **TERMINAL** verification.
+
+---
 
 ## Verification Report — v2 (re-verify after test-quality fix)
 

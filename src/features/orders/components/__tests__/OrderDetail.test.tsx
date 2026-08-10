@@ -324,6 +324,28 @@ describe('[ORD-12] OrderDetail Component', () => {
       const image = screen.getByRole('img')
       expect(image).toHaveAttribute('src', '/placeholder-watch.jpg')
     })
+
+    it('should not crash when product images field is undefined (Strapi omits it)', () => {
+      // Mirrors the FavoriteItemRow defensive-coding fix: the Product type now
+      // declares images?: string[] because Strapi sometimes omits the field
+      // entirely. The component must defend against undefined, not just empty.
+      const orderWithUndefinedImages = {
+        ...mockOrder,
+        items: [
+          {
+            ...mockOrder.items[0],
+            images: undefined,
+          },
+        ],
+      } as unknown as Parameters<typeof OrderDetail>[0]['order']
+
+      expect(() =>
+        render(<OrderDetail order={orderWithUndefinedImages} />)
+      ).not.toThrow()
+
+      const image = screen.getByRole('img')
+      expect(image).toHaveAttribute('src', '/placeholder-watch.jpg')
+    })
   })
 
   /**
