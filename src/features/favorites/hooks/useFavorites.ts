@@ -10,12 +10,17 @@ interface UseFavoritesApiResult {
   error: string | null
   fetchFavorites: () => Promise<void>
   updateFavorites: (favorites: Product[]) => Promise<void>
+  clearError: () => void
 }
 
 export function useFavoritesApi(): UseFavoritesApiResult {
   const [favorites, setFavorites] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
 
   const fetchFavorites = useCallback(async () => {
     setLoading(true)
@@ -76,5 +81,5 @@ export function useFavoritesApi(): UseFavoritesApiResult {
     }
   }, [])
 
-  return { favorites, loading, error, fetchFavorites, updateFavorites }
+  return { favorites, loading, error, fetchFavorites, updateFavorites, clearError }
 }

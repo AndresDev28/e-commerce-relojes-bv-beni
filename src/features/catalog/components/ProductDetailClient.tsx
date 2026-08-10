@@ -14,6 +14,7 @@ import ReactMarkdown from 'react-markdown'
 import { Product } from '@/types'
 import type { Breadcrumb } from '@/types/breadcrumb'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 
 // interface Product {
 //   id: string
@@ -42,7 +43,7 @@ export default function ProductDetailClient({
   const [quantity, setQuantity] = useState(1)
   const isOutOfStock = product.stock === 0
   const { addToCart } = useCart()
-  const { isFavorite } = useFavorites()
+  const { isFavorite, error: favoritesError, clearError } = useFavorites()
   const { showAuthPrompt, handleToggleFavorite, goToLogin } = useFavoriteAuthPrompt()
   const favorite = isFavorite(product.id)
 
@@ -226,6 +227,18 @@ export default function ProductDetailClient({
               >
                 {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
               </div>
+
+              {/* Error feedback when the favorites API fails (e.g., Strapi down).
+                  ErrorMessage uses role="alert" + aria-live="assertive" which is
+                  the correct semantic for an error. The next successful mutation
+                  OR the dismiss button clears the error. */}
+              {favoritesError && (
+                <ErrorMessage
+                  message={favoritesError}
+                  variant="error"
+                  onDismiss={clearError}
+                />
+              )}
             </div>
           </div>
         </div>

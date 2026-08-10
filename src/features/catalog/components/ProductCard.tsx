@@ -8,6 +8,7 @@ import { useFavorites } from '@/features/favorites'
 import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAuthPrompt'
 import { FavoriteAuthPrompt } from '@/features/favorites/components/FavoriteAuthPrompt'
 import { useCart } from '@/features/cart'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
 type ProductCardProps =
@@ -46,7 +47,7 @@ const ProductCard = (props: ProductCardProps) => {
     }
   }
 
-  const { isFavorite } = useFavorites()
+  const { isFavorite, error: favoritesError, clearError } = useFavorites()
   const { showAuthPrompt, handleToggleFavorite, goToLogin } = useFavoriteAuthPrompt()
   const productId = 'product' in props ? props.product.id : undefined
   const favorite = productId ? isFavorite(productId) : false
@@ -123,6 +124,20 @@ const ProductCard = (props: ProductCardProps) => {
       >
         {showAuthPrompt && <FavoriteAuthPrompt onLogin={goToLogin} />}
       </div>
+
+      {/* Error feedback when the favorites API fails (e.g., Strapi down).
+          ErrorMessage uses role="alert" + aria-live="assertive" which is the
+          correct semantic for an error (not a status update). The next
+          successful mutation OR the dismiss button clears the error. */}
+      {favoritesError && (
+        <div className="px-4 pb-3">
+          <ErrorMessage
+            message={favoritesError}
+            variant="error"
+            onDismiss={clearError}
+          />
+        </div>
+      )}
     </div>
   )
 }

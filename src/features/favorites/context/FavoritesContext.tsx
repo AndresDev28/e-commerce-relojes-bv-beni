@@ -17,6 +17,7 @@ interface FavoritesContextType {
   isFavorite: (productId: string) => boolean
   isLoading: boolean
   error: string | null
+  clearError: () => void
   clearFavorites: () => Promise<FavoriteMutationResult>
 }
 
@@ -30,7 +31,7 @@ interface FavoritesProviderProps {
 
 export const FavoritesProvider = ({ children }: FavoritesProviderProps) => {
   const { user } = useAuth()
-  const { favorites, loading, error, fetchFavorites, updateFavorites } = useFavoritesApi()
+  const { favorites, loading, error, fetchFavorites, updateFavorites, clearError } = useFavoritesApi()
 
   useEffect(() => {
     if (user) {
@@ -72,6 +73,7 @@ export const FavoritesProvider = ({ children }: FavoritesProviderProps) => {
     isFavorite,
     isLoading: loading,
     error,
+    clearError,
     clearFavorites,
   }
 
