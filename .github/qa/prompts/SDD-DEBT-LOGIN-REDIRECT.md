@@ -166,3 +166,47 @@ tests/e2e/login-redirect.spec.ts                  # NEW (Playwright E2E for TC-0
 
 .github/qa/DEBT-LOGIN-REDIRECT-honor-redirect-query-param.md  # NEW (QA plan)
 ```
+
+## Post-mortem: Suspense boundary requirement (hotfix C8, 2026-08-11)
+
+After the initial PR was opened, CI build failed with:
+```
+useSearchParams() should be wrapped in a suspense boundary at page "/registro"
+```
+
+**Root cause**: `useSearchParams()` in `LoginForm.tsx` and `RegisterForm.tsx`
+bails out static prerendering in Next.js 15 App Router, regardless of WHEN
+you consume the value (even inside `handleSubmit`).
+
+**Wrong assumption that was made in design.md**:
+> "No Suspense boundary change required for submit-time use of an already-subscribed hook."
+
+This is **incorrect**. The rule is: any `useSearchParams()` in the client tree
+causes CSR bailout. The bailout is at the hook call, not at value consumption.
+
+**Fix**: wrap each form in `<Suspense fallback={...}>` in the page wrapper.
+Both pages remain statically prerendered. Only the form slot is dynamic
+at runtime. This is the canonical Next.js 15 pattern.
+
+```tsx
+// src/app/(auth)/login/page.tsx (and same for /registro)
+import { Suspense } from 'react'
+// ...
+<Suspense fallback={<div className="py-8 text-center">Cargando…</div>}>
+  <LoginForm />
+</Suspense>
+```
+
+**Lesson for future cycles**:
+1. Whenever you add `useSearchParams()` (or `usePathname()` with route-dependent
+   logic) to a client component rendered inside a static page, add a `<Suspense>`
+   boundary in the page wrapper.
+2. ALWAYS run `npx next build` before pushing — design-time verification is
+   not enough. Static prerendering fails only at build time.
+3. The "obvious" fix of adding `'use client'` to the page wrapper or
+   `export const dynamic = 'force-dynamic'` is WRONG — those are workarounds
+   that miss the actual cause. `'use client'` doesn't help because the bailout
+   comes from the server tree; `force-dynamic` is a hammer that kills static
+   generation of the entire page.
+
+**Hotfix commit**: `4bcb690` on branch `frontend/DEBT-LOGIN-REDIRECT-honor-redirect-query-param`.
