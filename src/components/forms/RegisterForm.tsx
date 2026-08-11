@@ -1,6 +1,8 @@
 'use client'
 import { useState, FormEvent } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import { sanitizeRedirect } from '@/lib/auth/redirect'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
@@ -10,6 +12,7 @@ import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 export default function RegisterForm() {
   // Conexión con el hook de autenticación para extraer lo necesario
   const { register, isLoading } = useAuth()
+  const searchParams = useSearchParams()
 
   // Estado para guardar el usuario nuevo desde el input nombre de usuario
   const [userName, setUserName] = useState('')
@@ -38,7 +41,8 @@ export default function RegisterForm() {
     }
 
     try {
-      await register(userName, email, password)
+      const redirectTo = sanitizeRedirect(searchParams.get('redirect'))
+      await register(userName, email, password, redirectTo)
     } catch (err) {
       setError('Mensaje genérico de error')
       console.error(err)

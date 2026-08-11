@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, waitFor, act } from '@testing-library/react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 
+const push = vi.fn()
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push }),
 }))
 
 vi.mock('@/features/cart', () => ({
@@ -19,6 +20,7 @@ function AuthProbe({ onReady }: { onReady: (ctx: ReturnType<typeof useAuth>) => 
 describe('AuthContext', () => {
   beforeEach(() => {
     global.fetch = vi.fn()
+    push.mockClear()
   })
 
   afterEach(() => {
@@ -209,5 +211,117 @@ describe('AuthContext', () => {
   it('useAuth throws when used outside AuthProvider', () => {
     const renderOutside = () => render(<AuthProbe onReady={() => {}} />)
     expect(renderOutside).toThrow(/AuthProvider/)
+  })
+
+  // --- redirectTo tests (TC-06 / TC-07 / TC-08) ---
+
+  it('login() pushes /mi-cuenta when no redirectTo is provided', async () => {
+    const mockUser = { id: 7, username: 'joe', email: 'joe@test.com' }
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: null }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: mockUser }), { status: 200 }))
+
+    let captured: ReturnType<typeof useAuth> | null = null
+    render(
+      <AuthProvider>
+        <AuthProbe onReady={(ctx) => (captured = ctx)} />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(captured?.isLoading).toBe(false))
+
+    await act(async () => {
+      await captured!.login('joe@test.com', 'secret')
+    })
+
+    expect(push).toHaveBeenCalledWith('/mi-cuenta')
+  })
+
+  it('login() pushes sanitized redirectTo when provided (TC-06)', async () => {
+    const mockUser = { id: 7, username: 'joe', email: 'joe@test.com' }
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: null }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: mockUser }), { status: 200 }))
+
+    let captured: ReturnType<typeof useAuth> | null = null
+    render(
+      <AuthProvider>
+        <AuthProbe onReady={(ctx) => (captured = ctx)} />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(captured?.isLoading).toBe(false))
+
+    await act(async () => {
+      await captured!.login('joe@test.com', 'secret', '/tienda')
+    })
+
+    expect(push).toHaveBeenCalledWith('/tienda')
+  })
+
+  it('login() rejects open-redirect and falls back to /mi-cuenta (TC-07)', async () => {
+    const mockUser = { id: 7, username: 'joe', email: 'joe@test.com' }
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: null }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: mockUser }), { status: 200 }))
+
+    let captured: ReturnType<typeof useAuth> | null = null
+    render(
+      <AuthProvider>
+        <AuthProbe onReady={(ctx) => (captured = ctx)} />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(captured?.isLoading).toBe(false))
+
+    await act(async () => {
+      await captured!.login('joe@test.com', 'secret', '//evil.com')
+    })
+
+    expect(push).toHaveBeenCalledWith('/mi-cuenta')
+  })
+
+  it('register() pushes /mi-cuenta when no redirectTo is provided', async () => {
+    const mockUser = { id: 9, username: 'new', email: 'new@test.com' }
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: null }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: mockUser }), { status: 200 }))
+
+    let captured: ReturnType<typeof useAuth> | null = null
+    render(
+      <AuthProvider>
+        <AuthProbe onReady={(ctx) => (captured = ctx)} />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(captured?.isLoading).toBe(false))
+
+    await act(async () => {
+      await captured!.register('new', 'new@test.com', 'pass123')
+    })
+
+    expect(push).toHaveBeenCalledWith('/mi-cuenta')
+  })
+
+  it('register() pushes sanitized redirectTo when provided (TC-08)', async () => {
+    const mockUser = { id: 9, username: 'new', email: 'new@test.com' }
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: null }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ user: mockUser }), { status: 200 }))
+
+    let captured: ReturnType<typeof useAuth> | null = null
+    render(
+      <AuthProvider>
+        <AuthProbe onReady={(ctx) => (captured = ctx)} />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(captured?.isLoading).toBe(false))
+
+    await act(async () => {
+      await captured!.register('new', 'new@test.com', 'pass123', '/mi-cuenta/pedidos/123')
+    })
+
+    expect(push).toHaveBeenCalledWith('/mi-cuenta/pedidos/123')
   })
 })
