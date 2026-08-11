@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import RegisterForm from '@/components/forms/RegisterForm'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
@@ -33,8 +34,18 @@ export default function RegisterPage() {
               Bienvenido!
             </p>
           </div>
-          {/* Componente del formulario con la lógica */}
-          <RegisterForm />
+          {/* Suspense boundary: RegisterForm uses useSearchParams() which bails out
+              static prerendering in Next.js 15. The fallback shows briefly
+              between server-render and client-hydration. */}
+          <Suspense
+            fallback={
+              <div className="py-8 text-center text-neutral-medium">
+                Cargando…
+              </div>
+            }
+          >
+            <RegisterForm />
+          </Suspense>
         </div>
       </div>
     </div>
