@@ -1,6 +1,8 @@
 'use client'
 import { useState, FormEvent } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import { sanitizeRedirect } from '@/lib/auth/redirect'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
@@ -10,6 +12,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 export default function LoginForm() {
   // Conexión con el hook de autenticación y extraemos lo necesario
   const { login, isLoading } = useAuth()
+  const searchParams = useSearchParams()
 
   // Estado para guardar el input del usuario para email/usuario (Se inicia como string vacío)
   const [identifier, setIdentifier] = useState('')
@@ -37,9 +40,10 @@ export default function LoginForm() {
 
     try {
       // Llama a la función login del contexto, pasándole los valores de los estados
-      await login(identifier, password)
-      // Si el login es exitoso, en el futuro aquí redirigiremos al usuario a "Mi Cuenta".
-      // Por ahora, el 'AuthContext' se encargará de actualizar el estado.
+      // y el redirectTo sanitizado desde el query param ?redirect=
+      const redirectTo = sanitizeRedirect(searchParams.get('redirect'))
+      await login(identifier, password, redirectTo)
+      // Si el login es exitoso, el AuthContext se encargará de la redirección.
     } catch (err) {
       setError('Las credenciales son incorrectas, inténtelo de nuevo')
       console.error(err)
