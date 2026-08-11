@@ -1,7 +1,7 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 13 Marzo 2026  
-**Estado actual:** EPIC 17 + 17b + 18 completados ✅  
+**Última actualización:** 11 Agosto 2026  
+**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT completados ✅  
 **Objetivo:** Lanzamiento 14 Abril 2026
 
 ---
@@ -51,6 +51,16 @@
 - ✅ Manejo de errores de API y fallos de pago
 - ✅ Seguimiento y cancelación de pedidos verificado
 - ✅ Cobertura de flujos críticos al 100% en navegadores compatibles
+
+### 🐛 Deuda técnica resuelta (post-EPIC 18)
+
+**DEBT-LOGIN-REDIRECT: Honor `?redirect=` query param en `/login` y `/registro`** (PR #100 → release 1.4.3, commit `52a97f2`)
+- ✅ Helper `sanitizeRedirect()` con protección open-redirect + auth-page loop prevention
+- ✅ `AuthContext.login()`/`register()` aceptan `redirectTo?` opcional (backward compatible)
+- ✅ LoginForm y RegisterForm leen `?redirect=` envueltos en `<Suspense>` (Next.js 15 App Router)
+- ✅ 7 work-unit commits + hotfix C8 (Suspense boundary para `useSearchParams` bailout)
+- ✅ 33/33 tests Vitest scoped · Playwright 4/4 (Chromium + Firefox) · manual QA 8/8
+- ✅ Sanitización: rechaza `//`, `/\\`, schemes (`http:`, `javascript:`, `data:`); primer segmento `login` o `registro` → default `/mi-cuenta`
 
 **Progreso general:** ~200h invertidas de ~240h estimadas (83%)
 
