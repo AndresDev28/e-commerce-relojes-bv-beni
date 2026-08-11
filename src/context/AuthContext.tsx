@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/features/cart'
 import { newTraceId } from '@/lib/trace'
+import { sanitizeRedirect } from '@/lib/auth/redirect'
 
 export interface AuthUser {
   id: number
@@ -19,9 +20,9 @@ export interface AuthUser {
 export interface AuthContextType {
   user: AuthUser | null
   isLoading: boolean
-  login: (identifier: string, password: string) => Promise<void>
+  login: (identifier: string, password: string, redirectTo?: string) => Promise<void>
   logout: () => Promise<void>
-  register: (username: string, email: string, password: string) => Promise<void>
+  register: (username: string, email: string, password: string, redirectTo?: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -61,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     hydrateSession()
   }, [])
 
-  const login = async (identifier: string, password: string) => {
+  const login = async (identifier: string, password: string, redirectTo?: string) => {
     setIsLoading(true)
     try {
       if (!identifier.trim() || !password) {
@@ -84,7 +85,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const data = await response.json()
       setUser(data.user)
-      router.push('/mi-cuenta')
+      router.push(sanitizeRedirect(redirectTo))
     } finally {
       setIsLoading(false)
     }
@@ -93,7 +94,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const register = async (
     username: string,
     email: string,
-    password: string
+    password: string,
+    redirectTo?: string
   ) => {
     setIsLoading(true)
     try {
@@ -117,7 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const data = await response.json()
       setUser(data.user)
-      router.push('/mi-cuenta')
+      router.push(sanitizeRedirect(redirectTo))
     } finally {
       setIsLoading(false)
     }

@@ -253,7 +253,6 @@ describe('AuthContext', () => {
     await waitFor(() => expect(captured?.isLoading).toBe(false))
 
     await act(async () => {
-      // @ts-expect-error — redirectTo param not yet added to login interface (RED phase)
       await captured!.login('joe@test.com', 'secret', '/tienda')
     })
 
@@ -276,7 +275,6 @@ describe('AuthContext', () => {
     await waitFor(() => expect(captured?.isLoading).toBe(false))
 
     await act(async () => {
-      // @ts-expect-error — redirectTo param not yet added to login interface (RED phase)
       await captured!.login('joe@test.com', 'secret', '//evil.com')
     })
 
@@ -321,7 +319,6 @@ describe('AuthContext', () => {
     await waitFor(() => expect(captured?.isLoading).toBe(false))
 
     await act(async () => {
-      // @ts-expect-error — redirectTo param not yet added to register interface (RED phase)
       await captured!.register('new', 'new@test.com', 'pass123', '/mi-cuenta/pedidos/123')
     })
 
