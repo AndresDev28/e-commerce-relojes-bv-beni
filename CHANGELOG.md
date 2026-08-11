@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.2...relojes-bv-beni-v1.4.3) (2026-08-11)
+
+
+### Bug Fixes
+
+* **auth:** honor ?redirect= query param on /login and /registro ([#100](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/100)) ([52a97f2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/52a97f2563bf5b7c0c54359f5bd6bea0be327313))
+
 ## [1.4.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.1...relojes-bv-beni-v1.4.2) (2026-08-10)
 
 
