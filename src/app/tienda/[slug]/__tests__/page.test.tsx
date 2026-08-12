@@ -25,7 +25,9 @@ const createProduct = (
   name: 'Classic Watch',
   price: 199,
   slug: 'classic-watch',
-  description: 'A classic watch',
+  description: [
+    { type: 'paragraph', children: [{ type: 'text', text: 'A classic watch' }] },
+  ],
   stock: 3,
   category,
 })
@@ -73,5 +75,17 @@ describe('/tienda/[slug] breadcrumb wiring', () => {
     })
 
     expect(breadcrumbNames(result)).toEqual(['Inicio', 'Tienda', 'Classic Watch'])
+  })
+
+  it('converts the blocks description to a markdown string for the client', async () => {
+    getProductBySlug.mockResolvedValueOnce(createProduct(undefined))
+
+    const result = await ProductDetailPage({
+      params: Promise.resolve({ slug: 'classic-watch' }),
+    })
+
+    const product = (result as { props: { product: { description: string } } })
+      .props.product
+    expect(product.description).toBe('A classic watch\n\n')
   })
 })

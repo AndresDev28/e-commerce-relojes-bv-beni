@@ -4,6 +4,7 @@ import { ProductDetailClient } from '@/features/catalog'
 import { Product, StrapiImage } from '@/types'
 import { getProductBySlug } from '@/lib/api'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
+import { blocksToMarkdown } from '@/utils/blocks'
 
 export default async function ProductDetailPage({
   params,
@@ -49,11 +50,8 @@ export default async function ProductDetailPage({
     ? strapiProduct.category[0]?.name
     : strapiProduct.category?.name
 
-  // Limpiar y procesar la descripción para markdown
-  const cleanDescription =
-    strapiProduct.description && typeof strapiProduct.description === 'string'
-      ? strapiProduct.description.trim()
-      : ''
+  // Convertir la descripción de bloques de Strapi a markdown
+  const cleanDescription = blocksToMarkdown(strapiProduct.description ?? [])
 
   const product: Product = {
     id: strapiProduct.id.toString(),

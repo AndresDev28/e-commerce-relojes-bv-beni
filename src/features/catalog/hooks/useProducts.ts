@@ -58,7 +58,7 @@ function formatProduct(strapiProduct: StrapiProduct): Product {
     price: strapiProduct.price || 0,
     images: images.length > 0 ? images : ['/images/empty-cart.png'],
     href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
-    description: strapiProduct.description || '',
+    description: '',
     category: categoryName,
     stock: strapiProduct.stock || 0,
   }

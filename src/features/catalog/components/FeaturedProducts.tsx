@@ -44,7 +44,7 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
                   : `http://127.0.0.1:1337${img.url}`
               }),
               href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
-              description: strapiProduct.description || '',
+              description: '',
               category: categoryName,
               stock: strapiProduct.stock || 0,
             }
