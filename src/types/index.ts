@@ -62,13 +62,36 @@ export interface ProductsResponse {
   pagination: PaginationMeta
 }
 
+// Tipo para un nodo de texto enriquecido dentro de un bloque de Strapi 5
+// (inline formatting: bold, italic, code, links, etc.)
+export interface StrapiBlockChild {
+  type: string
+  text?: string
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
+  strikethrough?: boolean
+  code?: boolean
+  url?: string
+  children?: Array<{ type: string; text?: string; url?: string }>
+}
+
+// Tipo para un bloque de contenido de Strapi 5 (párrafo, encabezado,
+// lista, cita, código, etc.)
+export interface StrapiBlock {
+  type: string
+  children: StrapiBlockChild[]
+  level?: number
+  format?: 'ordered' | 'unordered'
+}
+
 // El tipo final para un producto completo que viene de la API
 export interface StrapiProduct {
   id: number
   name: string
   price: number
   slug: string
-  description: string | null
+  description: StrapiBlock[] | null
   stock: number
   image?: StrapiImage | StrapiImage[] // Puede ser único o arreglo
   images?: StrapiImage | StrapiImage[] // Alternativa si el campo es múltiple y se llama 'images'
