@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.3...relojes-bv-beni-v1.4.4) (2026-08-12)
+
+
+### Bug Fixes
+
+* **ux:** breadcrumb a11y + Strapi blocks product description (UXW-02 + UXW-03) ([#102](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/102)) ([c9ff8a3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/c9ff8a379ba6769c5ed2e86f5ef05e7fc6fc7048))
+
 ## [1.4.3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.2...relojes-bv-beni-v1.4.3) (2026-08-11)
 
 
