@@ -37,13 +37,17 @@ const Breadcrumbs = ({ breadcrumbs }: BreadcrumbsProps) => {
                   <span className="mx-2 text-neutral-medium">/</span>
                 )}
                 {isLast ? (
-                  <span className="font-serif text-neutral-medium">
+                  <span
+                    title={crumb.name}
+                    className="font-serif text-neutral-medium max-w-[12rem] truncate"
+                  >
                     {crumb.name}
                   </span>
                 ) : (
                   <Link
                     href={crumb.href}
-                    className="font-serif text-neutral-medium hover:text-primary transition-colors"
+                    title={crumb.name}
+                    className="font-serif text-neutral-medium hover:text-primary transition-colors max-w-[12rem] truncate"
                   >
                     {crumb.name}
                   </Link>

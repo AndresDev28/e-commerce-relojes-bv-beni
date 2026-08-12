@@ -110,4 +110,65 @@ describe('[BREAD-03] <Breadcrumbs> a11y contract', () => {
       expect(onlyLi.querySelector('a')).toBeNull()
     })
   })
+
+  describe('[UXW-02] Tooltip & truncation defense', () => {
+    const longSample = [
+      { name: 'Inicio', href: '/' },
+      { name: 'Tienda', href: '/tienda' },
+      {
+        name: 'Relojes Cronómetros de Lujo Edición Limitada',
+        href: '/tienda?category=cronometros',
+      },
+    ]
+
+    it('renders the trailing item full label as its title attribute', () => {
+      const { container } = render(<Breadcrumbs breadcrumbs={sample} />)
+      const currentLi = container.querySelector(
+        'li[aria-current="page"]',
+      ) as HTMLElement
+      const labelSpan = Array.from(currentLi.querySelectorAll('span')).find(
+        (s) => s.textContent === 'Cronómetros',
+      ) as HTMLElement
+      expect(labelSpan).toHaveAttribute('title', 'Cronómetros')
+    })
+
+    it('renders each non-trailing link full label as its title attribute', () => {
+      const { container } = render(<Breadcrumbs breadcrumbs={sample} />)
+      const list = screen.getByRole('list')
+      const items = within(list).getAllByRole('listitem')
+
+      const firstAnchor = items[0].querySelector('a') as HTMLElement
+      expect(firstAnchor).toHaveAttribute('title', 'Inicio')
+
+      const secondAnchor = items[1].querySelector('a') as HTMLElement
+      expect(secondAnchor).toHaveAttribute('title', 'Tienda')
+    })
+
+    it('applies truncation defense classes to both branches', () => {
+      const { container } = render(<Breadcrumbs breadcrumbs={longSample} />)
+      const currentLi = container.querySelector(
+        'li[aria-current="page"]',
+      ) as HTMLElement
+      const labelSpan = Array.from(currentLi.querySelectorAll('span')).find(
+        (s) => s.textContent === longSample[2].name,
+      ) as HTMLElement
+      expect(labelSpan.className).toContain('truncate')
+      expect(labelSpan.className).toContain('max-w-[12rem]')
+
+      const list = screen.getByRole('list')
+      const items = within(list).getAllByRole('listitem')
+      const firstAnchor = items[0].querySelector('a') as HTMLElement
+      expect(firstAnchor.className).toContain('truncate')
+      expect(firstAnchor.className).toContain('max-w-[12rem]')
+    })
+
+    it('still emits title on short labels (Option A)', () => {
+      const { container } = render(
+        <Breadcrumbs breadcrumbs={[{ name: 'Inicio', href: '/' }]} />,
+      )
+      const onlyLi = container.querySelector('li') as HTMLElement
+      const labelSpan = onlyLi.querySelector('span') as HTMLElement
+      expect(labelSpan).toHaveAttribute('title', 'Inicio')
+    })
+  })
 })
