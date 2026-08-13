@@ -1,6 +1,6 @@
 'use client'
 import { useCart } from '@/features/cart'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
@@ -18,6 +18,7 @@ import { buildBreadcrumbs } from '@/utils/breadcrumbs'
  */
 export default function CartPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, isLoading: authLoading } = useAuth()
   // Extraemos de useCart lo que vamos a necesitar
   const { cartItems, clearCart } = useCart()
@@ -25,9 +26,9 @@ export default function CartPage() {
   // Protección de ruta
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/login')
+      router.push('/login?redirect=' + encodeURIComponent(pathname))
     }
-  }, [authLoading, user, router])
+  }, [authLoading, user, router, pathname])
 
   // Breadcrumbs computados una sola vez (mismo valor en SSR y cliente) — disponibles en todos los branches
   const breadcrumbs = buildBreadcrumbs({ route: 'carrito' })
