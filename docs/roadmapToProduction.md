@@ -1,7 +1,7 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 11 Agosto 2026  
-**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT completados ✅  
+**Última actualización:** 13 Agosto 2026  
+**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 completados ✅  
 **Objetivo:** Lanzamiento 14 Abril 2026
 
 ---
@@ -67,6 +67,30 @@
 - ✅ Cierra el retrofit de generación diferido en DEBT-LOGIN-REDIRECT (release 1.4.3 solo entregó el lado consume)
 - ✅ Tests Vitest: checkout 6/6 · carrito 2/2 (suite nueva) · sin regresiones vs baseline
 - ⚠️ Limpieza futura (Q2): `src/app/mi-cuenta/pedidos/[orderId]/page.tsx:28` aún usa `redirect` hardcoded — fuera de alcance, pendiente de retrofit
+
+### 🐛 Deuda técnica pendiente (descubierta en testing manual de DEBT-02 — 13 Agosto 2026)
+
+> Bugs pre-existentes encontrados durante smoke test del redirect flow. NO fueron introducidos por DEBT-02; el retrofit del redirect funcionó correctamente (URL `?redirect=` correcta, consume-side respeta, round-trip OK). Cada bug requiere su propio ticket + change.
+
+**BUG-CART-PERSISTENCE** 🔴 CRITICAL (business)
+- **Síntoma**: items añadidos al carrito se pierden al cerrar sesión y volver a abrir. **Pérdida potencial de ventas.**
+- **Evidencia**: testing manual 13/08/2026 — `add to cart → logout → login → cart vacío`
+- **Root cause probable**: cart state en memoria/session, no persistido a backend ni a `localStorage`
+- **Sugerido**: Sprint 3 (junto con `TEST-INFRA-VITEST` de los 21 failures pre-existentes; posiblemente root cause compartido con `BUG-FAVORITES-400`)
+- **Estimación**: ~8-16 LOC + tests
+
+**BUG-FAVORITES-400** 🟡 HIGH (UX)
+- **Síntoma**: `/api/favorites` retorna 400 después de login. Botón favoritos en `/tienda` muestra "No se pudieron actualizar tus favoritos". `/favoritos` no carga imagen del producto. Hard refresh (Ctrl+Shift+R) lo arregla — sugiere stale client state.
+- **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /api/favorites:1`
+- **Sugerido**: Sprint 3 (relacionado con `TEST-INFRA-VITEST` pre-existing failures; posiblemente root cause compartido con `BUG-CART-PERSISTENCE`)
+- **Estimación**: ~4-8 LOC + tests
+
+**BUG-IMAGES-400** 🟡 MEDIUM (UX)
+- **Síntoma**: Next.js image optimization falla con 400 para `/next/image?url=...`. Algunos productos sin imagen.
+- **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /next/image?url=...`
+- **Root cause probable**: configuración de Next.js image domains, o imágenes externas sin allowlist
+- **Sugerido**: Sprint 3
+- **Estimación**: ~2-4 LOC (config change)
 
 **Progreso general:** ~200h invertidas de ~240h estimadas (83%)
 
