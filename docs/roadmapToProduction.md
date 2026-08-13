@@ -62,6 +62,12 @@
 - ✅ 33/33 tests Vitest scoped · Playwright 4/4 (Chromium + Firefox) · manual QA 8/8
 - ✅ Sanitización: rechaza `//`, `/\\`, schemes (`http:`, `javascript:`, `data:`); primer segmento `login` o `registro` → default `/mi-cuenta`
 
+**DEBT-02: Generar `?redirect=` en `/checkout` y `/carrito`** (branch `frontend/DEBT-02-checkout-carrito-redirect`)
+- ✅ Los auth guards de `/checkout` y `/carrito` emiten `/login?redirect=` + `encodeURIComponent(usePathname())` (espejo del patrón de Favoritos)
+- ✅ Cierra el retrofit de generación diferido en DEBT-LOGIN-REDIRECT (release 1.4.3 solo entregó el lado consume)
+- ✅ Tests Vitest: checkout 6/6 · carrito 2/2 (suite nueva) · sin regresiones vs baseline
+- ⚠️ Limpieza futura (Q2): `src/app/mi-cuenta/pedidos/[orderId]/page.tsx:28` aún usa `redirect` hardcoded — fuera de alcance, pendiente de retrofit
+
 **Progreso general:** ~200h invertidas de ~240h estimadas (83%)
 
 ---
