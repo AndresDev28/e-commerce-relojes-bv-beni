@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.4...relojes-bv-beni-v1.5.0) (2026-08-13)
+
+
+### Features
+
+* **checkout/carrito:** preserve return path through login (DEBT-02) ([#104](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/104)) ([bef9b3d](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/bef9b3d75f8f4999a1e8a7567cfc78fb2248291d))
+
 ## [1.4.4](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.3...relojes-bv-beni-v1.4.4) (2026-08-12)
 
 
