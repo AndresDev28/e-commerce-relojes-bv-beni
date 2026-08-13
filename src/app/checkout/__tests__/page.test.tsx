@@ -111,13 +111,17 @@ vi.mock('@/features/checkout', () => ({
   }),
 }))
 
+// Reset mutable mock state before every test in this file.
+beforeEach(() => {
+  mockPush.mockClear()
+  mockPathname = '/checkout'
+  mockUser = { id: 1, username: 'test', email: 'test@example.com' }
+  mockAuthLoading = false
+})
+
 describe('CheckoutPage - [PAY-09] page-level ErrorMessage (RED contract)', () => {
   beforeEach(() => {
     checkoutFormPropsRef.current = null
-    mockPush.mockClear()
-    mockPathname = '/checkout'
-    mockUser = { id: 1, username: 'test', email: 'test@example.com' }
-    mockAuthLoading = false
   })
 
   it('captures the CheckoutForm onError prop as a function', () => {
@@ -190,5 +194,23 @@ describe('CheckoutPage - [PAY-09] page-level ErrorMessage (RED contract)', () =>
     expect(stub).toBeInTheDocument()
     expect(container.querySelectorAll('[data-testid="checkout-form-stub"]'))
       .toHaveLength(1)
+  })
+})
+
+describe('CheckoutPage - auth guard redirect (DEBT-02)', () => {
+  it('redirects unauthenticated users to /login?redirect=%2Fcheckout', () => {
+    mockUser = null
+
+    render(<CheckoutPage />)
+
+    expect(mockPush).toHaveBeenCalledWith('/login?redirect=%2Fcheckout')
+  })
+
+  it('does not redirect while auth is still loading', () => {
+    mockAuthLoading = true
+
+    render(<CheckoutPage />)
+
+    expect(mockPush).not.toHaveBeenCalled()
   })
 })
