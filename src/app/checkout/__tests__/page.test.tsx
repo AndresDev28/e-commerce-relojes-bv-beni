@@ -13,16 +13,29 @@ const checkoutFormPropsRef: {
   } | null
 } = { current: null }
 
-// Mock next/navigation — the page uses useRouter for auth/cart redirects.
+// Module-level mutable mocks so vi.mock factories (hoisted above this code)
+// see the live values at call time — same pattern as the favorites hook test.
+const mockPush = vi.fn()
+let mockPathname = '/checkout'
+let mockUser: { id: number; username: string; email: string } | null = {
+  id: 1,
+  username: 'test',
+  email: 'test@example.com',
+}
+let mockAuthLoading = false
+
+// Mock next/navigation — the page uses useRouter for auth/cart redirects and
+// usePathname for the encoded return path.
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockPush,
     replace: vi.fn(),
     refresh: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
     prefetch: vi.fn(),
   }),
+  usePathname: () => mockPathname,
   useSearchParams: () => new URLSearchParams(),
 }))
 
@@ -37,11 +50,11 @@ vi.mock('next/link', () => ({
   }) => <a href={href}>{children}</a>,
 }))
 
-// Mock AuthContext — page needs a logged-in, non-loading user.
+// Mock AuthContext — mutable user/loading so tests can drive the guard.
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 1, username: 'test', email: 'test@example.com' },
-    isLoading: false,
+    user: mockUser,
+    isLoading: mockAuthLoading,
     login: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
@@ -97,6 +110,14 @@ vi.mock('@/features/checkout', () => ({
     total: 259.89,
   }),
 }))
+
+// Reset mutable mock state before every test in this file.
+beforeEach(() => {
+  mockPush.mockClear()
+  mockPathname = '/checkout'
+  mockUser = { id: 1, username: 'test', email: 'test@example.com' }
+  mockAuthLoading = false
+})
 
 describe('CheckoutPage - [PAY-09] page-level ErrorMessage (RED contract)', () => {
   beforeEach(() => {
@@ -173,5 +194,23 @@ describe('CheckoutPage - [PAY-09] page-level ErrorMessage (RED contract)', () =>
     expect(stub).toBeInTheDocument()
     expect(container.querySelectorAll('[data-testid="checkout-form-stub"]'))
       .toHaveLength(1)
+  })
+})
+
+describe('CheckoutPage - auth guard redirect (DEBT-02)', () => {
+  it('redirects unauthenticated users to /login?redirect=%2Fcheckout', () => {
+    mockUser = null
+
+    render(<CheckoutPage />)
+
+    expect(mockPush).toHaveBeenCalledWith('/login?redirect=%2Fcheckout')
+  })
+
+  it('does not redirect while auth is still loading', () => {
+    mockAuthLoading = true
+
+    render(<CheckoutPage />)
+
+    expect(mockPush).not.toHaveBeenCalled()
   })
 })

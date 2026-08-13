@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/features/cart'
 import {
@@ -29,6 +29,7 @@ import type { PaymentIntent } from '@stripe/stripe-js'
  */
 export default function CheckoutPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, isLoading: authLoading } = useAuth()
   const { cartItems, clearCart, isHydrated } = useCart()
   const { createOrder, isCreatingOrder, orderError } = useCreateOrder({
@@ -47,7 +48,7 @@ export default function CheckoutPage() {
     if (authLoading || !isHydrated) return
 
     if (!user) {
-      router.push('/login')
+      router.push('/login?redirect=' + encodeURIComponent(pathname))
       return
     }
 
@@ -55,7 +56,7 @@ export default function CheckoutPage() {
       router.push('/tienda')
       return
     }
-  }, [authLoading, user, cartItems, router, orderError, isHydrated])
+  }, [authLoading, user, cartItems, router, orderError, isHydrated, pathname])
 
   if (authLoading || !isHydrated) {
     return (
