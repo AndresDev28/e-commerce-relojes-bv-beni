@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.0...relojes-bv-beni-v1.5.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **test:** restore working localStorage polyfill under jsdom@27 ([#106](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/106)) ([e9e662e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/e9e662eef0e65690b577e1b08e495eb337549ac6))
+
 ## [1.5.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.4.4...relojes-bv-beni-v1.5.0) (2026-08-13)
 
 
