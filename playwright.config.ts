@@ -57,13 +57,24 @@ export default defineConfig({
         // },
     ],
 
-    /* Run your local dev server before starting the tests.
-       Readiness is checked against a static asset because `/` returns a 500
+    /* Run the dev server and Strapi mock before starting the tests.
+       The mock listens on the standard Strapi port (:1337) so the dev CSP
+       connect-src whitelist and the .env.local NEXT_PUBLIC_STRAPI_API_URL
+       default keep working — no env overrides are needed. Readiness for the
+       dev entry is checked against a static asset because `/` returns a 500
        while Strapi is unreachable (server-side fetch fails). */
-    webServer: {
-        command: 'npm run dev',
-        url: 'http://localhost:3000/favicon.svg',
-        reuseExistingServer: !process.env.CI,
-        timeout: 60_000,
-    },
+    webServer: [
+        {
+            command: 'npm run dev',
+            url: 'http://localhost:3000/favicon.svg',
+            reuseExistingServer: !process.env.CI,
+            timeout: 60_000,
+        },
+        {
+            command: 'MOCK_STRAPI_PORT=1337 node tests/e2e/mock-strapi-server.mjs',
+            url: 'http://localhost:1337/health',
+            reuseExistingServer: !process.env.CI,
+            timeout: 30_000,
+        },
+    ],
 });
