@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.1...relojes-bv-beni-v1.5.2) (2026-08-18)
+
+
+### Bug Fixes
+
+* **test:** self-bootstrap e2e suite via webServer + Strapi mock ([#108](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/108)) ([ece9190](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/ece9190c2c71c776561fd9e0c4f3e0b5c8ac07e6))
+
 ## [1.5.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.0...relojes-bv-beni-v1.5.1) (2026-08-14)
 
 
