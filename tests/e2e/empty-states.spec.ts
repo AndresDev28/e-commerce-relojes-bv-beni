@@ -1,16 +1,12 @@
 
 import { test, expect } from '@playwright/test';
-import { MOCK_USER, MOCK_AUTH_RESPONSE } from './utils/mocks';
+import { MOCK_USER } from './utils/mocks';
 
 test.describe('Empty States Verification', () => {
     test.beforeEach(async ({ page }) => {
         // Setup initial auth state for all tests since routes are protected
-        await page.addInitScript((token) => {
-            window.localStorage.setItem('jwt', token);
-        }, MOCK_AUTH_RESPONSE.jwt);
-
-        await page.route('**/api/users/me', async (route) => {
-            await route.fulfill({ json: MOCK_USER });
+        await page.route('**/api/auth/session', async (route) => {
+            await route.fulfill({ json: { user: MOCK_USER } });
         });
     });
 
