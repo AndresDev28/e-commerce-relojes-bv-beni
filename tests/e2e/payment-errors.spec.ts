@@ -1,16 +1,12 @@
 
 import { test, expect } from '@playwright/test';
-import { MOCK_PRODUCTS, MOCK_AUTH_RESPONSE, MOCK_USER } from './utils/mocks';
+import { MOCK_PRODUCTS, MOCK_USER } from './utils/mocks';
 
 test.describe('Payment and API Errors Handling', () => {
     test.beforeEach(async ({ page }) => {
-        // Logged in state
-        await page.addInitScript((token) => {
-            window.localStorage.setItem('jwt', token);
-        }, MOCK_AUTH_RESPONSE.jwt);
-
-        await page.route('**/api/users/me', async (route) => {
-            await route.fulfill({ json: MOCK_USER });
+        // Logged in state via the cookie-session endpoint
+        await page.route('**/api/auth/session', async (route) => {
+            await route.fulfill({ json: { user: MOCK_USER } });
         });
 
         await page.route('**/api/products*', async (route) => {
@@ -47,10 +43,9 @@ test.describe('Payment and API Errors Handling', () => {
     });
 
     test('Should show error when authentication is missing in checkout', async ({ page }) => {
-        // Clear auth in a fresh context or by script
-        await page.addInitScript(() => {
-            window.localStorage.removeItem('jwt');
-        });
+        // Drop the authenticated session mock so the real route runs and
+        // returns { user: null } (no bv_session cookie is ever set here).
+        await page.unroute('**/api/auth/session');
 
         // Redirect should happen because of route protection in checkout/page.tsx
         await page.goto('/checkout');
