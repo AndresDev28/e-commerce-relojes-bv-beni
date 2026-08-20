@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.4](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.3...relojes-bv-beni-v1.5.4) (2026-08-20)
+
+
+### Bug Fixes
+
+* **cart:** persist cart across logout/login via per-user localStorage key ([#114](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/114)) ([5b06371](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/5b063719bd0c8c29bd6568649c595a7cd0d7661a))
+
 ## [1.5.3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.2...relojes-bv-beni-v1.5.3) (2026-08-20)
 
 
