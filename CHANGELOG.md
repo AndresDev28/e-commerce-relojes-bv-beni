@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.2...relojes-bv-beni-v1.5.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* **test:** modernize auth mocks in legacy specs (cookie-session) ([#111](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/111)) ([74cdce3](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/74cdce3d3cef6abc0856da847ab840651ca5621f))
+
 ## [1.5.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.1...relojes-bv-beni-v1.5.2) (2026-08-18)
 
 
