@@ -98,9 +98,9 @@
 **BUG-CART-PERSISTENCE** 🔴 CRITICAL (business)
 - **Síntoma**: items añadidos al carrito se pierden al cerrar sesión y volver a abrir. **Pérdida potencial de ventas.**
 - **Evidencia**: testing manual 13/08/2026 — `add to cart → logout → login → cart vacío`
-- **Root cause probable**: cart state en memoria/session, no persistido a backend ni a `localStorage`
-- **Sugerido**: Sprint 4 (independiente de TEST-INFRA-VITEST/E2E ya cerrados)
-- **Estimación**: ~8-16 LOC + tests
+- **Root cause real**: `AuthContext.logout()` llama a `clearCart()` en `src/context/AuthContext.tsx:138` (en el bloque `finally`), y el save-effect del `CartProvider` persiste `[]` a localStorage inmediatamente después. El cart SÍ estaba persistido a localStorage — el wipe-on-logout era lo que producía el síntoma. Defecto secundario: la key `bv-beni-cart` era global, no per-user, filtrando carts entre usuarios en navegadores compartidos.
+- **Sugerido**: Sprint 4 (independiente de TEST-INFRA-VITEST/E2E ya cerrados). Cambio atómico frontend-only: per-user localStorage key + remover `clearCart()` del logout + migración one-shot desde la key legacy + guest→login merge con max-quantity.
+- **Estimación**: ~150-250 LOC (incluye tests + helpers `mergeGuestCartInto`/`migrateLegacyKey`); 7 RED tests en `src/__tests__/context/CartContext.test.tsx`.
 
 **BUG-FAVORITES-400** 🟡 HIGH (UX)
 - **Síntoma**: `/api/favorites` retorna 400 después de login. Botón favoritos en `/tienda` muestra "No se pudieron actualizar tus favoritos". `/favoritos` no carga imagen del producto. Hard refresh (Ctrl+Shift+R) lo arregla — sugiere stale client state.

@@ -10,9 +10,37 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act, render, waitFor } from '@testing-library/react'
 import { CartProvider, useCart } from '@/features/cart/context/CartContext'
 import { Product } from '@/types'
+import { AuthContext } from '@/context/AuthContext'
+import type { AuthUser, AuthContextType } from '@/context/AuthContext'
+
+// [BUG-CART-PERSISTENCE] Per-user persistence helpers — provide a real
+// AuthContext value so user transitions are observable end-to-end.
+const noopAsync = async () => {}
+const authValue = (user: AuthUser | null): AuthContextType => ({
+  user, isLoading: false, login: noopAsync, logout: noopAsync, register: noopAsync,
+})
+const WithAuth = ({ user, children }: { user: AuthUser | null; children: React.ReactNode }) => (
+  <AuthContext.Provider value={authValue(user)}>{children}</AuthContext.Provider>
+)
+type CapturedCart = ReturnType<typeof useCart>
+function CartProbe({ sink }: { sink: { current: CapturedCart | null } }) {
+  sink.current = useCart()
+  return null
+}
+function renderWithUser(user: AuthUser | null) {
+  const sink: { current: CapturedCart | null } = { current: null }
+  const utils = render(
+    <WithAuth user={user}>
+      <CartProvider><CartProbe sink={sink} /></CartProvider>
+    </WithAuth>
+  )
+  return { sink, ...utils }
+}
+const authedUserA: AuthUser = { id: 1, username: 'alice', email: 'alice@test.com' }
+const authedUserB: AuthUser = { id: 2, username: 'bob', email: 'bob@test.com' }
 
 // ============================================
 // MOCKS: Datos de prueba
@@ -66,7 +94,9 @@ describe('CartContext', () => {
    * - Este wrapper simula el Provider real de la app
    */
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <CartProvider>{children}</CartProvider>
+    <WithAuth user={null}>
+      <CartProvider>{children}</CartProvider>
+    </WithAuth>
   )
 
   /**
@@ -506,24 +536,199 @@ describe('CartContext', () => {
 })
 
 /**
- * ============================================
- * CONCEPTOS CLAVE APRENDIDOS:
- * ============================================
- *
- * 1. renderHook: Renderiza hooks en un ambiente de prueba
- * 2. act(): Envuelve actualizaciones de estado de React
- * 3. wrapper: Proporciona el Provider necesario
- * 4. Mocks: Datos falsos para tests predecibles
- * 5. Arrange-Act-Assert: Patrón de organización de tests
- * 6. describe/it: Agrupación semántica de tests
- * 7. Edge cases: Testear entradas inválidas o inesperadas
- * 8. beforeEach: Setup común para múltiples tests
- *
- * ============================================
- * PRÓXIMOS PASOS:
- * ============================================
- *
- * - Testear AuthContext (manejo de JWT, login/logout)
- * - Testear FavoritesContext (similar a Cart)
- * - Agregar tests E2E para flujos completos
+ * Per-user persistence test infrastructure for BUG-CART-PERSISTENCE.
+ * Key convention: `bv-beni-cart-${String(userId ?? 'guest')}`.
  */
+
+describe('CartContext — Per-User Persistence', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  // Task 1.1 — RED: cart survives user null → 1 → null → 1 roundtrip
+  it('persists cart across user null → 1 → null → 1 transitions', async () => {
+    // Guest session — add an item
+    const guest = renderWithUser(null)
+    await waitFor(() => expect(guest.sink.current?.isHydrated).toBe(true))
+    act(() => guest.sink.current!.addToCart(mockProduct, 2))
+
+    // Per-user (guest) key holds the item — RED on current code (global key)
+    const guestKey = `bv-beni-cart-guest`
+    expect(localStorage.getItem(guestKey)).not.toBeNull()
+    const guestStored = JSON.parse(localStorage.getItem(guestKey)!)
+    expect(guestStored).toHaveLength(1)
+    expect(guestStored[0].id).toBe('1')
+    expect(guestStored[0].quantity).toBe(2)
+
+    // "Login" as user 1 — guest→login merge happens (max-quantity dedupe by id).
+    const user = renderWithUser(authedUserA)
+    await waitFor(() => expect(user.sink.current?.isHydrated).toBe(true))
+    expect(user.sink.current!.cartItems).toHaveLength(1)
+    expect(user.sink.current!.cartItems[0].id).toBe('1')
+    expect(user.sink.current!.cartItems[0].quantity).toBe(2)
+    expect(localStorage.getItem(guestKey)).toBeNull()
+
+    // User 1 adds a different item
+    act(() => user.sink.current!.addToCart(mockProduct2, 1))
+
+    // Per-user key for user 1 holds both items
+    const userKey = `bv-beni-cart-${String(authedUserA.id)}`
+    expect(localStorage.getItem(userKey)).not.toBeNull()
+    const userStored = JSON.parse(localStorage.getItem(userKey)!)
+    expect(userStored).toHaveLength(2)
+
+    // "Logout" — render again as guest (user=null)
+    const guestAgain = renderWithUser(null)
+    await waitFor(() => expect(guestAgain.sink.current?.isHydrated).toBe(true))
+
+    // User 1's per-user key STILL has the items — RED on current code (clearCart wipes)
+    expect(localStorage.getItem(userKey)).not.toBeNull()
+    expect(JSON.parse(localStorage.getItem(userKey)!)).toHaveLength(2)
+
+    // "Re-login" as user 1 — items restored from per-user key
+    const userAgain = renderWithUser(authedUserA)
+    await waitFor(() => expect(userAgain.sink.current?.isHydrated).toBe(true))
+    expect(userAgain.sink.current!.cartItems).toHaveLength(2)
+    const ids = userAgain.sink.current!.cartItems.map((i) => i.id).sort()
+    expect(ids).toEqual(['1', '2'])
+  })
+
+  // Task 1.2 — RED: no cross-user leak — User A items invisible to User B
+  it('isolates carts between authenticated users on the same browser', async () => {
+    // User A adds an item
+    const userA = renderWithUser(authedUserA)
+    await waitFor(() => expect(userA.sink.current?.isHydrated).toBe(true))
+    act(() => userA.sink.current!.addToCart(mockProduct, 3))
+
+    const keyA = `bv-beni-cart-${String(authedUserA.id)}`
+    expect(JSON.parse(localStorage.getItem(keyA) ?? '[]')).toHaveLength(1)
+
+    // "Login" as User B (different user on same browser)
+    const userB = renderWithUser(authedUserB)
+    await waitFor(() => expect(userB.sink.current?.isHydrated).toBe(true))
+
+    // User B sees an EMPTY cart — RED on current code (sees User A's items via global key)
+    expect(userB.sink.current!.cartItems).toEqual([])
+
+    const keyB = `bv-beni-cart-${String(authedUserB.id)}`
+    expect(keyA).not.toBe(keyB)
+  })
+
+  // Task 1.3 — RED: guest→login merge — max-quantity, dedupe by id, guest cleared
+  it('merges guest cart into user cart on login with max-quantity per product id', async () => {
+    // Pre-populate: guest has 1× mockProduct, user 1 has 3× mockProduct
+    localStorage.setItem(
+      `bv-beni-cart-guest`,
+      JSON.stringify([{ ...mockProduct, quantity: 1 }])
+    )
+    localStorage.setItem(
+      `bv-beni-cart-${String(authedUserA.id)}`,
+      JSON.stringify([{ ...mockProduct, quantity: 3 }])
+    )
+
+    const user = renderWithUser(authedUserA)
+    await waitFor(() => expect(user.sink.current?.isHydrated).toBe(true))
+
+    // Merged cart has max(1, 3) = 3 of mockProduct
+    expect(user.sink.current!.cartItems).toHaveLength(1)
+    expect(user.sink.current!.cartItems[0].id).toBe('1')
+    expect(user.sink.current!.cartItems[0].quantity).toBe(3)
+    expect(localStorage.getItem(`bv-beni-cart-guest`)).toBeNull()
+
+    // Different product present only in guest cart → merged in
+    localStorage.setItem(
+      `bv-beni-cart-guest`,
+      JSON.stringify([{ ...mockProduct3, quantity: 2 }])
+    )
+    localStorage.setItem(
+      `bv-beni-cart-${String(authedUserA.id)}`,
+      JSON.stringify([{ ...mockProduct, quantity: 3 }])
+    )
+    const user2 = renderWithUser(authedUserA)
+    await waitFor(() => expect(user2.sink.current?.isHydrated).toBe(true))
+    expect(user2.sink.current!.cartItems).toHaveLength(2)
+    const ids = user2.sink.current!.cartItems.map((i) => i.id).sort()
+    expect(ids).toEqual(['1', '3'])
+    expect(localStorage.getItem(`bv-beni-cart-guest`)).toBeNull()
+  })
+
+  // Task 1.4 — RED: legacy key `bv-beni-cart` migrated on first login; legacy removed
+  it('migrates legacy key `bv-beni-cart` to per-user key on first login', async () => {
+    localStorage.setItem(
+      `bv-beni-cart`,
+      JSON.stringify([
+        { ...mockProduct, quantity: 2 },
+        { ...mockProduct2, quantity: 1 },
+        { ...mockProduct3, quantity: 4 },
+      ])
+    )
+
+    const user = renderWithUser(authedUserA)
+    await waitFor(() => expect(user.sink.current?.isHydrated).toBe(true))
+
+    const userKey = `bv-beni-cart-${String(authedUserA.id)}`
+    const migrated = JSON.parse(localStorage.getItem(userKey) ?? '[]')
+    expect(migrated).toHaveLength(3)
+    expect(migrated.map((i: { id: string }) => i.id).sort()).toEqual(['1', '2', '3'])
+    // Legacy key is removed from storage — RED on current code (legacy untouched)
+    expect(localStorage.getItem(`bv-beni-cart`)).toBeNull()
+  })
+
+  // Task 1.5 — GREEN-on-current-code (regression guard)
+  it('does not throw and leaves per-user key unchanged when legacy key is absent', async () => {
+    const user = renderWithUser(authedUserA)
+    await waitFor(() => expect(user.sink.current?.isHydrated).toBe(true))
+
+    const userKey = `bv-beni-cart-${String(authedUserA.id)}`
+    expect(localStorage.getItem(userKey)).toBeNull()
+
+    // Empty-string legacy value is also a defensive no-op
+    localStorage.setItem(`bv-beni-cart`, '')
+    const user2 = renderWithUser(authedUserA)
+    await waitFor(() => expect(user2.sink.current?.isHydrated).toBe(true))
+    expect(localStorage.getItem(userKey)).toBeNull()
+  })
+
+  // Task 1.6 — RED: hydration re-runs on user.id change; isHydrated cycles
+  it('re-hydrates the cart when the authenticated user id changes', async () => {
+    localStorage.setItem(
+      `bv-beni-cart-${String(authedUserA.id)}`,
+      JSON.stringify([{ ...mockProduct, quantity: 5 }])
+    )
+
+    const user = renderWithUser(authedUserA)
+    await waitFor(() => expect(user.sink.current?.isHydrated).toBe(true))
+    expect(user.sink.current!.cartItems).toHaveLength(1)
+    expect(user.sink.current!.cartItems[0].quantity).toBe(5)
+
+    // Switch to user 2 — re-hydrate from a different key
+    const userB = renderWithUser(authedUserB)
+    await waitFor(() => expect(userB.sink.current?.isHydrated).toBe(true))
+    expect(userB.sink.current!.cartItems).toEqual([])
+    expect(userB.sink.current!.isHydrated).toBe(true)
+
+    // Switch back to user 1 — re-hydrate restores items
+    const userAgain = renderWithUser(authedUserA)
+    await waitFor(() => expect(userAgain.sink.current?.isHydrated).toBe(true))
+    expect(userAgain.sink.current!.cartItems).toHaveLength(1)
+    expect(userAgain.sink.current!.cartItems[0].quantity).toBe(5)
+  })
+
+  // Task 1.7 — GREEN-on-current-code (regression guard for useCreateOrder.ts:69)
+  it('clears the cart when clearCart() is invoked (payment-success regression guard)', async () => {
+    const user = renderWithUser(authedUserA)
+    await waitFor(() => expect(user.sink.current?.isHydrated).toBe(true))
+
+    act(() => user.sink.current!.addToCart(mockProduct, 2))
+    act(() => user.sink.current!.addToCart(mockProduct2, 1))
+    expect(user.sink.current!.cartItems).toHaveLength(2)
+
+    // Simulate the useCreateOrder.ts:69 payment-success clearCart() call
+    act(() => user.sink.current!.clearCart())
+
+    expect(user.sink.current!.cartItems).toEqual([])
+    const userKey = `bv-beni-cart-${String(authedUserA.id)}`
+    const stored = JSON.parse(localStorage.getItem(userKey) ?? '[]')
+    expect(stored).toEqual([])
+  })
+})
