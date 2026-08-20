@@ -1,6 +1,6 @@
 
 import { test, expect } from '@playwright/test';
-import { MOCK_PRODUCTS, MOCK_AUTH_RESPONSE, MOCK_USER } from './utils/mocks';
+import { MOCK_PRODUCTS, MOCK_USER } from './utils/mocks';
 
 // Usamos viewport de móvil sobre Chromium para evitar dependencias de WebKit en este entorno
 test.use({
@@ -26,16 +26,24 @@ test.describe('Mobile Checkout Flow', () => {
             await route.fulfill({ json: { data: [{ id: 1, name: 'Luxury', slug: 'luxury' }] } });
         });
 
-        await page.route('**/api/users/me', async (route) => {
-            if (route.request().headers()['authorization']) {
-                await route.fulfill({ json: MOCK_USER });
+        // Session is conditional on the bv_session cookie, mirroring the real
+        // route: anonymous before login, authenticated after.
+        await page.route('**/api/auth/session', async (route) => {
+            const cookie = route.request().headers()['cookie'] || '';
+            if (cookie.includes('bv_session=')) {
+                await route.fulfill({ json: { user: MOCK_USER } });
             } else {
-                await route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
+                await route.fulfill({ json: { user: null } });
             }
         });
 
-        await page.route('**/api/auth/local', async (route) => {
-            await route.fulfill({ json: MOCK_AUTH_RESPONSE });
+        // Login must emit the cookie explicitly; route.fulfill() does not set one.
+        await page.route('**/api/auth/login', async (route) => {
+            await route.fulfill({
+                status: 200,
+                headers: { 'Set-Cookie': 'bv_session=mock-jwt; Path=/; HttpOnly; SameSite=Lax' },
+                json: { user: MOCK_USER },
+            });
         });
 
         await page.route('**/api/create-payment-intent', async (route) => {
@@ -69,8 +77,8 @@ test.describe('Mobile Checkout Flow', () => {
         await page.fill('input[id="password"]', 'password111');
         await loginBtn.click();
 
-        // 5. Volver al carrito tras login (que redirige a mi-cuenta)
-        await expect(page).toHaveURL(/.*\/mi-cuenta/, { timeout: 20000 });
+        // 5. Tras login vuelve al destino de ?redirect (/carrito)
+        await expect(page).toHaveURL(/.*\/carrito/, { timeout: 20000 });
         await page.goto('/carrito');
 
         // 6. Checkout

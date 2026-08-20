@@ -1,18 +1,15 @@
 
 import { test, expect } from '@playwright/test';
-import { MOCK_SHIPPED_ORDER, MOCK_ORDERS_RESPONSE, MOCK_USER, MOCK_AUTH_RESPONSE } from './utils/mocks';
+import { MOCK_SHIPPED_ORDER, MOCK_ORDERS_RESPONSE, MOCK_USER } from './utils/mocks';
 
 test.describe('Order Tracking and Details', () => {
     test.beforeEach(async ({ page }) => {
-        // Setup initial auth state
-        await page.addInitScript((token) => {
-            window.localStorage.setItem('jwt', token);
-        }, MOCK_AUTH_RESPONSE.jwt);
+        // Setup initial auth state via the cookie-session endpoint
+        await page.route('**/api/auth/session', async (route) => {
+            await route.fulfill({ json: { user: MOCK_USER } });
+        });
 
         // Mock API calls
-        await page.route('**/api/users/me', async (route) => {
-            await route.fulfill({ json: MOCK_USER });
-        });
 
         await page.route('**/api/orders?*', async (route) => {
             await route.fulfill({ json: MOCK_ORDERS_RESPONSE });

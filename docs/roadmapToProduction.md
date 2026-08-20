@@ -1,7 +1,7 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 13 Agosto 2026  
-**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 completados ✅  
+**Última actualización:** 18 Agosto 2026
+**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 + TEST-INFRA-VITEST + TEST-INFRA-E2E (parcial) completados ✅
 **Objetivo:** Lanzamiento 14 Abril 2026
 
 ---
@@ -68,7 +68,30 @@
 - ✅ Tests Vitest: checkout 6/6 · carrito 2/2 (suite nueva) · sin regresiones vs baseline
 - ⚠️ Limpieza futura (Q2): `src/app/mi-cuenta/pedidos/[orderId]/page.tsx:28` aún usa `redirect` hardcoded — fuera de alcance, pendiente de retrofit
 
-### 🐛 Deuda técnica pendiente (descubierta en testing manual de DEBT-02 — 13 Agosto 2026)
+**TEST-INFRA-VITEST: Arreglar 21 fallos pre-existentes de Vitest (CartContext + CookieBanner)** (PR #106 → release 1.5.1, commit `e9e662e`)
+- ✅ Reemplazo del polyfill roto de `localStorage` en `vitest.setup.ts` (truthy-guard contra `window.localStorage` empty stub de jsdom@27)
+- ✅ Singleton WHATWG `Storage` instalado en `globalThis.localStorage` y `window.localStorage` vía `Object.defineProperty`
+- ✅ Strict TDD: RED baseline (`localStorage.clear is not a function` ×21) → GREEN (21/21) → SWEEP (949/949 unit + 20/20 storybook + 9/9 integration + tsc + eslint)
+- ✅ 1 archivo modificado (`vitest.setup.ts`, +40/-6), 0 cambios production code
+- ✅ Cap delta: 0 (test-infra only)
+
+**TEST-INFRA-E2E: Self-contained Playwright suite (parcial — 22 → 14 events)** (PR #108 → release 1.5.2, commit `59d197b`)
+- ✅ C1 — baseURL `:1355` unreachable arreglado (cambio a `:3000` en `playwright.config.ts:21`); 14 events cerrados (16 → 2)
+- ✅ SUG-1 — `webServer` block activado (`reuseExistingServer: !process.env.CI`); suite auto-bootstrapping
+- ✅ C2 — Strapi mock orquestado en webServer array (entry 2, readiness `/health`); 6 events cerrados (6 → 0)
+- ⚠️ **Refinamiento CSP**: design original decía `:1338` para el mock; `next.config.ts` `connect-src` whitelists solo `:1337`. Fix in-scope: `MOCK_STRAPI_PORT=1337` (el mock ya leía esa env var). Sin cambios production code, sin spec edits.
+- ⚠️ **C3 (legacy-auth) descubierto**: 7 specs (cancellation-flow, checkout-happy-path, checkout-mobile, empty-states, order-tracking, payment-errors, +1) mockean auth vieja (`localStorage.jwt` + `/api/users/me`); la app migró a cookie-session `/api/auth/session`. Estos 14 events (7 × 2 browsers) NO son regresiones — estaban masked bajo C1 en el explore inicial. Patrón fix: template `uxw01-regression-sweep.spec.ts` (ya modernizado).
+- ✅ Verdict verify: 10/10 spec scenarios COMPLIANT, 0 regresiones, 1 UNTESTED (S5.3 integration sin Strapi real)
+- ✅ 1 archivo modificado (`playwright.config.ts`, +28/-7 net), 0 cambios production code, 2 commits work-unit (`87af90f` + `5c7ca91`)
+- ✅ Cap delta: 0 (test-infra only)
+
+**Hygiene: Persistir openspec artifacts de DEBT-LOGIN-REDIRECT** (PR #110, branch `chore/persist-debt-login-redirect-artifacts`, 488fdd2)
+- ✅ Cierra el followup F4 del archive-report de TEST-INFRA-E2E
+- ✅ 7 archivos añadidos: `openspec/changes/archive/2026-08-11-DEBT-LOGIN-REDIRECT-honor-redirect-query-param/` (archive-report, design, exploration, proposal, tasks, verify-report) + `openspec/specs/login-redirect/spec.md`
+- ✅ 967 inserciones, 0 production code touched, 0 test code touched
+- ✅ Cap delta: 0 (hygiene only)
+
+### 🐛 Deuda técnica pendiente (post-TEST-INFRA-E2E — 18 Agosto 2026)
 
 > Bugs pre-existentes encontrados durante smoke test del redirect flow. NO fueron introducidos por DEBT-02; el retrofit del redirect funcionó correctamente (URL `?redirect=` correcta, consume-side respeta, round-trip OK). Cada bug requiere su propio ticket + change.
 
@@ -76,23 +99,31 @@
 - **Síntoma**: items añadidos al carrito se pierden al cerrar sesión y volver a abrir. **Pérdida potencial de ventas.**
 - **Evidencia**: testing manual 13/08/2026 — `add to cart → logout → login → cart vacío`
 - **Root cause probable**: cart state en memoria/session, no persistido a backend ni a `localStorage`
-- **Sugerido**: Sprint 3 (junto con `TEST-INFRA-VITEST` de los 21 failures pre-existentes; posiblemente root cause compartido con `BUG-FAVORITES-400`)
+- **Sugerido**: Sprint 4 (independiente de TEST-INFRA-VITEST/E2E ya cerrados)
 - **Estimación**: ~8-16 LOC + tests
 
 **BUG-FAVORITES-400** 🟡 HIGH (UX)
 - **Síntoma**: `/api/favorites` retorna 400 después de login. Botón favoritos en `/tienda` muestra "No se pudieron actualizar tus favoritos". `/favoritos` no carga imagen del producto. Hard refresh (Ctrl+Shift+R) lo arregla — sugiere stale client state.
 - **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /api/favorites:1`
-- **Sugerido**: Sprint 3 (relacionado con `TEST-INFRA-VITEST` pre-existing failures; posiblemente root cause compartido con `BUG-CART-PERSISTENCE`)
+- **Sugerido**: Sprint 4 (independiente; root cause NO compartido con BUG-CART-PERSISTENCE según TEST-INFRA-VITEST findings)
 - **Estimación**: ~4-8 LOC + tests
 
 **BUG-IMAGES-400** 🟡 MEDIUM (UX)
 - **Síntoma**: Next.js image optimization falla con 400 para `/next/image?url=...`. Algunos productos sin imagen.
 - **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /next/image?url=...`
 - **Root cause probable**: configuración de Next.js image domains, o imágenes externas sin allowlist
-- **Sugerido**: Sprint 3
+- **Sugerido**: Sprint 4
 - **Estimación**: ~2-4 LOC (config change)
 
-**Progreso general:** ~200h invertidas de ~240h estimadas (83%)
+**TEST-INFRA-E2E-LEGACY-AUTH** 🟡 MEDIUM (deuda e2e pre-existente) — **descubierto por TEST-INFRA-E2E**
+- **Síntoma**: 14 e2e failure events (7 specs × 2 browsers) que no son regresiones pero bloquean `0 failures` acceptance.
+- **Specs afectados**: `cancellation-flow.spec.ts`, `checkout-happy-path.spec.ts`, `checkout-mobile.spec.ts`, `empty-states.spec.ts`, `order-tracking.spec.ts`, `payment-errors.spec.ts`, +1
+- **Root cause**: migración previa del modelo de auth — specs mockean `localStorage.jwt` + `/api/users/me` (legacy), la app actual usa cookie-session `/api/auth/session`. Estos 7 specs nunca se actualizaron.
+- **Plantilla**: `tests/e2e/uxw01-regression-sweep.spec.ts` (ya modernizado, mockea `/api/auth/session` correctamente)
+- **Sugerido**: Sprint 4 (cierra el último item de de Sprint 3 original; followup nombrado en archive-report de TEST-INFRA-E2E)
+- **Estimación**: ~1-2 días, scope: 7 spec edits, 0 production code, 0 mock code
+
+**Progreso general:** ~210h invertidas de ~240h estimadas (88%)
 
 ---
 
@@ -816,6 +847,6 @@
 
 ---
 
-**Última actualización:** 9 Marzo 2026  
-**Próxima revisión:** Al completar Testing + QA y Setup de Producción  
+**Última actualización:** 18 Agosto 2026
+**Próxima revisión:** Al cerrar Sprint 4 (BUG-CART-PERSISTENCE + BUG-FAVORITES-400 + BUG-IMAGES-400 + TEST-INFRA-E2E-LEGACY-AUTH)
 **Contacto:** Andrés | andresjpadev@gmail.com
