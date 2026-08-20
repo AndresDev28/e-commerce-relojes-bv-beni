@@ -7,7 +7,6 @@ import {
   useEffect,
 } from 'react'
 import { useRouter } from 'next/navigation'
-import { useCart } from '@/features/cart'
 import { newTraceId } from '@/lib/trace'
 import { sanitizeRedirect } from '@/lib/auth/redirect'
 
@@ -36,7 +35,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
   const router = useRouter()
-  const { clearCart } = useCart()
 
   useEffect(() => {
     const hydrateSession = async () => {
@@ -135,7 +133,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       })
     } catch {
     } finally {
-      clearCart()
+      // [BUG-CART-PERSISTENCE] Cart is per-user key in localStorage; logout
+      // MUST NOT clear it. Re-hydration on user.id change picks it up on
+      // re-login. The cart's own clearCart() is preserved for the payment-
+      // success path (see useCreateOrder.ts).
       setUser(null)
       setIsLoading(false)
       router.push('/')

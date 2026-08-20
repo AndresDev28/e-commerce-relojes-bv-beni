@@ -1,6 +1,7 @@
 'use client'
-import { createContext, useState, ReactNode, useContext, useEffect } from 'react';
+import { createContext, useState, ReactNode, useContext, useEffect, useMemo, useRef } from 'react';
 import { Product } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 // Tipo para el Item del Carrito
 export interface CartItem extends Product {
@@ -25,38 +26,173 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-const CART_STORAGE_KEY = 'bv-beni-cart';
+// [BUG-CART-PERSISTENCE] Legacy global key — one-shot migration target.
+const LEGACY_CART_STORAGE_KEY = 'bv-beni-cart';
+
+// [BUG-CART-PERSISTENCE] Per-user key. Explicit String() coercion handles
+// AuthUser.id (number) vs Product.id (string) type interaction.
+function cartStorageKey(userId: number | null | undefined): string {
+  return `bv-beni-cart-${String(userId ?? 'guest')}`;
+}
+
+// [BUG-CART-PERSISTENCE] Pure helper: per-product max-quantity, dedupe by id,
+// sorted output for stable diffs. Tested in isolation.
+export function mergeGuestCartInto(
+  userCart: CartItem[],
+  guestCart: CartItem[]
+): CartItem[] {
+  if (guestCart.length === 0) return userCart
+
+  const byId = new Map<string, CartItem>()
+  for (const item of userCart) {
+    byId.set(item.id, item)
+  }
+  for (const guestItem of guestCart) {
+    const existing = byId.get(guestItem.id)
+    if (existing) {
+      byId.set(guestItem.id, {
+        ...existing,
+        quantity: Math.max(existing.quantity, guestItem.quantity),
+      })
+    } else {
+      byId.set(guestItem.id, guestItem)
+    }
+  }
+
+  return Array.from(byId.values()).sort((a, b) => a.id.localeCompare(b.id))
+}
+
+// [BUG-CART-PERSISTENCE] One-shot legacy → per-user migration. Idempotent.
+export function migrateLegacyKey(targetKey: string): void {
+  if (typeof window === 'undefined') return
+
+  const raw = localStorage.getItem(LEGACY_CART_STORAGE_KEY)
+  if (raw === null || raw === '') return
+
+  let legacyItems: CartItem[]
+  try {
+    const parsed = JSON.parse(raw)
+    legacyItems = Array.isArray(parsed) ? (parsed as CartItem[]) : []
+  } catch {
+    localStorage.removeItem(LEGACY_CART_STORAGE_KEY)
+    return
+  }
+
+  if (legacyItems.length === 0) {
+    localStorage.removeItem(LEGACY_CART_STORAGE_KEY)
+    return
+  }
+
+  let existing: CartItem[] = []
+  const existingRaw = localStorage.getItem(targetKey)
+  if (existingRaw) {
+    try {
+      const parsed = JSON.parse(existingRaw)
+      existing = Array.isArray(parsed) ? (parsed as CartItem[]) : []
+    } catch {
+      existing = []
+    }
+  }
+
+  const merged = mergeGuestCartInto(existing, legacyItems)
+  localStorage.setItem(targetKey, JSON.stringify(merged))
+  localStorage.removeItem(LEGACY_CART_STORAGE_KEY)
+}
 
 export const CartProvider = ({ children }: CartProviderProps) => {
+  const { user } = useAuth()
+
+  // [BUG-CART-PERSISTENCE] Per-user key — re-keyed on user.id change.
+  const storageKey = useMemo(
+    () => cartStorageKey(user?.id),
+    [user?.id]
+  )
+
+  // [BUG-CART-PERSISTENCE] Tracks previous user id for guest→user merge detection.
+  const previousUserIdRef = useRef<number | null | undefined>(undefined)
+
   // 1. Creamos un estado usando 'useState' para guardar la lista de 'CartItem'.
-  // Lo inicializamos como un array vacío.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  // Flag de hidratación inicializada en false por defecto para el SSR
+  // [BUG-CART-PERSISTENCE] isHydrated cycles on user.id change for SSR safety.
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Efecto para cargar datos iniciales del localStorage al montar
+  // [BUG-CART-PERSISTENCE] Re-hydrate on auth transitions + legacy migration + merge.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-      if (storedCart) {
+    if (typeof window === 'undefined') return
+
+    migrateLegacyKey(storageKey)
+
+    const previousUserId = previousUserIdRef.current
+    const currentUserId = user?.id ?? null
+
+    // Guest → authenticated transition: max-quantity merge, then clear guest.
+    if (
+      (previousUserId === null || previousUserId === undefined) &&
+      currentUserId !== null
+    ) {
+      const guestKey = cartStorageKey(null)
+      let guestItems: CartItem[] = []
+      const guestRaw = localStorage.getItem(guestKey)
+      if (guestRaw) {
         try {
-          setCartItems(JSON.parse(storedCart));
-        } catch (error) {
-          console.error("Failed to parse cart from localStorage", error);
-          setCartItems([]); // Reset if parsing fails
+          const parsed = JSON.parse(guestRaw)
+          guestItems = Array.isArray(parsed) ? (parsed as CartItem[]) : []
+        } catch {
+          guestItems = []
         }
       }
-      setIsHydrated(true);
-    }
-  }, []);
 
-  // Efecto para guardar el carrito en localStorage cada vez que cartItems cambie,
-  // pero solo después de que el componente se haya hidratado.
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+      let userItems: CartItem[] = []
+      const userRaw = localStorage.getItem(storageKey)
+      if (userRaw) {
+        try {
+          const parsed = JSON.parse(userRaw)
+          userItems = Array.isArray(parsed) ? (parsed as CartItem[]) : []
+        } catch {
+          userItems = []
+        }
+      }
+
+      const merged = mergeGuestCartInto(userItems, guestItems)
+      if (merged.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(merged))
+      } else {
+        localStorage.removeItem(storageKey)
+      }
+      localStorage.removeItem(guestKey)
+
+      setCartItems(merged)
+      previousUserIdRef.current = currentUserId
+      setIsHydrated(true)
+      return
     }
-  }, [cartItems, isHydrated]);
+
+    // Standard re-hydration path
+    const storedCart = localStorage.getItem(storageKey)
+    if (storedCart) {
+      try {
+        const parsed = JSON.parse(storedCart)
+        setCartItems(Array.isArray(parsed) ? (parsed as CartItem[]) : [])
+      } catch (error) {
+        console.error("Failed to parse cart from localStorage", error)
+        setCartItems([])
+      }
+    } else {
+      setCartItems([])
+    }
+    previousUserIdRef.current = currentUserId
+    setIsHydrated(true)
+  }, [storageKey, user?.id])
+
+  // [BUG-CART-PERSISTENCE] Empty cart removes the key to keep storage tidy.
+  useEffect(() => {
+    if (!isHydrated) return
+    if (cartItems.length === 0) {
+      localStorage.removeItem(storageKey)
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(cartItems))
+    }
+  }, [cartItems, isHydrated, storageKey]);
 
   const addToCart = (product: Product, quantity: number) => {
     setCartItems(prevItems => {

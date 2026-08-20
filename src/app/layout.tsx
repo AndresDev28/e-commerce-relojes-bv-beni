@@ -36,16 +36,16 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className="bg-white flex flex-col min-h-screen">
-        <CartProvider>
-          <AuthProviderWrapper>
+        <AuthProviderWrapper>
+          <CartProvider>
             <FavoritesProvider>
               <StripeProviderWrapper>
                 <AppShell>{children}</AppShell>
                 <CookieBanner />
               </StripeProviderWrapper>
             </FavoritesProvider>
-          </AuthProviderWrapper>
-        </CartProvider>
+          </CartProvider>
+        </AuthProviderWrapper>
       </body>
     </html>
   )
