@@ -52,6 +52,12 @@ describe('updateFavoritesService', () => {
       expect(JSON.parse(init?.body as string)).toEqual({
         favorites: ['p-1', 'p-2', 'p-3'],
       })
+      const body = JSON.parse(init?.body as string)
+      // Regression guard for the UXW-01 contract: every id in the PUT body
+      // MUST be a string. A numeric id would trip validateFavoritesList's
+      // invalid_item check at src/app/api/favorites/route.ts:50-60 and
+      // produce the 400 we are fixing here.
+      expect(body.favorites.every((id: unknown) => typeof id === 'string')).toBe(true)
     })
   })
 
