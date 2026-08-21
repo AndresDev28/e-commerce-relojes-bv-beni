@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
+import type { Product } from '@/types'
+import { normalizeFavorites } from './normalizeFavorite'
 
 export const MAX_FAVORITES = 200
 
@@ -8,7 +10,7 @@ export type FavoritesList = string[]
 export async function getFavoritesService(params: {
   jwtToken: string
   traceId: string
-}): Promise<{ favorites: unknown[] } | { error: NextResponse }> {
+}): Promise<{ favorites: Product[] } | { error: NextResponse }> {
   const { jwtToken, traceId } = params
 
   let response: Response
@@ -51,5 +53,5 @@ export async function getFavoritesService(params: {
     }
   }
 
-  return { favorites: payload.favorites ?? [] }
+  return { favorites: normalizeFavorites(payload.favorites ?? []) }
 }

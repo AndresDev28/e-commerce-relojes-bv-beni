@@ -114,19 +114,49 @@ describe('getFavoritesService', () => {
   })
 
   describe('200 — success', () => {
-    it('returns {favorites: <array>} when payload is well-formed, defaulting to []', async () => {
+    it('returns {favorites: <Product[]>} when payload is well-formed, defaulting to []', async () => {
       const { getFavoritesService } = await import('../getFavoritesService')
 
-      // Case 1: explicit favorites array
+      // Case 1: explicit favorites array (real Strapi object shape)
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ favorites: ['p-1', 'p-2', 'p-3'] }),
+        json: async () => ({
+          favorites: [
+            {
+              id: 'p-1',
+              documentId: 'p-1',
+              name: 'Watch A',
+              price: 100,
+              stock: 1,
+            },
+            {
+              id: 'p-2',
+              documentId: 'p-2',
+              name: 'Watch B',
+              price: 200,
+              stock: 2,
+            },
+            {
+              id: 'p-3',
+              documentId: 'p-3',
+              name: 'Watch C',
+              price: 300,
+              stock: 3,
+            },
+          ],
+        }),
       } as Response)
 
       const result1 = await getFavoritesService(baseParams)
       expect('favorites' in result1).toBe(true)
       if ('favorites' in result1) {
-        expect(result1.favorites).toEqual(['p-1', 'p-2', 'p-3'])
+        expect(result1.favorites).toHaveLength(3)
+        expect(result1.favorites.every((p) => typeof p.id === 'string')).toBe(true)
+        expect(result1.favorites.map((p) => p.id).sort()).toEqual([
+          'p-1',
+          'p-2',
+          'p-3',
+        ])
       }
 
       // Case 2: missing favorites field defaults to empty array
