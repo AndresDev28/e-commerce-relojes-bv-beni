@@ -341,5 +341,191 @@ describe('FavoritesContext', () => {
         expect(captured!.favorites).toEqual([])
       })
     })
+
+    it('isFavorite matches a favorite persisted with a numeric source id, and addToFavorites for the catalog string id is a no-op', async () => {
+      // Server-side favorite arrives as a raw Strapi object with numeric id.
+      // After ingestion + normalization, isFavorite('42') must return true.
+      vi.mocked(global.fetch).mockReset()
+      vi.mocked(global.fetch).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            favorites: [
+              {
+                id: 42,
+                documentId: 'p-42',
+                name: 'Casio LA670WEA-1EF',
+                price: 3990,
+                stock: 5,
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+
+      let captured: ReturnType<typeof useFavorites> | null = null
+
+      render(
+        <FavoritesProvider>
+          <AuthProbe onReady={(ctx) => (captured = ctx)} />
+        </FavoritesProvider>,
+      )
+
+      await waitFor(() => {
+        expect(captured).not.toBeNull()
+        expect(captured!.isLoading).toBe(false)
+        expect(captured!.isFavorite('42')).toBe(true)
+      })
+
+      // Catalog exposes the same product as a string id — addToFavorites
+      // must short-circuit because the favorite is already in state.
+      vi.mocked(global.fetch).mockClear()
+
+      const catalogProduct: Product = {
+        id: '42',
+        name: 'Casio LA670WEA-1EF',
+        price: 3990,
+        images: ['/img/casio.jpg'],
+        href: '/tienda/casio-la670wea-1ef',
+        description: 'Reloj Casio vintage',
+        stock: 5,
+      }
+
+      const result: FavoriteMutationResult =
+        await captured!.addToFavorites(catalogProduct)
+
+      expect(result).toEqual({ ok: true })
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('PUT body for an add on top of a numeric-source favorite contains only string ids', async () => {
+      // Start with one favorite ingested from a numeric source id.
+      vi.mocked(global.fetch).mockReset()
+      vi.mocked(global.fetch).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            favorites: [
+              {
+                id: 42,
+                documentId: 'p-42',
+                name: 'Casio LA670WEA-1EF',
+                price: 3990,
+                stock: 5,
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+
+      let captured: ReturnType<typeof useFavorites> | null = null
+
+      render(
+        <FavoritesProvider>
+          <AuthProbe onReady={(ctx) => (captured = ctx)} />
+        </FavoritesProvider>,
+      )
+
+      await waitFor(() => {
+        expect(captured).not.toBeNull()
+        expect(captured!.isLoading).toBe(false)
+        expect(captured!.isFavorite('42')).toBe(true)
+      })
+
+      // Mock the PUT response for the upcoming add.
+      vi.mocked(global.fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify({ favorites: ['18', '42'] }), { status: 200 }),
+      )
+
+      const catalogProduct: Product = {
+        id: '18',
+        name: 'Casio LA670WEA-8AEF',
+        price: 4590,
+        images: ['/img/casio2.jpg'],
+        href: '/tienda/casio-la670wea-8aef',
+        description: 'Reloj Casio',
+        stock: 3,
+      }
+
+      await captured!.addToFavorites(catalogProduct)
+
+      // Capture the PUT body.
+      const putCall = vi.mocked(global.fetch).mock.calls.find(
+        (c) => c[0] === '/api/favorites' && (c[1] as any)?.method === 'PUT',
+      )
+      expect(putCall).toBeDefined()
+
+      const body = JSON.parse((putCall![1] as any).body)
+      expect(Array.isArray(body)).toBe(true)
+      // CRITICAL: every entry must be a string (UXW-01 contract + 400 fix)
+      expect(body.every((id: unknown) => typeof id === 'string')).toBe(true)
+      expect(body).toContain('18')
+      expect(body).toContain('42')
+    })
+
+    it('removeFromFavorites matches a numeric-source favorite by string id and PUTs the remainder', async () => {
+      // Two favorites ingested from numeric source ids.
+      vi.mocked(global.fetch).mockReset()
+      vi.mocked(global.fetch).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            favorites: [
+              {
+                id: 42,
+                documentId: 'p-42',
+                name: 'Casio LA670WEA-1EF',
+                price: 3990,
+                stock: 5,
+              },
+              {
+                id: 18,
+                documentId: 'p-18',
+                name: 'Casio LA670WEA-8AEF',
+                price: 4590,
+                stock: 3,
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+
+      let captured: ReturnType<typeof useFavorites> | null = null
+
+      render(
+        <FavoritesProvider>
+          <AuthProbe onReady={(ctx) => (captured = ctx)} />
+        </FavoritesProvider>,
+      )
+
+      await waitFor(() => {
+        expect(captured).not.toBeNull()
+        expect(captured!.isLoading).toBe(false)
+        expect(captured!.isFavorite('42')).toBe(true)
+        expect(captured!.isFavorite('18')).toBe(true)
+      })
+
+      // Mock the PUT response for the upcoming remove.
+      vi.mocked(global.fetch).mockResolvedValueOnce(
+        new Response(JSON.stringify({ favorites: ['18'] }), { status: 200 }),
+      )
+
+      const result: FavoriteMutationResult =
+        await captured!.removeFromFavorites('42')
+
+      expect(result).toEqual({ ok: true })
+
+      // Capture the PUT body.
+      const putCall = vi.mocked(global.fetch).mock.calls.find(
+        (c) => c[0] === '/api/favorites' && (c[1] as any)?.method === 'PUT',
+      )
+      expect(putCall).toBeDefined()
+
+      const body = JSON.parse((putCall![1] as any).body)
+      expect(Array.isArray(body)).toBe(true)
+      expect(body.every((id: unknown) => typeof id === 'string')).toBe(true)
+      expect(body).not.toContain('42')
+      expect(body).toContain('18')
+    })
   })
 })
