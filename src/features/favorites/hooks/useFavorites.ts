@@ -55,7 +55,7 @@ export function useFavoritesApi(): UseFavoritesApiResult {
     setError(null)
 
     try {
-      const favoriteIds = newFavorites.map(f => f.id)
+      const favoriteIds = newFavorites.map(f => String(f.id))
 
       const response = await fetch('/api/favorites', {
         method: 'PUT',
