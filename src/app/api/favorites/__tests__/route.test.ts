@@ -56,9 +56,27 @@ describe('GET /api/favorites', () => {
         json: async () => ({ id: 42, email: 'user@example.com' }),
       })
       // getFavoritesService → /api/users/me?populate=favorites
+      // Real Strapi shape: numeric id, documentId, partial fields
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ favorites: ['p-1', 'p-2'] }),
+        json: async () => ({
+          favorites: [
+            {
+              id: 1,
+              documentId: 'p-1',
+              name: 'Watch A',
+              price: 100,
+              stock: 1,
+            },
+            {
+              id: 2,
+              documentId: 'p-2',
+              name: 'Watch B',
+              price: 200,
+              stock: 2,
+            },
+          ],
+        }),
       })
 
     const request = new NextRequest('http://localhost:3000/api/favorites')
@@ -67,7 +85,13 @@ describe('GET /api/favorites', () => {
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.favorites).toEqual(['p-1', 'p-2'])
+    // Service normalizes to canonical Product[] with string ids
+    expect(data.favorites).toHaveLength(2)
+    expect(data.favorites.every((p: { id: unknown }) => typeof p.id === 'string')).toBe(true)
+    expect(data.favorites.map((p: { id: string }) => p.id).sort()).toEqual([
+      '1',
+      '2',
+    ])
     expect(response.headers.get('X-Trace-Id')).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     )
