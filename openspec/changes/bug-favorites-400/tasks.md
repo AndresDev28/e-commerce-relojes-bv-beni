@@ -71,7 +71,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
   - **Depends on**: none
   - **Diff est.**: +60 (per design §6)
 
-- [ ] **Task 2**: Update `getFavoritesService.test.ts` mock + add canonical-shape assertions
+- [x] **Task 2**: Update `getFavoritesService.test.ts` mock + add canonical-shape assertions
   - **Phase**: T0 RED
   - **Files**: `src/features/favorites/services/__tests__/getFavoritesService.test.ts` (modified)
   - **Acceptance**: Success-path mock (currently lines 117-143) uses the **real Strapi object shape** with numeric `id` and `documentId` (snippet from design §4.2). New assertions inside the existing `200 — success` describe block assert: `result.favorites` is `Product[]` (no cast), every `result.favorites[i].id` is `typeof 'string'`, `name/price/stock` flow through, `images/href/description` fall back. Existing `URL and headers` (lines 30-50) and 502 tests (lines 53-114) stay byte-identical. Test fails until Task 5 wires the new return type and normalizer.
@@ -80,7 +80,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
   - **Depends on**: Task 1
   - **Diff est.**: +30 (per design §6)
 
-- [ ] **Task 3**: Add `FavoritesContext.test.tsx` cases for numeric-source membership and PUT-body strings
+- [x] **Task 3**: Add `FavoritesContext.test.tsx` cases for numeric-source membership and PUT-body strings
   - **Phase**: T0 RED
   - **Files**: `src/features/favorites/context/__tests__/FavoritesContext.test.tsx` (modified)
   - **Acceptance**: 3 new test cases inside the existing `describe('authenticated user', ...)` block (per design §4.4):
@@ -95,7 +95,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
 
 ### Phase T2 — GREEN (implement normalizer)
 
-- [ ] **Task 4**: Implement `normalizeFavorite.ts` pure helper
+- [x] **Task 4**: Implement `normalizeFavorite.ts` pure helper
   - **Phase**: T2 GREEN
   - **Files**: `src/features/favorites/services/normalizeFavorite.ts` (new)
   - **Acceptance**: Exports `normalizeFavorite(raw: unknown): Product | null` and `normalizeFavorites(raw: unknown): Product[]`. Field mapping from design §3.1 table is implemented exactly (every Strapi field has its defensive fallback). Null entries are dropped, never silently coerced to `{ id: '' }`. Module is pure (no I/O, no React, no hooks). Task 1's 7 tests now pass.
@@ -106,7 +106,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
 
 ### Phase T3 — GREEN (wire service + type signature)
 
-- [ ] **Task 5**: Wire `normalizeFavorites` into `getFavoritesService` and tighten return type to `Product[]`
+- [x] **Task 5**: Wire `normalizeFavorites` into `getFavoritesService` and tighten return type to `Product[]`
   - **Phase**: T3 GREEN
   - **Files**: `src/features/favorites/services/getFavoritesService.ts` (modified)
   - **Acceptance**: Three precise line-level changes per design §3.2 table — add `Product` type import + `normalizeFavorites` import at line 1, change return type at line 11 to `Promise<{ favorites: Product[] } | { error: NextResponse }>`, change line 54 to `return { favorites: normalizeFavorites(payload.favorites ?? []) }`. Line 42 (`payload: { favorites?: unknown[] }`) stays — that `unknown[]` describes the JSON-parse boundary (honest). Error paths (lines 24-40, 502 handling) stay byte-identical. Task 2 tests now pass.
@@ -117,7 +117,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
 
 ### Phase T4 — GREEN (egress coercion)
 
-- [ ] **Task 6**: Add `String(f.id)` egress coercion in `useFavoritesApi`
+- [x] **Task 6**: Add `String(f.id)` egress coercion in `useFavoritesApi`
   - **Phase**: T4 GREEN
   - **Files**: `src/features/favorites/hooks/useFavorites.ts` (modified)
   - **Acceptance**: Line 58 changes from `const favoriteIds = newFavorites.map(f => f.id)` to `const favoriteIds = newFavorites.map(f => String(f.id))`. One-line, surgical edit; no other lines change. State type `useState<Product[]>([])` at line 17 stays. Task 3 case 2 (`PUT body contains only string IDs after mixed add/remove`) now passes.
@@ -128,7 +128,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
 
 ### Phase T5 — GREEN (defensive context coercion)
 
-- [ ] **Task 7**: Add defensive `String()` coercion in `FavoritesContext` membership checks
+- [x] **Task 7**: Add defensive `String()` coercion in `FavoritesContext` membership checks
   - **Phase**: T5 GREEN
   - **Files**: `src/features/favorites/context/FavoritesContext.tsx` (modified)
   - **Acceptance**: Four precise line changes per design §3.5 table: line 44 `String(p.id) === String(product.id)`, line 53 `String(p.id) === String(productId)`, line 55 `String(p.id) !== String(productId)`, line 61 `String(p.id) === String(productId)`. `useEffect` at lines 36-40 and `clearFavorites` (lines 63-67) stay unchanged. Task 3 cases 1 and 3 now pass.
@@ -139,7 +139,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
 
 ### Phase T6 — SWEEP (regression guards + edge cases)
 
-- [ ] **Task 8**: Tighten `updateFavoritesService.test.ts` body assertion + edge case regression guards
+- [x] **Task 8**: Tighten `updateFavoritesService.test.ts` body assertion + edge case regression guards
   - **Phase**: T6 SWEEP
   - **Files**: `src/features/favorites/services/__tests__/updateFavoritesService.test.ts` (modified)
   - **Acceptance**: Tighten the body assertion at lines 52-54 to enforce canonical string types per design §4.3 — `expect(body.favorites).toEqual(['p-1', 'p-2', 'p-3'])` and `expect(body.favorites.every((id: unknown) => typeof id === 'string')).toBe(true)`. Existing `validateFavoritesList` tests (lines 123-179) stay — `invalid_item` on `['p-1', 42, 'p-3']` is still the correct rejection (validator guards the contract; we send it valid input).
@@ -150,7 +150,7 @@ Each GREEN/SWEEP task assumes the prior phase's RED tests now pass. Verifier (`s
 
 ### Phase VERIFY
 
-- [ ] **Task 9**: Boot check + manual smoke (user-run, mandatory merge gate)
+- [x] **Task 9**: Boot check + manual smoke (user-run, mandatory merge gate)
   - **Phase**: VERIFY
   - **Files**: optionally `scripts/check-favorites-boot.sh` (per design §6 row 9; not required if user runs commands inline)
   - **Acceptance**: All three static gates from design §5.1 exit 0:
