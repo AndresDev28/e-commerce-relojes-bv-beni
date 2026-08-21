@@ -141,5 +141,102 @@ describe('getFavoritesService', () => {
         expect(result2.favorites).toEqual([])
       }
     })
+
+    it('normalizes raw Strapi favorite objects (numeric id) to canonical Product[] with string ids', async () => {
+      const { getFavoritesService } = await import('../getFavoritesService')
+
+      // Real Strapi response shape: numeric id, documentId, partial fields
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          favorites: [
+            {
+              id: 1,
+              documentId: 'p-1',
+              name: 'Casio LA670WEA-1EF',
+              price: 3990,
+              stock: 5,
+            },
+            {
+              id: 2,
+              documentId: 'p-2',
+              name: 'Casio LA670WEA-8AEF',
+              price: 4590,
+              stock: 3,
+            },
+          ],
+        }),
+      } as Response)
+
+      const result = await getFavoritesService(baseParams)
+
+      expect('favorites' in result).toBe(true)
+      if (!('favorites' in result)) return
+
+      expect(result.favorites).toHaveLength(2)
+      // Every id is a string (canonical Product.id is string)
+      expect(result.favorites.every((p) => typeof p.id === 'string')).toBe(true)
+      expect(result.favorites[0]?.id).toBe('1')
+      expect(result.favorites[1]?.id).toBe('2')
+      // Strapi fields flow through
+      expect(result.favorites[0]?.name).toBe('Casio LA670WEA-1EF')
+      expect(result.favorites[0]?.price).toBe(3990)
+      expect(result.favorites[0]?.stock).toBe(5)
+      // Defensive fallbacks applied for omitted fields
+      expect(result.favorites[0]?.images).toEqual([])
+      expect(result.favorites[0]?.href).toBe('')
+      expect(result.favorites[0]?.description).toBe('')
+    })
+
+    it('normalizes a single favorite with documentId fallback when id is absent', async () => {
+      const { getFavoritesService } = await import('../getFavoritesService')
+
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          favorites: [
+            {
+              documentId: 'ab12cd34',
+              name: 'Casio',
+              price: 100,
+              stock: 1,
+            },
+          ],
+        }),
+      } as Response)
+
+      const result = await getFavoritesService(baseParams)
+
+      expect('favorites' in result).toBe(true)
+      if (!('favorites' in result)) return
+
+      expect(result.favorites).toHaveLength(1)
+      expect(result.favorites[0]?.id).toBe('ab12cd34')
+      expect(result.favorites[0]?.name).toBe('Casio')
+    })
+
+    it('returns canonical Product[] even when Strapi sends mixed-type favorites (some string id, some numeric)', async () => {
+      const { getFavoritesService } = await import('../getFavoritesService')
+
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          favorites: [
+            { id: 'p-1', name: 'A', price: 10, stock: 1 },
+            { id: 2, name: 'B', price: 20, stock: 2 },
+          ],
+        }),
+      } as Response)
+
+      const result = await getFavoritesService(baseParams)
+
+      expect('favorites' in result).toBe(true)
+      if (!('favorites' in result)) return
+
+      expect(result.favorites).toHaveLength(2)
+      expect(result.favorites[0]?.id).toBe('p-1')
+      expect(result.favorites[1]?.id).toBe('2')
+      expect(result.favorites.every((p) => typeof p.id === 'string')).toBe(true)
+    })
   })
 })
