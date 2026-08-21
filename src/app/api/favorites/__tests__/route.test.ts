@@ -55,8 +55,8 @@ describe('GET /api/favorites', () => {
         ok: true,
         json: async () => ({ id: 42, email: 'user@example.com' }),
       })
-      // getFavoritesService → /api/users/me?populate=favorites
-      // Real Strapi shape: numeric id, documentId, partial fields
+      // getFavoritesService → /api/users/me?populate[favorites][populate]=image
+      // Real Strapi shape: numeric id, documentId, populated `image` array
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -67,6 +67,7 @@ describe('GET /api/favorites', () => {
               name: 'Watch A',
               price: 100,
               stock: 1,
+              image: [{ id: 1, url: '/uploads/watch.jpg' }],
             },
             {
               id: 2,
@@ -74,6 +75,7 @@ describe('GET /api/favorites', () => {
               name: 'Watch B',
               price: 200,
               stock: 2,
+              image: [{ id: 2, url: '/uploads/watch-b.jpg' }],
             },
           ],
         }),
@@ -92,6 +94,9 @@ describe('GET /api/favorites', () => {
       '1',
       '2',
     ])
+    // Bug-favorites-images-401: embedded image objects are normalized to absolute URLs
+    expect(data.favorites[0].images[0]).toBe('http://localhost:1337/uploads/watch.jpg')
+    expect(data.favorites[1].images[0]).toBe('http://localhost:1337/uploads/watch-b.jpg')
     expect(response.headers.get('X-Trace-Id')).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     )

@@ -39,7 +39,7 @@ describe('getFavoritesService', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1)
       const [url, init] = vi.mocked(global.fetch).mock.calls[0]
       expect(url).toBe(
-        'http://localhost:1337/api/users/me?populate=favorites'
+        'http://localhost:1337/api/users/me?populate[favorites][populate]=image'
       )
       expect(init?.method).toBe('GET')
       expect(init?.headers).toMatchObject({
@@ -267,6 +267,36 @@ describe('getFavoritesService', () => {
       expect(result.favorites[0]?.id).toBe('p-1')
       expect(result.favorites[1]?.id).toBe('2')
       expect(result.favorites.every((p) => typeof p.id === 'string')).toBe(true)
+    })
+
+    it('hydrates populated Strapi `image` objects into absolute URLs on canonical Product[]', async () => {
+      const { getFavoritesService } = await import('../getFavoritesService')
+
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          favorites: [
+            {
+              id: 1,
+              documentId: 'p-1',
+              name: 'Casio',
+              price: 3990,
+              stock: 5,
+              image: [{ id: 1, url: '/uploads/casio.jpg' }],
+            },
+          ],
+        }),
+      } as Response)
+
+      const result = await getFavoritesService(baseParams)
+
+      expect('favorites' in result).toBe(true)
+      if (!('favorites' in result)) return
+
+      expect(result.favorites).toHaveLength(1)
+      expect(result.favorites[0]?.images).toEqual([
+        'http://localhost:1337/uploads/casio.jpg',
+      ])
     })
   })
 })

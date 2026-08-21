@@ -9,7 +9,7 @@
  * drop unusable entries.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   normalizeFavorite,
   normalizeFavorites,
@@ -152,5 +152,103 @@ describe('normalizeFavorites', () => {
     ])
 
     expect(result).toEqual([])
+  })
+})
+
+/**
+ * Bug-favorites-images-401 coverage: Strapi hydrate image objects into
+ * canonical Product.images: string[]. The server populates `image` (singular)
+ * as an array of `{ id, url }` media objects. The normalizer MUST map each
+ * entry to an absolute URL prefixed with NEXT_PUBLIC_STRAPI_API_URL, preserve
+ * the `[]` sentinel for absent/empty images, and skip entries missing `url`.
+ *
+ * Mirrors the pattern at src/features/catalog/hooks/useProducts.ts:33-65
+ * (formatProduct) without refactoring it.
+ */
+describe('normalizeFavorite — image hydration (bug-favorites-images-401)', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_STRAPI_API_URL', 'http://localhost:1337')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('maps a single `image` {id, url} object to an absolute URL string', () => {
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      image: { id: 1, url: '/uploads/casio.jpg' },
+    }) as Product
+
+    expect(result.images).toEqual(['http://localhost:1337/uploads/casio.jpg'])
+  })
+
+  it('maps an array of `image` {id, url} objects to absolute URL strings (each entry)', () => {
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      image: [
+        { id: 1, url: '/uploads/a.jpg' },
+        { id: 2, url: 'https://cdn.example.com/b.jpg' },
+      ],
+    }) as Product
+
+    expect(result.images).toEqual([
+      'http://localhost:1337/uploads/a.jpg',
+      'https://cdn.example.com/b.jpg',
+    ])
+  })
+
+  it('returns [] when `image` is null or undefined (preserves placeholder UX)', () => {
+    const nullResult = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      image: null,
+    }) as Product
+    const undefinedResult = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      image: undefined,
+    }) as Product
+
+    expect(nullResult.images).toEqual([])
+    expect(undefinedResult.images).toEqual([])
+  })
+
+  it('passes through legacy `images` plural array of URL strings without mutation', () => {
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      images: ['/a.jpg', '/b.jpg'],
+    }) as Product
+
+    expect(result.images).toEqual(['/a.jpg', '/b.jpg'])
+  })
+
+  it('prefixes relative URLs (`/uploads/...`) with NEXT_PUBLIC_STRAPI_API_URL', () => {
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      image: [{ id: 1, url: '/uploads/casio.jpg' }],
+    }) as Product
+
+    expect(result.images).toEqual(['http://localhost:1337/uploads/casio.jpg'])
+    // Sanity: the prefix is the configured env var, not a hardcoded value
+    expect(result.images?.[0]).toMatch(/^http:\/\/localhost:1337\//)
+  })
+
+  it('falls back to `http://127.0.0.1:1337` when neither env var is set', () => {
+    vi.unstubAllEnvs()
+    delete process.env.NEXT_PUBLIC_STRAPI_API_URL
+    delete process.env.STRAPI_API_URL
+
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      image: [{ id: 1, url: '/uploads/casio.jpg' }],
+    }) as Product
+
+    expect(result.images).toEqual(['http://127.0.0.1:1337/uploads/casio.jpg'])
   })
 })
