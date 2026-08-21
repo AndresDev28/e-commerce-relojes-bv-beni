@@ -41,7 +41,7 @@ export const FavoritesProvider = ({ children }: FavoritesProviderProps) => {
 
   const addToFavorites = async (product: Product): Promise<FavoriteMutationResult> => {
     if (!user) return { ok: false, reason: 'unauthenticated' }
-    if (favorites.some(p => p.id === product.id)) return { ok: true }
+    if (favorites.some(p => String(p.id) === String(product.id))) return { ok: true }
 
     const updated = [product, ...favorites]
     await updateFavorites(updated)
@@ -50,15 +50,15 @@ export const FavoritesProvider = ({ children }: FavoritesProviderProps) => {
 
   const removeFromFavorites = async (productId: string): Promise<FavoriteMutationResult> => {
     if (!user) return { ok: false, reason: 'unauthenticated' }
-    if (!favorites.some(p => p.id === productId)) return { ok: true }
+    if (!favorites.some(p => String(p.id) === String(productId))) return { ok: true }
 
-    const updated = favorites.filter(p => p.id !== productId)
+    const updated = favorites.filter(p => String(p.id) !== String(productId))
     await updateFavorites(updated)
     return { ok: true }
   }
 
   const isFavorite = (productId: string) =>
-    favorites.some(p => p.id === productId)
+    favorites.some(p => String(p.id) === String(productId))
 
   const clearFavorites = async (): Promise<FavoriteMutationResult> => {
     if (!user) return { ok: false, reason: 'unauthenticated' }
