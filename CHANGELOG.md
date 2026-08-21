@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.5](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.4...relojes-bv-beni-v1.5.5) (2026-08-21)
+
+
+### Bug Fixes
+
+* **favorites:** canonicalize favorite IDs to string to fix /api/favorites 400 (BUG-FAVORITES-400) ([#116](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/116)) ([0a1e7ab](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/0a1e7ab2921f5d25e321430b647005ad1655b093))
+
 ## [1.5.4](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.3...relojes-bv-beni-v1.5.4) (2026-08-20)
 
 
