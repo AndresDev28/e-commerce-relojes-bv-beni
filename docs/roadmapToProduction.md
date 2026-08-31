@@ -1,7 +1,7 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 18 Agosto 2026
-**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 + TEST-INFRA-VITEST + TEST-INFRA-E2E (parcial) completados ✅
+**Última actualización:** 31 Agosto 2026
+**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 + TEST-INFRA-VITEST + TEST-INFRA-E2E + Sprint 4 (BUG-CART-PERSISTENCE + BUG-FAVORITES-400/H2 + TEST-INFRA-E2E-LEGACY-AUTH) ✅; **BUG-IMAGES-400 único Sprint 4 pendiente**
 **Objetivo:** Lanzamiento 14 Abril 2026
 
 ---
@@ -91,39 +91,51 @@
 - ✅ 967 inserciones, 0 production code touched, 0 test code touched
 - ✅ Cap delta: 0 (hygiene only)
 
-### 🐛 Deuda técnica pendiente (post-TEST-INFRA-E2E — 18 Agosto 2026)
+### 🐛 Sprint 4 — Cierres recientes (post-18 Agosto 2026)
 
-> Bugs pre-existentes encontrados durante smoke test del redirect flow. NO fueron introducidos por DEBT-02; el retrofit del redirect funcionó correctamente (URL `?redirect=` correcta, consume-side respeta, round-trip OK). Cada bug requiere su propio ticket + change.
+**BUG-CART-PERSISTENCE** 🔴 CRITICAL (business) (PR #114 → release 1.5.4, commit `5b06371`)
+- ✅ Items del carrito persisten a través de logout/login vía per-user localStorage key (`bv-beni-cart:<userId>`)
+- ✅ Removido `clearCart()` del bloque `finally` de `AuthContext.logout()`
+- ✅ Migración one-shot desde la key legacy `bv-beni-cart`
+- ✅ Guest→login merge con max-quantity (helper `mergeGuestCartInto`)
+- ✅ 7 RED tests en `src/__tests__/context/CartContext.test.tsx` (Vitest + Testing Library)
+- ✅ User smoke: 13/08/2026 refutado post-fix
 
-**BUG-CART-PERSISTENCE** 🔴 CRITICAL (business)
-- **Síntoma**: items añadidos al carrito se pierden al cerrar sesión y volver a abrir. **Pérdida potencial de ventas.**
-- **Evidencia**: testing manual 13/08/2026 — `add to cart → logout → login → cart vacío`
-- **Root cause real**: `AuthContext.logout()` llama a `clearCart()` en `src/context/AuthContext.tsx:138` (en el bloque `finally`), y el save-effect del `CartProvider` persiste `[]` a localStorage inmediatamente después. El cart SÍ estaba persistido a localStorage — el wipe-on-logout era lo que producía el síntoma. Defecto secundario: la key `bv-beni-cart` era global, no per-user, filtrando carts entre usuarios en navegadores compartidos.
-- **Sugerido**: Sprint 4 (independiente de TEST-INFRA-VITEST/E2E ya cerrados). Cambio atómico frontend-only: per-user localStorage key + remover `clearCart()` del logout + migración one-shot desde la key legacy + guest→login merge con max-quantity.
-- **Estimación**: ~150-250 LOC (incluye tests + helpers `mergeGuestCartInto`/`migrateLegacyKey`); 7 RED tests en `src/__tests__/context/CartContext.test.tsx`.
+**BUG-FAVORITES-400 (H1)** 🟡 HIGH (UX) (PR #116 → release 1.5.5, commit `0a1e7ab`)
+- ✅ Fix canonicalización de favorite IDs a `string` previene el 400 post-login en `/api/favorites`
+- ✅ Coerciones defensivas `String()` en `useFavoritesApi`/`FavoritesContext`/`updateFavoritesService`
+- ✅ Egreso de IDs en `String(f.id)` desde el `useEffect` que dispara el re-fetch on `[user, fetchFavorites]`
+- ✅ 9 RED tests en `src/__tests__/context/FavoritesContext.test.tsx` y friends
+- ✅ User smoke: 21/08/2026 end-to-end validado contra Strapi real
 
-**BUG-FAVORITES-400** 🟡 HIGH (UX)
-- **Síntoma**: `/api/favorites` retorna 400 después de login. Botón favoritos en `/tienda` muestra "No se pudieron actualizar tus favoritos". `/favoritos` no carga imagen del producto. Hard refresh (Ctrl+Shift+R) lo arregla — sugiere stale client state.
-- **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /api/favorites:1`
-- **Sugerido**: Sprint 4 (independiente; root cause NO compartido con BUG-CART-PERSISTENCE según TEST-INFRA-VITEST findings)
-- **Estimación**: ~4-8 LOC + tests
+**BUG-FAVORITES-IMAGES-401 (H2 follow-up)** 🟡 HIGH (UX) (PR #118 → release 1.5.6, commit `36c1763`, cycle SDD `bug-favorites-images-401` en engram #1666-#1675)
+- ✅ Query Strapi: `populate[favorites][populate]=image` (singular; bypass del middleware del Product controller por la ruta del plugin `users-permissions`)
+- ✅ `normalizeFavorite.ts`: nueva helper `extractFavoriteImages` (dual-key `images ?? image ?? null`, `{id,url}` → `${NEXT_PUBLIC_STRAPI_API_URL}${url}`)
+- ✅ `href` derivado de `slug` (fix de 404 en `/tienda/${id}` descubierto durante smoke)
+- ✅ CI fix: `API_URL` (de `@/lib/constants`) primero en la cadena de fallback → `vi.mock('@/lib/constants')` toma efecto en CI sin `.env.local`
+- ✅ 1 requirement ADDED al spec canónico `openspec/specs/favorites/spec.md` (4 Given/When/Then scenarios)
+- ✅ 1011/1011 vitest pass; tsc/lint exit 0; NO AI co-author
+- ✅ User smoke: 21/08/2026 — imágenes hidratan en /favoritos pre y post re-login; click navega a `/tienda/<slug>` sin 404
 
-**BUG-IMAGES-400** 🟡 MEDIUM (UX)
+**TEST-INFRA-E2E-LEGACY-AUTH** 🟡 MEDIUM (deuda e2e pre-existente) (PR #111 → release 1.5.3, commit `74cdce3`)
+- ✅ 7 specs modernizadas de `localStorage.jwt` + `/api/users/me` (legacy auth) a `/api/auth/session` (cookie-session)
+- ✅ Specs afectados: `cancellation-flow.spec.ts`, `checkout-happy-path.spec.ts`, `checkout-mobile.spec.ts`, `empty-states.spec.ts`, `order-tracking.spec.ts`, `payment-errors.spec.ts`, +1
+- ✅ Plantilla aplicada: `tests/e2e/uxw01-regression-sweep.spec.ts` (ya modernizado en TEST-INFRA-E2E)
+- ✅ 14 e2e events cerrados (7 × 2 browsers)
+- ✅ Cierra el último followup F del archive-report de TEST-INFRA-E2E
+
+### 🐛 Deuda técnica pendiente (post-Sprint 4 — 31 Agosto 2026)
+
+> Sprint 4 fue completado en su mayoría desde la última actualización del roadmap (18 Ago). Los 4 items originales están cerrados vía PRs #111, #114, #116, #118. Solo queda 1 pendiente:
+
+**BUG-IMAGES-400** 🟡 MEDIUM (UX) — **ÚNICO SPRINT 4 PENDIENTE**
 - **Síntoma**: Next.js image optimization falla con 400 para `/next/image?url=...`. Algunos productos sin imagen.
 - **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /next/image?url=...`
-- **Root cause probable**: configuración de Next.js image domains, o imágenes externas sin allowlist
-- **Sugerido**: Sprint 4
-- **Estimación**: ~2-4 LOC (config change)
+- **Root cause probable**: configuración de Next.js image domains (`next.config.ts`), o imágenes externas sin allowlist
+- **Sugerido**: Próximo SDD cycle (`bug-images-400`) — Independiente de los demás cierres
+- **Estimación**: ~2-4 LOC (config change) + 1 test de integración
 
-**TEST-INFRA-E2E-LEGACY-AUTH** 🟡 MEDIUM (deuda e2e pre-existente) — **descubierto por TEST-INFRA-E2E**
-- **Síntoma**: 14 e2e failure events (7 specs × 2 browsers) que no son regresiones pero bloquean `0 failures` acceptance.
-- **Specs afectados**: `cancellation-flow.spec.ts`, `checkout-happy-path.spec.ts`, `checkout-mobile.spec.ts`, `empty-states.spec.ts`, `order-tracking.spec.ts`, `payment-errors.spec.ts`, +1
-- **Root cause**: migración previa del modelo de auth — specs mockean `localStorage.jwt` + `/api/users/me` (legacy), la app actual usa cookie-session `/api/auth/session`. Estos 7 specs nunca se actualizaron.
-- **Plantilla**: `tests/e2e/uxw01-regression-sweep.spec.ts` (ya modernizado, mockea `/api/auth/session` correctamente)
-- **Sugerido**: Sprint 4 (cierra el último item de de Sprint 3 original; followup nombrado en archive-report de TEST-INFRA-E2E)
-- **Estimación**: ~1-2 días, scope: 7 spec edits, 0 production code, 0 mock code
-
-**Progreso general:** ~210h invertidas de ~240h estimadas (88%)
+**Progreso general:** ~225h invertidas de ~240h estimadas (~94%) — Sprint 4 cerrado al 80% (3/4 items), queda solo BUG-IMAGES-400
 
 ---
 
@@ -847,6 +859,6 @@
 
 ---
 
-**Última actualización:** 18 Agosto 2026
-**Próxima revisión:** Al cerrar Sprint 4 (BUG-CART-PERSISTENCE + BUG-FAVORITES-400 + BUG-IMAGES-400 + TEST-INFRA-E2E-LEGACY-AUTH)
+**Última actualización:** 31 Agosto 2026
+**Próxima revisión:** Al cerrar BUG-IMAGES-400 (último Sprint 4 pendiente; próximo SDD cycle)
 **Contacto:** Andrés | andresjpadev@gmail.com
