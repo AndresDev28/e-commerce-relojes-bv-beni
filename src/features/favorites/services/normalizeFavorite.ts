@@ -96,6 +96,13 @@ export function extractFavoriteImages(
  * caller drop the entry instead of crashing the whole list. An empty
  * id is never silently coerced to `{ id: '' }` because such an entry
  * would never match a catalog product anyway.
+ *
+ * `href` derivation mirrors the catalog `formatProduct` helper at
+ * `src/features/catalog/hooks/useProducts.ts:60`:
+ *   1. If Strapi populates an explicit `href`, preserve it.
+ *   2. Else if a `slug` is present, build `/tienda/${slug}`.
+ *   3. Else fall back to the `producto-sin-slug` sentinel so the
+ *      navigation Link in FavoriteItemRow never 404s into `/tienda/${id}`.
  */
 export function normalizeFavorite(raw: unknown): Product | null {
   if (raw === null || typeof raw !== 'object') {
@@ -113,12 +120,19 @@ export function normalizeFavorite(raw: unknown): Product | null {
     return null
   }
 
+  const slug = typeof item.slug === 'string' && item.slug ? item.slug : null
+
   return {
     id,
     name: typeof item.name === 'string' && item.name ? item.name : 'Sin nombre',
     price: typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0,
     images: extractFavoriteImages(item, resolveStrapiApiUrl()),
-    href: typeof item.href === 'string' ? item.href : '',
+    href:
+      typeof item.href === 'string' && item.href
+        ? item.href
+        : slug
+          ? `/tienda/${slug}`
+          : '/tienda/producto-sin-slug',
     description: typeof item.description === 'string' ? item.description : '',
     category: typeof item.category === 'string' ? item.category : undefined,
     stock: typeof item.stock === 'number' && Number.isFinite(item.stock) ? item.stock : 0,

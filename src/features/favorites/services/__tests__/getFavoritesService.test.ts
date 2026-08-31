@@ -214,7 +214,7 @@ describe('getFavoritesService', () => {
       expect(result.favorites[0]?.stock).toBe(5)
       // Defensive fallbacks applied for omitted fields
       expect(result.favorites[0]?.images).toEqual([])
-      expect(result.favorites[0]?.href).toBe('')
+      expect(result.favorites[0]?.href).toBe('/tienda/producto-sin-slug')
       expect(result.favorites[0]?.description).toBe('')
     })
 

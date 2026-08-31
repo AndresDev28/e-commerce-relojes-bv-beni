@@ -32,7 +32,7 @@ describe('normalizeFavorite', () => {
     expect(result.price).toBe(3990)
     expect(result.stock).toBe(5)
     expect(result.images).toEqual([])
-    expect(result.href).toBe('')
+    expect(result.href).toBe('/tienda/producto-sin-slug')
     expect(result.description).toBe('')
     expect(result.category).toBeUndefined()
   })
