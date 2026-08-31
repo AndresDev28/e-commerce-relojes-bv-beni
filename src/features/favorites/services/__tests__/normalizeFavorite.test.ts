@@ -252,3 +252,37 @@ describe('normalizeFavorite — image hydration (bug-favorites-images-401)', () 
     expect(result.images).toEqual(['http://127.0.0.1:1337/uploads/casio.jpg'])
   })
 })
+
+/**
+ * Bug-favorites-images-401 follow-up: the navigation <Link> in
+ * FavoriteItemRow (src/features/favorites/components/FavoriteItemRow.tsx:45)
+ * reads `product.href || `/tienda/${product.id}``. When Strapi does not
+ * populate an explicit `href`, the previous normalizer returned `''`, which
+ * made the JSX fall back to `/tienda/${id}` and 404 — /tienda/[slug]
+ * expects a slug, not a numeric id.
+ *
+ * Mirror the catalog pattern at src/features/catalog/hooks/useProducts.ts:60
+ * (formatProduct): build `href` from `slug`, fall back to a sentinel slug
+ * when missing. Existing tests already cover the "preserve explicit href"
+ * path; these two cover the slug-derivation branches.
+ */
+describe('normalizeFavorite — href construction (bug-favorites-images-401 follow-up)', () => {
+  it('builds `/tienda/${slug}` when Strapi Product provides a slug and no href field', () => {
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+      slug: 'casio-la670wea',
+    }) as Product
+
+    expect(result.href).toBe('/tienda/casio-la670wea')
+  })
+
+  it('falls back to `/tienda/producto-sin-slug` when Strapi Product has neither href nor slug', () => {
+    const result = normalizeFavorite({
+      id: 7,
+      name: 'Casio',
+    }) as Product
+
+    expect(result.href).toBe('/tienda/producto-sin-slug')
+  })
+})
