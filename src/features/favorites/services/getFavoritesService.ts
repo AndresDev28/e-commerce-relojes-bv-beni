@@ -15,7 +15,7 @@ export async function getFavoritesService(params: {
 
   let response: Response
   try {
-    response = await fetch(`${API_URL}/api/users/me?populate=favorites`, {
+    response = await fetch(`${API_URL}/api/users/me?populate[favorites][populate]=image`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

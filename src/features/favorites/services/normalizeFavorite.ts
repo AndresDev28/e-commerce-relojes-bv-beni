@@ -1,10 +1,12 @@
 /**
  * Pure normalizer that maps raw Strapi favorite objects (returned by
- * GET /api/users/me?populate=favorites) to canonical Product shape.
+ * GET /api/users/me?populate[favorites][populate]=image) to canonical
+ * Product shape.
  *
  * Strapi v5 returns objects with:
  *   - numeric `id` (PK)
  *   - string `documentId` (Strapi v5 convenience)
+ *   - populated `image` (singular, multiple: true) as `[{ id, url }]`
  *   - partial fields (no `images`, no `href`, no `category`)
  *
  * The frontend Product type (`src/types/index.ts`) declares `id: string`
@@ -16,6 +18,91 @@
  */
 
 import type { Product } from '@/types'
+import { API_URL } from '@/lib/constants'
+
+/**
+ * Resolve the Strapi API URL with a fallback chain.
+ *
+ * Order matters: `API_URL` first so that
+ * `vi.mock('@/lib/constants', () => ({ API_URL: 'http://...' }))`
+ * takes effect in unit tests (otherwise CI tests that mock
+ * `@/lib/constants` would silently bypass that mock and fall through to
+ * the hardcoded `127.0.0.1` literal when the env var is undefined —
+ * which is exactly what happens in CI where `.env.local` is gitignored).
+ *
+ * Production ordering (env-first) is preserved because at runtime
+ * `API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL` (see
+ * `src/lib/constants.ts:4`); both branches resolve to the same value.
+ *
+ * Mirrors the catalog `formatProduct` helper at
+ * `src/features/catalog/hooks/useProducts.ts:34-37`.
+ *
+ * Read at call time (not module load) so tests can stub env vars
+ * vi.stubEnv('NEXT_PUBLIC_STRAPI_API_URL', ...) per case.
+ */
+function resolveStrapiApiUrl(): string {
+  return (
+    API_URL ||
+    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
+    process.env.STRAPI_API_URL ||
+    'http://127.0.0.1:1337'
+  )
+}
+
+/**
+ * Extract canonical `images: string[]` from a raw Strapi favorite.
+ *
+ * Strapi returns the populated `image` (singular, multiple: true) field as
+ * an array of `{ id, url }` media objects. Legacy entries may also surface
+ * as already-normalized URL strings. Both shapes are accepted:
+ *
+ *   - missing/null/undefined image field → `[]` (preserves placeholder UX)
+ *   - `[]` (empty array) → `[]` (same placeholder UX)
+ *   - `[{ id, url: '/uploads/x.jpg' }]` → `['${STRAPI_URL}/uploads/x.jpg']`
+ *   - `[{ id, url: 'https://cdn/x.jpg' }]` → `['https://cdn/x.jpg']` (no double-prefix)
+ *   - `[{ id }]` (entry missing `url`) → entry skipped (defensive)
+ *   - legacy `['/a.jpg', '/b.jpg']` (URL strings) → passes through unchanged
+ *
+ * Pure: no env reads, no I/O. Pass the URL in via `strapiApiUrl`.
+ *
+ * Exported as a sibling helper so the wiring is debuggable in isolation
+ * and the unit-test surface doesn't depend on `process.env` plumbing.
+ */
+export function extractFavoriteImages(
+  item: Record<string, unknown>,
+  strapiApiUrl: string
+): string[] {
+  const mediaData = item.images ?? item.image ?? null
+
+  if (mediaData === null || mediaData === undefined) {
+    return []
+  }
+
+  const entries: unknown[] = Array.isArray(mediaData)
+    ? mediaData
+    : [mediaData]
+
+  const result: string[] = []
+  for (const entry of entries) {
+    if (entry === null || entry === undefined) {
+      continue
+    }
+    if (typeof entry === 'string') {
+      // Legacy: already-normalized URL string (passthrough)
+      result.push(entry)
+      continue
+    }
+    if (typeof entry === 'object' && 'url' in entry) {
+      const url = (entry as { url: unknown }).url
+      if (typeof url !== 'string' || !url) {
+        // Entry missing `url` — skip defensively rather than emit half-baked URL
+        continue
+      }
+      result.push(url.startsWith('http') ? url : `${strapiApiUrl}${url}`)
+    }
+  }
+  return result
+}
 
 /**
  * Map one raw Strapi favorite to a canonical Product.
@@ -24,6 +111,13 @@ import type { Product } from '@/types'
  * caller drop the entry instead of crashing the whole list. An empty
  * id is never silently coerced to `{ id: '' }` because such an entry
  * would never match a catalog product anyway.
+ *
+ * `href` derivation mirrors the catalog `formatProduct` helper at
+ * `src/features/catalog/hooks/useProducts.ts:60`:
+ *   1. If Strapi populates an explicit `href`, preserve it.
+ *   2. Else if a `slug` is present, build `/tienda/${slug}`.
+ *   3. Else fall back to the `producto-sin-slug` sentinel so the
+ *      navigation Link in FavoriteItemRow never 404s into `/tienda/${id}`.
  */
 export function normalizeFavorite(raw: unknown): Product | null {
   if (raw === null || typeof raw !== 'object') {
@@ -41,14 +135,19 @@ export function normalizeFavorite(raw: unknown): Product | null {
     return null
   }
 
+  const slug = typeof item.slug === 'string' && item.slug ? item.slug : null
+
   return {
     id,
     name: typeof item.name === 'string' && item.name ? item.name : 'Sin nombre',
     price: typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0,
-    images: Array.isArray(item.images)
-      ? (item.images as Product['images'])
-      : [],
-    href: typeof item.href === 'string' ? item.href : '',
+    images: extractFavoriteImages(item, resolveStrapiApiUrl()),
+    href:
+      typeof item.href === 'string' && item.href
+        ? item.href
+        : slug
+          ? `/tienda/${slug}`
+          : '/tienda/producto-sin-slug',
     description: typeof item.description === 'string' ? item.description : '',
     category: typeof item.category === 'string' ? item.category : undefined,
     stock: typeof item.stock === 'number' && Number.isFinite(item.stock) ? item.stock : 0,
