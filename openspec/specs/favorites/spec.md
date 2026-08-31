@@ -163,3 +163,43 @@ The favorites feature MUST canonicalize every product identifier to the `Product
 - **Real dev-server boot check**: after the change, `curl -s -m 15 -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/` MUST return `HTTP 200`, and the response body MUST contain no `useFavorites must be used within a FavoritesProvider` runtime error. The fix touches `useFavorites`/`FavoritesContext` (Context provider surface); strict-TDD mocks cannot catch provider-nesting regressions (playbook #1645-2). This check MUST run in the verify phase and is a merge gate, not a guideline.
 - **Test command**: `npx vitest run --maxWorkers=2` MUST exit 0. New tests MUST mock numeric-ID Strapi responses reflecting real Strapi output; string-ID-only mocks are prohibited (exploration risk #6).
 
+### Requirement: Favorites Hydrated From Server Renders Product Images
+
+The favorites service MUST hydrate every favorited Product with renderable absolute image URLs at the feature boundary, so `/favoritos` shows real images after re-login without changing the canonical `Product.images: string[]` contract.
+
+**Server query.** `getFavoritesService.ts:18` MUST nest-populate the Product media field — `image` (singular, per Strapi schema `e-commerce-relojes-bv-beni-api/src/api/product/content-types/product/schema.json:20-29`) — inside the `favorites` populate. The route uses the `users-permissions` plugin and bypasses the Product controller's `images→image` normalization, so the query MUST address `image` directly.
+
+**Normalizer shape.** `normalizeFavorite.ts` MUST dual-key read the image field (`item.images ?? item.image ?? null`), coerce to array, and map every entry — Strapi `{ id, url }` — to an absolute URL prefixed with `NEXT_PUBLIC_STRAPI_API_URL` (fallback chain mirrors `formatProduct` at `useProducts.ts:33-65`). Zero-image Products normalize to `images: []` (NOT a placeholder URL); `FavoriteItemRow.tsx:33` keeps rendering `/images/placeholder.png` per decision #1669.
+
+**Atomic ship.** Query and normalizer changes MUST land in the same commit. Splitting them ships a regression (objects inside a `string[]` crash Next.js Image at runtime) — `sdd-verify` MUST enforce this as a merge gate.
+
+**Scope preserved.** The `Favorites ID Canonicalization on Sync` requirement (archive #1664) is unchanged. Shared `getStrapiImageUrl` extraction is deferred to a separate tech-debt cycle — this spec MUST NOT touch `formatProduct`.
+
+#### Scenario: Re-login renders the previously-favorited Product image
+
+- GIVEN an authenticated user has favorited a Product with `image: [{ id: 7, url: "/uploads/casio.jpg" }]` server-side
+- AND the user logs out and logs back in
+- WHEN the user navigates to `/favoritos`
+- THEN each row renders `next/image` with `src` equal to `NEXT_PUBLIC_STRAPI_API_URL + "/uploads/casio.jpg"`
+- AND no row falls back to `/images/placeholder.png`
+
+#### Scenario: Product with zero images renders the placeholder
+
+- GIVEN a favorited Product whose `image` field is empty server-side
+- WHEN the user navigates to `/favoritos`
+- THEN the row renders `next/image` with `src = "/images/placeholder.png"` (decision #1669 #1)
+
+#### Scenario: Favorites added after re-login already render images
+
+- GIVEN an authenticated user is browsing `/tienda` after re-login
+- WHEN the user taps a heart on a product card
+- THEN the new favorite appears in `/favoritos` with the catalog image immediately (catalog `formatProduct` unchanged — no regression)
+
+#### Scenario: Mixed list — each row resolves independently
+
+- GIVEN a list with three Products: one `image: [{ id, url }]`, one empty `image`, one `images: [{ id, url }]` (legacy plural)
+- WHEN rendered on `/favoritos`
+- THEN the first and third rows render their respective absolute URLs
+- AND the second row renders `/images/placeholder.png`
+- AND no row throws or shows a blank image
+
