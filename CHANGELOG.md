@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.6](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.5...relojes-bv-beni-v1.5.6) (2026-08-31)
+
+
+### Bug Fixes
+
+* **favorites:** hydrate Product images at re-login + derive href from slug (BUG-FAVORITES-IMAGES-401) ([#118](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/118)) ([36c1763](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/36c1763b2c0889a1dc087093f1e3d97fd7a354cd))
+
 ## [1.5.5](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.4...relojes-bv-beni-v1.5.5) (2026-08-21)
 
 
