@@ -238,18 +238,30 @@ describe('normalizeFavorite — image hydration (bug-favorites-images-401)', () 
     expect(result.images?.[0]).toMatch(/^http:\/\/localhost:1337\//)
   })
 
-  it('falls back to `http://127.0.0.1:1337` when neither env var is set', () => {
-    vi.unstubAllEnvs()
-    delete process.env.NEXT_PUBLIC_STRAPI_API_URL
-    delete process.env.STRAPI_API_URL
+  it('falls back to `http://127.0.0.1:1337` when both API_URL (in @/lib/constants) and env vars are unset', async () => {
+    // After the API_URL-first chain change (bug-favorites-images-401 follow-up
+    // CI fix), the hardcoded fallback `127.0.0.1` is reachable only when
+    // BOTH `API_URL` (from @/lib/constants) AND the env vars are empty.
+    // vi.doMock + resetModules + dynamic import lets us force that state
+    // without disturbing other tests in the file.
+    vi.resetModules()
+    vi.doMock('@/lib/constants', () => ({ API_URL: '' }))
+    vi.stubEnv('NEXT_PUBLIC_STRAPI_API_URL', '')
+    vi.stubEnv('STRAPI_API_URL', '')
 
-    const result = normalizeFavorite({
+    const { normalizeFavorite: normalizeFresh } = await import('../normalizeFavorite')
+
+    const result = normalizeFresh({
       id: 7,
       name: 'Casio',
       image: [{ id: 1, url: '/uploads/casio.jpg' }],
     }) as Product
 
     expect(result.images).toEqual(['http://127.0.0.1:1337/uploads/casio.jpg'])
+
+    vi.doUnmock('@/lib/constants')
+    vi.unstubAllEnvs()
+    vi.resetModules()
   })
 })
 

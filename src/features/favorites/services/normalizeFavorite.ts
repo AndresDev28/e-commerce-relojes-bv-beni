@@ -18,16 +18,31 @@
  */
 
 import type { Product } from '@/types'
+import { API_URL } from '@/lib/constants'
 
 /**
- * Resolve the Strapi API URL with a fallback chain, mirroring the catalog
- * `formatProduct` helper at `src/features/catalog/hooks/useProducts.ts:34-37`.
+ * Resolve the Strapi API URL with a fallback chain.
+ *
+ * Order matters: `API_URL` first so that
+ * `vi.mock('@/lib/constants', () => ({ API_URL: 'http://...' }))`
+ * takes effect in unit tests (otherwise CI tests that mock
+ * `@/lib/constants` would silently bypass that mock and fall through to
+ * the hardcoded `127.0.0.1` literal when the env var is undefined —
+ * which is exactly what happens in CI where `.env.local` is gitignored).
+ *
+ * Production ordering (env-first) is preserved because at runtime
+ * `API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL` (see
+ * `src/lib/constants.ts:4`); both branches resolve to the same value.
+ *
+ * Mirrors the catalog `formatProduct` helper at
+ * `src/features/catalog/hooks/useProducts.ts:34-37`.
  *
  * Read at call time (not module load) so tests can stub env vars
  * vi.stubEnv('NEXT_PUBLIC_STRAPI_API_URL', ...) per case.
  */
 function resolveStrapiApiUrl(): string {
   return (
+    API_URL ||
     process.env.NEXT_PUBLIC_STRAPI_API_URL ||
     process.env.STRAPI_API_URL ||
     'http://127.0.0.1:1337'
