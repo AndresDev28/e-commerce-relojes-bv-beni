@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import QuantitySelector from '@/components/ui/QuantitySelector'
 import Button from '@/components/ui/Button'
 import { CheckSquare, XCircle } from 'lucide-react'
@@ -15,6 +14,7 @@ import { Product } from '@/types'
 import type { Breadcrumb } from '@/types/breadcrumb'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import ErrorMessage from '@/components/ui/ErrorMessage'
+import { SafeImage } from '@/components/ui/SafeImage'
 
 // interface Product {
 //   id: string
@@ -76,7 +76,7 @@ export default function ProductDetailClient({
         <div className="flex flex-col gap-4">
           {/* Imagen principal */}
           <div className="relative w-full aspect-square rounded-r-lg overflow-hidden shadow-lg">
-            <Image
+            <SafeImage
               src={activeImage}
               alt={product.name}
               fill
@@ -94,7 +94,7 @@ export default function ProductDetailClient({
                 className={`relative aspect-square rounded-md overflow-hidden cursor-pointer border-2 ${activeImage === image ? 'border-primary' : 'border-transparent'}`}
                 onClick={() => setActiveImage(image)}
               >
-                <Image
+                <SafeImage
                   src={image}
                   alt={`${product.name} - vista ${index + 1}`}
                   fill

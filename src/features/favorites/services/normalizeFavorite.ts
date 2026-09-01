@@ -18,36 +18,7 @@
  */
 
 import type { Product } from '@/types'
-import { API_URL } from '@/lib/constants'
-
-/**
- * Resolve the Strapi API URL with a fallback chain.
- *
- * Order matters: `API_URL` first so that
- * `vi.mock('@/lib/constants', () => ({ API_URL: 'http://...' }))`
- * takes effect in unit tests (otherwise CI tests that mock
- * `@/lib/constants` would silently bypass that mock and fall through to
- * the hardcoded `127.0.0.1` literal when the env var is undefined —
- * which is exactly what happens in CI where `.env.local` is gitignored).
- *
- * Production ordering (env-first) is preserved because at runtime
- * `API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL` (see
- * `src/lib/constants.ts:4`); both branches resolve to the same value.
- *
- * Mirrors the catalog `formatProduct` helper at
- * `src/features/catalog/hooks/useProducts.ts:34-37`.
- *
- * Read at call time (not module load) so tests can stub env vars
- * vi.stubEnv('NEXT_PUBLIC_STRAPI_API_URL', ...) per case.
- */
-function resolveStrapiApiUrl(): string {
-  return (
-    API_URL ||
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
-    process.env.STRAPI_API_URL ||
-    'http://127.0.0.1:1337'
-  )
-}
+import { normalizeImageUrl } from '@/lib/images/url'
 
 /**
  * Extract canonical `images: string[]` from a raw Strapi favorite.
@@ -59,18 +30,19 @@ function resolveStrapiApiUrl(): string {
  *   - missing/null/undefined image field → `[]` (preserves placeholder UX)
  *   - `[]` (empty array) → `[]` (same placeholder UX)
  *   - `[{ id, url: '/uploads/x.jpg' }]` → `['${STRAPI_URL}/uploads/x.jpg']`
+ *     (delegated to `normalizeImageUrl`, which reads the base at call time)
  *   - `[{ id, url: 'https://cdn/x.jpg' }]` → `['https://cdn/x.jpg']` (no double-prefix)
  *   - `[{ id }]` (entry missing `url`) → entry skipped (defensive)
  *   - legacy `['/a.jpg', '/b.jpg']` (URL strings) → passes through unchanged
  *
- * Pure: no env reads, no I/O. Pass the URL in via `strapiApiUrl`.
- *
- * Exported as a sibling helper so the wiring is debuggable in isolation
- * and the unit-test surface doesn't depend on `process.env` plumbing.
+ * The base URL resolution chain (API_URL → env vars → 127.0.0.1 fallback)
+ * is owned by `normalizeImageUrl` (BUG-IMAGES-400 #1688), so this module
+ * no longer carries its own copy of that logic. Tests that need to force
+ * a base URL can `vi.mock('@/lib/constants', () => ({ API_URL: '...' }))`
+ * the same way they do for the catalog mapper.
  */
 export function extractFavoriteImages(
-  item: Record<string, unknown>,
-  strapiApiUrl: string
+  item: Record<string, unknown>
 ): string[] {
   const mediaData = item.images ?? item.image ?? null
 
@@ -98,7 +70,7 @@ export function extractFavoriteImages(
         // Entry missing `url` — skip defensively rather than emit half-baked URL
         continue
       }
-      result.push(url.startsWith('http') ? url : `${strapiApiUrl}${url}`)
+      result.push(normalizeImageUrl(url))
     }
   }
   return result
@@ -141,7 +113,7 @@ export function normalizeFavorite(raw: unknown): Product | null {
     id,
     name: typeof item.name === 'string' && item.name ? item.name : 'Sin nombre',
     price: typeof item.price === 'number' && Number.isFinite(item.price) ? item.price : 0,
-    images: extractFavoriteImages(item, resolveStrapiApiUrl()),
+    images: extractFavoriteImages(item),
     href:
       typeof item.href === 'string' && item.href
         ? item.href

@@ -36,10 +36,11 @@ import CancelOrderModal from './CancelOrderModal'
 import { formatPaymentMethod } from '@/utils'
 import { shouldShowStatusIcon, OrderStatus } from '@/types'
 import { getDeliveryEstimate } from '@/lib/utils/delivery'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BsArrowLeft, BsCreditCard, BsClock } from 'react-icons/bs'
+import { SafeImage } from '@/components/ui/SafeImage'
+import { PLACEHOLDER_SRC } from '@/lib/images/url.constants'
 
 interface OrderDetailProps {
   order: OrderData
@@ -289,8 +290,8 @@ export default function OrderDetail({ order }: OrderDetailProps) {
               >
                 {/* Product image */}
                 <div className="flex-shrink-0 w-20 h-20 relative bg-white rounded-md overflow-hidden">
-                  <Image
-                    src={item.images?.[0] || '/placeholder-watch.jpg'}
+                  <SafeImage
+                    src={item.images?.[0] || PLACEHOLDER_SRC}
                     alt={item.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform"

@@ -118,8 +118,8 @@ describe('FavoriteItemRow', () => {
     // Product info still renders
     expect(screen.getByText('Test Watch')).toBeInTheDocument()
 
-    // The image src falls back to the placeholder so the row is still useful
+    // The image src falls back to the centralized placeholder so the row is still useful
     const img = screen.getByAltText('Test Watch')
-    expect(img).toHaveAttribute('src', '/images/placeholder.png')
+    expect(img).toHaveAttribute('src', '/images/no-image.svg')
   })
 })

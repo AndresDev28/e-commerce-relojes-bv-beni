@@ -5,6 +5,7 @@ import { Product, StrapiImage } from '@/types'
 import { getProductBySlug } from '@/lib/api'
 import { buildBreadcrumbs } from '@/utils/breadcrumbs'
 import { blocksToMarkdown } from '@/utils/blocks'
+import { normalizeImageUrl } from '@/lib/images/url'
 
 export default async function ProductDetailPage({
   params,
@@ -38,12 +39,9 @@ export default async function ProductDetailPage({
       ? [mediaData]
       : []
 
-  const images = imagesArray.map(img => {
-    if (!img || !img.url) return '/images/empty-cart.png'
-    return img.url.startsWith('http')
-      ? img.url
-      : `http://127.0.0.1:1337${img.url}`
-  })
+  const images = imagesArray.map(img =>
+    normalizeImageUrl(img?.url) || '/images/empty-cart.png'
+  )
 
   // Normalizamos categoría (puede venir como objeto o array)
   const category = Array.isArray(strapiProduct.category)
