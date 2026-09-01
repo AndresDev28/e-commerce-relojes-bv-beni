@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.7](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.6...relojes-bv-beni-v1.5.7) (2026-09-01)
+
+
+### Bug Fixes
+
+* **images:** centralize image URL normalization (BUG-IMAGES-400) ([#121](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/121)) ([3b35638](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/3b356386b89592caea503f1a00cfe783a1a40bed))
+
 ## [1.5.6](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.5...relojes-bv-beni-v1.5.6) (2026-08-31)
 
 
