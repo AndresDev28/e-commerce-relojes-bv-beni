@@ -9,6 +9,8 @@ import type {
   Product,
   PaginationMeta,
 } from '@/types'
+import { normalizeImageUrl } from '@/lib/images/url'
+import { PLACEHOLDER_SRC } from '@/lib/images/url.constants'
 
 const DEFAULT_PAGE_SIZE = 8
 
@@ -31,11 +33,6 @@ function deduplicateById(products: Product[]): Product[] {
  * Shared logic between useProducts and the existing page.tsx mapping.
  */
 function formatProduct(strapiProduct: StrapiProduct): Product {
-  const strapiApiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
-    process.env.STRAPI_API_URL ||
-    'http://127.0.0.1:1337'
-
   const mediaData = strapiProduct.images ?? strapiProduct.image ?? null
   const imagesArray: StrapiImage[] = Array.isArray(mediaData)
     ? mediaData
@@ -43,10 +40,9 @@ function formatProduct(strapiProduct: StrapiProduct): Product {
       ? [mediaData]
       : []
 
-  const images = imagesArray.map(img => {
-    if (!img || !img.url) return '/images/empty-cart.png'
-    return img.url.startsWith('http') ? img.url : `${strapiApiUrl}${img.url}`
-  })
+  const images = imagesArray.map(img =>
+    normalizeImageUrl(img?.url),
+  )
 
   const categoryName = Array.isArray(strapiProduct.category)
     ? strapiProduct.category[0]?.name
@@ -56,7 +52,7 @@ function formatProduct(strapiProduct: StrapiProduct): Product {
     id: strapiProduct.id.toString(),
     name: strapiProduct.name || 'Sin nombre',
     price: strapiProduct.price || 0,
-    images: images.length > 0 ? images : ['/images/empty-cart.png'],
+    images: images.length > 0 ? images : [PLACEHOLDER_SRC],
     href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
     description: '',
     category: categoryName,
