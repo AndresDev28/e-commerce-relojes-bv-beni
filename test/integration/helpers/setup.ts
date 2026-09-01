@@ -38,11 +38,32 @@ beforeAll(async () => {
     // Lo importante es que el servidor esté up
     console.log(`  ✅ Strapi is running at ${strapiUrl}`)
   } catch (error) {
-    console.error(`  ❌ Cannot connect to Strapi at ${strapiUrl}`)
-    console.error('  Make sure Docker Desktop is running and Strapi is started')
-    console.error('  Run: cd ../relojes-bv-beni-api && npm run dev')
-    throw new Error(
-      'Strapi is not available. Please start the backend before running integration tests.'
+    // The Strapi health check is now warn-only (BUG-IMAGES-400 PR2 follow-up).
+    //
+    // Rationale: the `integration` project hosts multiple test files, not all
+    // of which need Strapi. The image-allowlist integration test (C3) only
+    // exercises the Next.js image optimizer against `/_next/image`, so it
+    // must be able to run independently of the backend. Tests that DO need
+    // Strapi will surface their dependency the moment they make a real
+    // request (fetch failures, 5xx, etc.) — same effective coverage, just
+    // without pre-empting every test in the project.
+    //
+    // Set `INTEGRATION_REQUIRE_STRAPI=1` to restore the throw behavior for
+    // CI runs that explicitly want the project-wide health check.
+    if (process.env.INTEGRATION_REQUIRE_STRAPI === '1') {
+      console.error(`  ❌ Cannot connect to Strapi at ${strapiUrl}`)
+      console.error('  Make sure Docker Desktop is running and Strapi is started')
+      console.error('  Run: cd ../relojes-bv-beni-api && npm run dev')
+      throw new Error(
+        'Strapi is not available. Please start the backend before running integration tests.'
+      )
+    }
+
+    console.warn(
+      `  ⚠️  Cannot reach Strapi at ${strapiUrl} — skipping project-wide health check.`,
+    )
+    console.warn(
+      '     Tests that depend on Strapi will fail individually when they make a real request.',
     )
   }
 
