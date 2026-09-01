@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.8](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.7...relojes-bv-beni-v1.5.8) (2026-09-01)
+
+
+### Bug Fixes
+
+* **images:** add SafeImage fallback + migrate consumers (BUG-IMAGES-400) ([#123](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/123)) ([cfd5148](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/cfd5148813a0dc7a9cfc2d6af4a7e9ba362d110a))
+
 ## [1.5.7](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.6...relojes-bv-beni-v1.5.7) (2026-09-01)
 
 
