@@ -1,5 +1,7 @@
 import ProductCard from './ProductCard'
 import { Product, StrapiImage, StrapiProduct } from '@/types'
+import { normalizeImageUrl } from '@/lib/images/url'
+import { PLACEHOLDER_SRC } from '@/lib/images/url.constants'
 
 interface FeaturedProductsProps {
   products: StrapiProduct[]
@@ -37,12 +39,7 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
               id: strapiProduct.id.toString(),
               name: strapiProduct.name || 'Sin nombre',
               price: strapiProduct.price || 0,
-              images: imagesArray.map(img => {
-                if (!img || !img.url) return '/images/empty-cart.png'
-                return img.url.startsWith('http')
-                  ? img.url
-                  : `http://127.0.0.1:1337${img.url}`
-              }),
+              images: imagesArray.map(img => normalizeImageUrl(img?.url)),
               href: `/tienda/${strapiProduct.slug || 'producto-sin-slug'}`,
               description: '',
               category: categoryName,
@@ -51,7 +48,7 @@ const FeaturedProducts = ({ products }: FeaturedProductsProps) => {
 
             // Placeholder si no hay imágenes
             if (!productForCard.images || productForCard.images.length === 0) {
-              productForCard.images = ['/images/empty-cart.png']
+              productForCard.images = [PLACEHOLDER_SRC]
             }
 
             return (

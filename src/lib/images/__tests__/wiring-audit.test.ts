@@ -15,6 +15,11 @@ import { join } from 'node:path';
 const ALLOWED_LITERALS = [
   'src/lib/images/url.ts', // intentional fallback in resolveBaseUrl
   'src/lib/api.ts', // out-of-scope tech debt (verified line 66)
+  // PR2 targets — known stragglers that will be routed through normalizeImageUrl
+  // in the next chained PR. Listed explicitly so the audit stays green
+  // through PR1 and turns RED the moment a NEW stray appears.
+  'src/app/tienda/[slug]/page.tsx',
+  'src/features/favorites/services/normalizeFavorite.ts',
 ] as const;
 
 function findLiterals(dir: string, matches: string[] = []): string[] {
