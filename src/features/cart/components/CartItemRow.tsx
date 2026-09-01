@@ -1,10 +1,11 @@
 'use client'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/features/cart'
 import { CartItem } from '@/types'
 import QuantitySelector from '@/components/ui/QuantitySelector'
 import { Trash2 } from 'lucide-react'
+import { SafeImage } from '@/components/ui/SafeImage'
+import { PLACEHOLDER_SRC } from '@/lib/images/url.constants'
 
 interface CartItemProps {
   item: CartItem
@@ -21,8 +22,8 @@ const CartItemRow = ({ item }: CartItemProps) => {
       <div className="flex items-center gap-4 w-full sm:w-auto sm:flex-grow">
         {/* Contenedor de la Imagen */}
         <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden bg-neutral-light">
-          <Image
-            src={item.images?.[0] || '/images/placeholder.png'}
+          <SafeImage
+            src={item.images?.[0] || PLACEHOLDER_SRC}
             alt={item.name}
             fill
             sizes="96px"

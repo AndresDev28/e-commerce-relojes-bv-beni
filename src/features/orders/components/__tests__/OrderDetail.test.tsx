@@ -322,7 +322,7 @@ describe('[ORD-12] OrderDetail Component', () => {
       render(<OrderDetail order={orderWithoutImages} />)
 
       const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('src', '/placeholder-watch.jpg')
+      expect(image).toHaveAttribute('src', '/images/no-image.svg')
     })
 
     it('should not crash when product images field is undefined (Strapi omits it)', () => {
@@ -344,7 +344,7 @@ describe('[ORD-12] OrderDetail Component', () => {
       ).not.toThrow()
 
       const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('src', '/placeholder-watch.jpg')
+      expect(image).toHaveAttribute('src', '/images/no-image.svg')
     })
   })
 

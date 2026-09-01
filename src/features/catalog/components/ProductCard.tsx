@@ -1,5 +1,4 @@
 'use client'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingCart, Eye, Heart } from 'lucide-react'
 import ProductActionIcon from './ProductActionIcon'
@@ -9,6 +8,8 @@ import { useFavoriteAuthPrompt } from '@/features/favorites/hooks/useFavoriteAut
 import { FavoriteAuthPrompt } from '@/features/favorites/components/FavoriteAuthPrompt'
 import { useCart } from '@/features/cart'
 import ErrorMessage from '@/components/ui/ErrorMessage'
+import { SafeImage } from '@/components/ui/SafeImage'
+import { PLACEHOLDER_SRC } from '@/lib/images/url.constants'
 
 // Permite usar el componente con un objeto `product` o con props sueltos.
 type ProductCardProps =
@@ -29,8 +30,11 @@ const ProductCard = (props: ProductCardProps) => {
   const name = 'product' in props ? props.product.name : props.name
   const price = 'product' in props ? props.product.price : props.price
 
-  // Usa la primera imagen disponible; admite string, array, o undefined (Strapi a veces omite el campo)
-  const mainImageUrl = (Array.isArray(rawImages) ? rawImages[0] : rawImages) ?? '/images/placeholder.png'
+  // Usa la primera imagen disponible; admite string, array, o undefined (Strapi a veces omite el campo).
+  // SafeImage se encarga del fallback a PLACEHOLDER_SRC cuando el src falla
+  // (incluyendo el caso undefined/null), así que aquí solo necesitamos
+  // garantizar un string que no rompa el render inicial.
+  const mainImageUrl = (Array.isArray(rawImages) ? rawImages[0] : rawImages) ?? PLACEHOLDER_SRC
 
   const { addToCart } = useCart()
   const isOutOfStock = 'product' in props ? props.product.stock === 0 : false
@@ -65,7 +69,7 @@ const ProductCard = (props: ProductCardProps) => {
       {/* Enlace a la ficha del producto */}
       <Link href={href || '#'} className="block">
         <div className="relative h-64 w-full bg-neutral-light">
-          <Image
+          <SafeImage
             src={mainImageUrl}
             alt={name}
             fill

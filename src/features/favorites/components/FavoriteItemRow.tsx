@@ -1,11 +1,12 @@
 'use client'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useFavorites } from '@/features/favorites'
 import { useCart } from '@/features/cart'
 import { Product } from '@/types'
 import { Heart, ShoppingCart } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import { SafeImage } from '@/components/ui/SafeImage'
+import { PLACEHOLDER_SRC } from '@/lib/images/url.constants'
 
 interface FavoriteItemProps {
   product: Product
@@ -29,8 +30,8 @@ const FavoriteItemRow = ({ product }: FavoriteItemProps) => {
       <div className="flex items-center gap-4 w-full sm:flex-grow">
         {/* Imagen del Producto */}
         <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden bg-neutral-light">
-          <Image
-            src={product.images?.[0] || '/images/placeholder.png'}
+          <SafeImage
+            src={product.images?.[0] || PLACEHOLDER_SRC}
             alt={product.name}
             fill
             sizes="96px"

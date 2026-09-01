@@ -20,13 +20,13 @@
 
 import { useCart } from '@/features/cart'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ShoppingCart, Edit } from 'lucide-react'
 import {
   SHIPPING_COST,
   FREE_SHIPPING_THRESHOLD,
   calculateShipping,
 } from '@/lib/constants/shipping'
+import { SafeImage } from '@/components/ui/SafeImage'
 
 /**
  * Formatea un número como moneda española
@@ -129,7 +129,7 @@ export default function OrderSummary() {
             {/* Imagen del producto */}
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden bg-neutral-light">
               {item.images && item.images.length > 0 ? (
-                <Image
+                <SafeImage
                   src={item.images[0]}
                   alt={item.name}
                   fill
