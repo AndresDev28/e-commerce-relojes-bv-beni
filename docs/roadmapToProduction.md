@@ -1,8 +1,8 @@
 # 🚀 Roadmap to Production - E-commerce Relojes BV Beni
 
-**Última actualización:** 31 Agosto 2026
-**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 + TEST-INFRA-VITEST + TEST-INFRA-E2E + Sprint 4 (BUG-CART-PERSISTENCE + BUG-FAVORITES-400/H2 + TEST-INFRA-E2E-LEGACY-AUTH) ✅; **BUG-IMAGES-400 único Sprint 4 pendiente**
-**Objetivo:** Lanzamiento 14 Abril 2026
+**Última actualización:** 2 Septiembre 2026
+**Estado actual:** EPIC 17 + 17b + 18 + DEBT-LOGIN-REDIRECT + DEBT-02 + TEST-INFRA-VITEST + TEST-INFRA-E2E + Sprint 4 ✅ (5/5 items cerrados: BUG-CART-PERSISTENCE + BUG-FAVORITES-400/H1 + BUG-FAVORITES-IMAGES-401/H2 + TEST-INFRA-E2E-LEGACY-AUTH + BUG-IMAGES-400 con cross-repo backend)
+**Objetivo:** Lanzamiento 14 Abril 2026 (objetivo original, revisado en iteraciones)
 
 ---
 
@@ -117,6 +117,14 @@
 - ✅ 1011/1011 vitest pass; tsc/lint exit 0; NO AI co-author
 - ✅ User smoke: 21/08/2026 — imágenes hidratan en /favoritos pre y post re-login; click navega a `/tienda/<slug>` sin 404
 
+**BUG-IMAGES-400** 🟡 MEDIUM (UX) — FRONT (PRs #121 + #123 → releases 1.5.7 + 1.5.8, commits `3b35638` + `cfd5148`) + BACKEND cross-repo (PR #32 → `88df294`, cycle SDD `bug-images-400-backend` en engram #1696-#1721)
+- ✅ Frontend: helper `normalizeImageUrl` con API_URL-first chain (per #1677) en `src/lib/images/url.ts`; `SafeImage` derived-state wrapper con `onError` placeholder swap; additive `remotePatterns` para `localhost:1337` + `relojes-bv-beni-api.onrender.com` (producción confirmado vía CSP `next.config.ts:6`)
+- ✅ Backend (cross-repo C5.S1): lifecycle hooks en `plugin::upload.file` (`afterCreate`, `afterUpdate`, `afterFindOne`, `afterFindMany` — split Strapi 5) que rewrite URLs relativas a absolutas usando `STRAPI_PUBLIC_URL`; Cloudinary URLs pasan byte-identical (early return)
+- ✅ Frontend 2 PRs chained stacked-to-main (329 + 412 líneas netas); size exception aprobada para PR2 (+3% over 400 budget, maintainer-approved)
+- ✅ 1042/1042 unit + 3/3 integration + 28/29 e2e tests pasan; lint/tsc exit 0; 30/30 spec scenarios PASS (1 N/A: cross-repo declared)
+- ⚠️ **Action item operator (post-merge)**: setear `STRAPI_PUBLIC_URL=https://relojes-bv-beni-api.onrender.com` en Render — el frontend ya shipped con helper defensivo (degraded fallback), pero el WARN-once queda activo hasta setear la env var
+- ✅ User verification: integration test (`image-allowlist.test.ts`) spawned `next dev` real y confirmó allowlisted hosts ≠ 400; e2e chromium cubrió flujos con imágenes (catalog detail, gallery, checkout, favorites)
+
 **TEST-INFRA-E2E-LEGACY-AUTH** 🟡 MEDIUM (deuda e2e pre-existente) (PR #111 → release 1.5.3, commit `74cdce3`)
 - ✅ 7 specs modernizadas de `localStorage.jwt` + `/api/users/me` (legacy auth) a `/api/auth/session` (cookie-session)
 - ✅ Specs afectados: `cancellation-flow.spec.ts`, `checkout-happy-path.spec.ts`, `checkout-mobile.spec.ts`, `empty-states.spec.ts`, `order-tracking.spec.ts`, `payment-errors.spec.ts`, +1
@@ -124,18 +132,11 @@
 - ✅ 14 e2e events cerrados (7 × 2 browsers)
 - ✅ Cierra el último followup F del archive-report de TEST-INFRA-E2E
 
-### 🐛 Deuda técnica pendiente (post-Sprint 4 — 31 Agosto 2026)
+### ✅ Deuda técnica resuelta (post-Sprint 4 — 2 Septiembre 2026)
 
-> Sprint 4 fue completado en su mayoría desde la última actualización del roadmap (18 Ago). Los 4 items originales están cerrados vía PRs #111, #114, #116, #118. Solo queda 1 pendiente:
+> Sprint 4 cerrado al 100% (5/5 items) tras el cierre de BUG-IMAGES-400 con su ciclo cross-repo backend. Sin deuda técnica pendiente en este momento.
 
-**BUG-IMAGES-400** 🟡 MEDIUM (UX) — **ÚNICO SPRINT 4 PENDIENTE**
-- **Síntoma**: Next.js image optimization falla con 400 para `/next/image?url=...`. Algunos productos sin imagen.
-- **Evidencia**: DevTools console 13/08/2026 — `Failed to load resource: 400 (Bad Request) for /next/image?url=...`
-- **Root cause probable**: configuración de Next.js image domains (`next.config.ts`), o imágenes externas sin allowlist
-- **Sugerido**: Próximo SDD cycle (`bug-images-400`) — Independiente de los demás cierres
-- **Estimación**: ~2-4 LOC (config change) + 1 test de integración
-
-**Progreso general:** ~225h invertidas de ~240h estimadas (~94%) — Sprint 4 cerrado al 80% (3/4 items), queda solo BUG-IMAGES-400
+**Progreso general:** ~228h invertidas de ~240h estimadas (~95%) — Sprint 4 cerrado al 100% (5/5 items). Siguiente foco: SEO setup / Lighthouse audit / operational setup para lanzamiento.
 
 ---
 
@@ -859,6 +860,6 @@
 
 ---
 
-**Última actualización:** 31 Agosto 2026
-**Próxima revisión:** Al cerrar BUG-IMAGES-400 (último Sprint 4 pendiente; próximo SDD cycle)
+**Última actualización:** 2 Septiembre 2026
+**Próxima revisión:** Inicio del siguiente SDD cycle (SEO setup, Lighthouse audit, o cleanup) — operational setup (deploy, DNS, Stripe live, soft launch) en paralelo con vos y Diego
 **Contacto:** Andrés | andresjpadev@gmail.com
