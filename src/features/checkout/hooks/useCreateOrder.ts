@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { PaymentIntent } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
-import { generateOrderId } from '@/lib/orders/generateOrderId'
 import { calculateShipping } from '@/lib/constants/shipping'
 import { assembleOrderData } from '@/features/checkout/services/assembleOrderData'
 import { newTraceId } from '@/lib/trace'
@@ -15,7 +14,11 @@ interface UseCreateOrderOptions {
 }
 
 interface UseCreateOrderResult {
-  createOrder: (paymentIntent: PaymentIntent, cartItems: CartItem[]) => Promise<void>
+  createOrder: (
+    paymentIntent: PaymentIntent,
+    cartItems: CartItem[],
+    orderId: string
+  ) => Promise<void>
   isCreatingOrder: boolean
   orderError: string | null
   clearOrderError: () => void
@@ -33,9 +36,9 @@ export function useCreateOrder(
 
   const doCreateOrder = async (
     paymentIntent: PaymentIntent,
-    cartItems: CartItem[]
+    cartItems: CartItem[],
+    orderId: string
   ) => {
-    const orderId = generateOrderId()
     const subtotal = cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -77,12 +80,13 @@ export function useCreateOrder(
 
   const createOrder = async (
     paymentIntent: PaymentIntent,
-    cartItems: CartItem[]
+    cartItems: CartItem[],
+    orderId: string
   ) => {
     try {
       setIsCreatingOrder(true)
       setOrderError(null)
-      await doCreateOrder(paymentIntent, cartItems)
+      await doCreateOrder(paymentIntent, cartItems, orderId)
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : 'Error al crear la orden'

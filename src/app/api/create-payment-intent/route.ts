@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const authResult = await requireUser(request)
     if ('error' in authResult) return authResult.error
 
-    const { jwtToken } = authResult
+    const { jwtToken, user } = authResult
 
     let body: CreatePaymentIntentBody
     try {
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     const result = await createPaymentIntentService({
       jwtToken,
       traceId,
+      userId: String(user.id),
       input: { items: items as CartItem[] },
     })
 
