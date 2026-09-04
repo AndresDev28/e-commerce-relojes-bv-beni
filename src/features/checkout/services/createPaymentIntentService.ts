@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { calculateShipping } from '@/lib/constants/shipping'
+import { generateOrderId } from '@/lib/orders/generateOrderId'
 import { getStripeServer } from '@/lib/stripe/server'
 import type { CartItem } from '@/types'
 
@@ -10,11 +11,18 @@ export interface CreatePaymentIntentInput {
 export async function createPaymentIntentService(params: {
   jwtToken: string
   traceId: string
+  /**
+   * Server-derived user id. MUST come from `requireUser()` — never from the
+   * request body. Required so Stripe metadata carries the canonical id used
+   * for downstream reconciliation.
+   */
+  userId: string
   input: CreatePaymentIntentInput
 }): Promise<
-  { data: { clientSecret: string; amount: number } } | { error: NextResponse }
+  | { data: { clientSecret: string; amount: number; orderId: string } }
+  | { error: NextResponse }
 > {
-  const { jwtToken, traceId, input } = params
+  const { jwtToken, traceId, userId, input } = params
   const { items } = input
 
   let subtotal: number
@@ -95,6 +103,41 @@ export async function createPaymentIntentService(params: {
     }
   }
 
+  // Fail closed fast: if userId is missing we MUST NOT call Stripe. The
+  // orderId is generated after this guard so an empty userId never wastes a
+  // generated id or exposes it in logs.
+  if (!userId) {
+    return {
+      error: NextResponse.json(
+        { error: 'Faltan datos de identidad para procesar el pago.' },
+        { status: 400, headers: { 'X-Trace-Id': traceId } }
+      ),
+    }
+  }
+
+  // Generate the canonical orderId BEFORE the Stripe call so the same id
+  // can flow into both the metadata and the response.
+  let orderId: string
+  try {
+    orderId = generateOrderId()
+  } catch {
+    return {
+      error: NextResponse.json(
+        { error: 'No se pudo generar el identificador del pedido.' },
+        { status: 500, headers: { 'X-Trace-Id': traceId } }
+      ),
+    }
+  }
+
+  if (!orderId) {
+    return {
+      error: NextResponse.json(
+        { error: 'Faltan datos de identidad para procesar el pago.' },
+        { status: 400, headers: { 'X-Trace-Id': traceId } }
+      ),
+    }
+  }
+
   const stripe = getStripeServer()
   let paymentIntent
   try {
@@ -104,6 +147,8 @@ export async function createPaymentIntentService(params: {
       automatic_payment_methods: { enabled: true },
       expand: ['latest_charge.payment_method_details'],
       metadata: {
+        orderId,
+        userId,
         itemsCount: items.length.toString(),
         subtotal: subtotal.toString(),
         shipping: shipping.toString(),
@@ -131,6 +176,7 @@ export async function createPaymentIntentService(params: {
     data: {
       clientSecret: paymentIntent.client_secret,
       amount: total,
+      orderId,
     },
   }
 }

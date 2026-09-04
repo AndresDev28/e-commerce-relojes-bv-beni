@@ -77,10 +77,14 @@ describe('CheckoutForm - [PAY-05]', () => {
     // Mock localStorage to provide a valid JWT
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
 
-    // Mock fetch to return a valid payment intent
+    // Mock fetch to return a valid payment intent (server-issued orderId)
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ clientSecret: 'pi_test_secret_mock', amount: 100 }),
+      json: async () => ({
+        clientSecret: 'pi_test_secret_mock',
+        amount: 100,
+        orderId: 'ORD-TEST-DEFAULT-AAAA',
+      }),
     })
 
     // Configure confirmCardPayment to return success by default
@@ -179,6 +183,33 @@ describe('CheckoutForm - [PAY-05]', () => {
       )
     })
 
+    it('should call onSuccess with the server-supplied orderId from the response', async () => {
+      // Override fetch to simulate server returning orderId alongside clientSecret.
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          clientSecret: 'pi_test_secret_mock',
+          amount: 100,
+          orderId: 'ORD-SERVER-RESPONSE-001',
+        }),
+      })
+
+      const user = userEvent.setup()
+      const button = await renderAndWaitForInit(100, { onSuccess: mockOnSuccess })
+      await user.click(button)
+
+      await waitFor(
+        () => {
+          expect(mockOnSuccess).toHaveBeenCalledTimes(1)
+        },
+        { timeout: 3000 }
+      )
+
+      // onSuccess signature: (paymentIntent, orderId) — server orderId flows through.
+      const callArgs = mockOnSuccess.mock.calls[0]
+      expect(callArgs[1]).toBe('ORD-SERVER-RESPONSE-001')
+    })
+
     it('should not submit if Stripe is not loaded', async () => {
       mockUseStripe.mockReturnValue(null)
       const user = userEvent.setup()
@@ -273,7 +304,11 @@ describe('Stripe Error Handler - [PAY-09]', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ clientSecret: 'pi_test_secret_mock', amount: 100 }),
+      json: async () => ({
+        clientSecret: 'pi_test_secret_mock',
+        amount: 100,
+        orderId: 'ORD-TEST-DEFAULT-AAAA',
+      }),
     })
     mockStripe.confirmCardPayment.mockResolvedValue({
       paymentIntent: { id: 'pi_test_123', status: 'succeeded' },
