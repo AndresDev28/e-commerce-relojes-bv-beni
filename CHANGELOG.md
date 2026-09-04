@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.8...relojes-bv-beni-v1.6.0) (2026-09-04)
+
+
+### Features
+
+* **checkout:** server-authoritative orderId + userId on Stripe PaymentIntents ([#127](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/127)) ([#127](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/127)) ([6e5096b](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/6e5096b7599e2414d42ab716a542774b8aa908e1))
+
 ## [1.5.8](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.7...relojes-bv-beni-v1.5.8) (2026-09-01)
 
 
