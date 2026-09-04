@@ -239,6 +239,60 @@ describe('POST /api/create-payment-intent', () => {
       )
     })
 
+    it('forwards orderId and userId to Stripe metadata from the session', async () => {
+      const request = createAuthenticatedRequest(validItems)
+      await POST(request)
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            orderId: expect.stringMatching(/^ORD-\d+-[A-Z0-9]{4}$/),
+            userId: '1',
+          }),
+        })
+      )
+    })
+
+    it('returns the generated orderId in the response body', async () => {
+      const request = createAuthenticatedRequest(validItems)
+      const response = await POST(request)
+      const data = await response.json()
+      expect(response.status).toBe(200)
+      expect(data.orderId).toMatch(/^ORD-\d+-[A-Z0-9]{4}$/)
+      expect(typeof data.orderId).toBe('string')
+    })
+
+    it('ignores a client-supplied userId in the request body', async () => {
+      // Build a request that carries BOTH a session cookie AND a spoofed userId.
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ id: 1, email: 'user@example.com' }),
+        })
+        .mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [{ stock: 100, name: 'Product' }] }),
+        })
+      const request = new NextRequest(
+        'http://localhost:3000/api/create-payment-intent',
+        {
+          method: 'POST',
+          body: JSON.stringify({ items: validItems, userId: 999 }),
+        }
+      )
+      request.cookies.set(SESSION_COOKIE, 'valid-session-token')
+      await POST(request)
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            userId: '1', // session-derived, NOT the client-spoofed '999'
+          }),
+        })
+      )
+    })
+
     it('includes X-Trace-Id in response headers', async () => {
       const request = createAuthenticatedRequest(validItems)
       const response = await POST(request)

@@ -62,10 +62,14 @@ describe('[PAY-10] Retry Logic Tests', () => {
     // Mock localStorage to provide a valid JWT
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
 
-    // Mock fetch to return a valid payment intent
+    // Mock fetch to return a valid payment intent (server-issued orderId)
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ clientSecret: 'pi_test_secret_mock', amount: 100 }),
+      json: async () => ({
+        clientSecret: 'pi_test_secret_mock',
+        amount: 100,
+        orderId: 'ORD-TEST-RETRY-AAAA',
+      }),
     })
   })
 
@@ -310,7 +314,11 @@ describe('[PAY-10] Retry Logic Tests', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ clientSecret: 'pi_test_secret_mock_2', amount: 100 }),
+      json: async () => ({
+        clientSecret: 'pi_test_secret_mock_2',
+        amount: 100,
+        orderId: 'ORD-TEST-RETRY-BBBB',
+      }),
     })
 
     mockRetryWithBackoff.mockResolvedValueOnce({
