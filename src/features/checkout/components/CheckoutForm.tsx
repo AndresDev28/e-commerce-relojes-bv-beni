@@ -13,7 +13,7 @@ import type { CartItem } from '@/types'
 interface CheckoutFormProps {
   amount: number
   cartItems: CartItem[]
-  onSuccess?: (paymentIntent: PaymentIntent) => void
+  onSuccess?: (paymentIntent: PaymentIntent, orderId: string) => void
   /**
    * Page-level error callback. Called with the already-localized Spanish
    * message produced by `handleStripeError(...)`. The page is the sole
@@ -40,6 +40,10 @@ export default function CheckoutForm({
   const [isMobile, setIsMobile] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [isLoadingIntent, setIsLoadingIntent] = useState(false)
+  // Server-issued canonical orderId from /api/create-payment-intent. Threaded
+  // through onSuccess so downstream order assembly uses the SAME id that
+  // was written to Stripe metadata.
+  const [serverOrderId, setServerOrderId] = useState<string | null>(null)
 
   const stripe = useStripe()
   const elements = useElements()
@@ -79,6 +83,9 @@ export default function CheckoutForm({
         }
         const data = await response.json()
         setClientSecret(data.clientSecret)
+        if (typeof data.orderId === 'string') {
+          setServerOrderId(data.orderId)
+        }
       } catch (error) {
         onError?.(
           error instanceof Error
@@ -148,7 +155,11 @@ export default function CheckoutForm({
 
       if (result.success && result.data) {
         setIsRetrying(false)
-        onSuccess?.(result.data)
+        if (serverOrderId) {
+          onSuccess?.(result.data, serverOrderId)
+        } else {
+          throw new Error('No se recibió el identificador del pedido.')
+        }
       } else {
         throw result.error || new Error('Payment failed')
       }

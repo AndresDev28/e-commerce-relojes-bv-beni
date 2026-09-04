@@ -75,11 +75,14 @@ export default function CheckoutPage() {
     return null
   }
 
-  const handleSuccess = (paymentIntent: PaymentIntent) => {
+  const handleSuccess = (
+    paymentIntent: PaymentIntent,
+    orderId: string
+  ) => {
     // R8 mitigation: clear any prior payment error so a stale alert does
     // not linger after a successful retry.
     setPaymentError(null)
-    createOrder(paymentIntent, cartItems)
+    createOrder(paymentIntent, cartItems, orderId)
   }
 
   const handleError = (error: string) => {
