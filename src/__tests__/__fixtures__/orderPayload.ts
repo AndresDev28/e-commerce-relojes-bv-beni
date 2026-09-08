@@ -73,6 +73,18 @@ export function makeUpsertErrorEnvelope(
   return { data: null, error: { status, name, message, details: { traceId } } }
 }
 
+/**
+ * Minimal fetch Response stub for a UPSERT status + body pair.
+ * Shared by the service unit suite and the proxy integration suite (2.7).
+ */
+export function mockUpsertResponse(status: number, body: unknown): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  } as Response
+}
+
 // D-locked message variants (obs #1793 — exact backend strings).
 export const UPSERT_ERROR_400_USERID = makeUpsertErrorEnvelope(
   400,

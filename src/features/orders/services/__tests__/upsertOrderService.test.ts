@@ -12,6 +12,7 @@ import {
   makeUpsertWirePayload,
   makeUpsertSuccessEnvelope,
   makeUpsertErrorEnvelope,
+  mockUpsertResponse,
   MOCK_ORDER_ID,
   MOCK_TRACE_ID,
 } from '@/__tests__/__fixtures__/orderPayload'
@@ -29,13 +30,6 @@ const baseParams = {
   rawBody,
 }
 
-const jsonResponse = (status: number, body: unknown) =>
-  ({
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => body,
-  }) as Response
-
 describe('upsertOrderService — request composition', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -49,7 +43,7 @@ describe('upsertOrderService — request composition', () => {
   it('sends PUT to the by-order-id path with Auth, trace and verbatim body (S1.6 boundary, A-2)', async () => {
     const { upsertOrderService } = await import('../upsertOrderService')
     vi.mocked(global.fetch).mockResolvedValueOnce(
-      jsonResponse(200, makeUpsertSuccessEnvelope())
+      mockUpsertResponse(200, makeUpsertSuccessEnvelope())
     )
 
     await upsertOrderService(baseParams)
@@ -72,7 +66,7 @@ describe('upsertOrderService — request composition', () => {
   it('encodes special characters in the orderId path segment (threat: fixed upstream)', async () => {
     const { upsertOrderService } = await import('../upsertOrderService')
     vi.mocked(global.fetch).mockResolvedValueOnce(
-      jsonResponse(200, makeUpsertSuccessEnvelope())
+      mockUpsertResponse(200, makeUpsertSuccessEnvelope())
     )
 
     await upsertOrderService({ ...baseParams, orderId: 'ORD/a b&c' })
@@ -97,7 +91,7 @@ describe('upsertOrderService — bounded status preservation (S2.1)', () => {
   it('returns { status: 200, body } with the success envelope preserved', async () => {
     const { upsertOrderService } = await import('../upsertOrderService')
     const envelope = makeUpsertSuccessEnvelope()
-    vi.mocked(global.fetch).mockResolvedValueOnce(jsonResponse(200, envelope))
+    vi.mocked(global.fetch).mockResolvedValueOnce(mockUpsertResponse(200, envelope))
 
     const result = await upsertOrderService(baseParams)
 
@@ -112,7 +106,7 @@ describe('upsertOrderService — bounded status preservation (S2.1)', () => {
       'BadRequestError',
       'userId is required'
     )
-    vi.mocked(global.fetch).mockResolvedValueOnce(jsonResponse(400, envelope))
+    vi.mocked(global.fetch).mockResolvedValueOnce(mockUpsertResponse(400, envelope))
 
     const result = await upsertOrderService(baseParams)
 
@@ -127,7 +121,7 @@ describe('upsertOrderService — bounded status preservation (S2.1)', () => {
       'ForbiddenError',
       'You can only modify your own orders'
     )
-    vi.mocked(global.fetch).mockResolvedValueOnce(jsonResponse(403, envelope))
+    vi.mocked(global.fetch).mockResolvedValueOnce(mockUpsertResponse(403, envelope))
 
     const result = await upsertOrderService(baseParams)
 
@@ -142,7 +136,7 @@ describe('upsertOrderService — bounded status preservation (S2.1)', () => {
       'ConflictError',
       'paymentIntentId does not match existing order'
     )
-    vi.mocked(global.fetch).mockResolvedValueOnce(jsonResponse(409, envelope))
+    vi.mocked(global.fetch).mockResolvedValueOnce(mockUpsertResponse(409, envelope))
 
     const result = await upsertOrderService(baseParams)
 
