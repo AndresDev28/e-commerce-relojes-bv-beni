@@ -6,6 +6,8 @@ export { default as CancelOrderModal } from './components/CancelOrderModal'
 
 export { getOrdersService } from './services/getOrdersService'
 export { createOrderService } from './services/createOrderService'
+export { upsertOrderService } from './services/upsertOrderService'
+export type { UpsertOrderResult, UpsertOrderStatus } from './services/upsertOrderService'
 export { getOrderByIdService } from './services/getOrderByIdService'
 export { requestCancellationService } from './services/requestCancellationService'
 export { requestOrderCancellation } from './services/requestCancellation'
