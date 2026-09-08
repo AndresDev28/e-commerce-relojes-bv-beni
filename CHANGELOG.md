@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.7.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.6.0...relojes-bv-beni-v1.7.0) (2026-09-08)
+
+
+### Features
+
+* **checkout:** add pure checkoutOrderErrors mapper with A-9 Spanish copy table ([3a76188](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/3a76188cc951c61186f39df9a02731aabe620941))
+* **checkout:** sprint-5-stripe-upsert PR1 — UPSERT foundation (fixtures + service + mapper + proxy) ([7811fd0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/7811fd03dc349ee012b5723d94423e26f049e063))
+* **orders:** add status-preserving upsertOrderService for UPSERT PUT ([8c98e4e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/8c98e4e7385a7b9ba015b75b674c004fbcdc7ba3))
+* **proxy:** add same-origin PUT proxy for order upsert by orderId ([06f1bef](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/06f1bef9d40e987dd2d6aa4db3c756a6456383bf))
+
 ## [1.6.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.5.8...relojes-bv-beni-v1.6.0) (2026-09-04)
 
 
