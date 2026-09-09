@@ -17,20 +17,12 @@ import type { PaymentIntent } from '@stripe/stripe-js'
 import type { CartItem } from '@/types'
 
 // Hoisted: AuthContext state is mutable so each test drives A-12 composition.
-const { mockGenerateOrderId, mockAssembleOrderData, mockAuthState, mockPush } =
-  vi.hoisted(() => ({
-    mockGenerateOrderId: vi.fn(),
-    mockAssembleOrderData: vi.fn(),
-    mockAuthState: {
-      user: null as { id: number; username: string; email: string } | null,
-    },
-    mockPush: vi.fn(),
-  }))
-
-// Stale mock kept until task 3.6 (R-4 dead-code removal): the hook no longer
-// imports `generateOrderId`; the server-issued orderId flows through props.
-vi.mock('@/lib/orders/generateOrderId', () => ({
-  generateOrderId: mockGenerateOrderId,
+const { mockAssembleOrderData, mockAuthState, mockPush } = vi.hoisted(() => ({
+  mockAssembleOrderData: vi.fn(),
+  mockAuthState: {
+    user: null as { id: number; username: string; email: string } | null,
+  },
+  mockPush: vi.fn(),
 }))
 
 vi.mock('@/features/checkout/services/assembleOrderData', () => ({
@@ -498,19 +490,5 @@ describe('useCreateOrder — server orderId passthrough (legacy invariants)', ()
     expect(mockAssembleOrderData).toHaveBeenCalledTimes(1)
     const call = mockAssembleOrderData.mock.calls[0][0]
     expect(call.orderId).toBe('ORD-SERVER-123')
-  })
-
-  it('never calls generateOrderId — server is source of truth', async () => {
-    const { result } = renderHook(() => useCreateOrder())
-
-    await act(async () => {
-      await result.current.createOrder(
-        paymentIntent,
-        cartItems,
-        'ORD-SERVER-789'
-      )
-    })
-
-    expect(mockGenerateOrderId).not.toHaveBeenCalled()
   })
 })
