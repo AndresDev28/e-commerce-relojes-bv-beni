@@ -19,10 +19,12 @@ import {
   MOCK_USER,
   MOCK_UPSERT_SUCCESS,
   MOCK_UPSERT_CONFLICT,
+  MOCK_UPSERT_ORDER_ID,
+  MOCK_UPSERT_PAYMENT_INTENT_ID,
 } from './utils/mocks'
 
-const FAKE_PI_ID = 'pi_e2e_upsert_mock'
-const FAKE_ORDER_ID = 'ORD-E2E-UPSERT-1'
+const FAKE_PI_ID = MOCK_UPSERT_PAYMENT_INTENT_ID
+const FAKE_ORDER_ID = MOCK_UPSERT_ORDER_ID
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -53,7 +55,15 @@ async function installFakeStripe(page: Page) {
       };
       return {
         elements: function () { return elements; },
+        // react-stripe-js v5 isStripeInstance() gate: elements, createToken,
+        // createPaymentMethod and confirmCardPayment must all be functions —
+        // otherwise the Elements provider throws and the checkout page crashes.
+        createToken: function () { return Promise.resolve({ id: 'tok_e2e' }); },
+        createPaymentMethod: function () {
+          return Promise.resolve({ id: 'pm_e2e' });
+        },
         _registerWrapper: function () {},
+        registerAppInfo: function () {},
         confirmCardPayment: function () {
           return Promise.resolve({
             paymentIntent: {
