@@ -5,7 +5,9 @@ import { PaymentIntent } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
 import { calculateShipping } from '@/lib/constants/shipping'
 import { assembleOrderData } from '@/features/checkout/services/assembleOrderData'
+import { checkoutOrderErrors } from '@/features/checkout/utils/checkoutOrderErrors'
 import { newTraceId } from '@/lib/trace'
+import { useAuth } from '@/context/AuthContext'
 import type { CartItem } from '@/types'
 
 interface UseCreateOrderOptions {
@@ -28,6 +30,7 @@ export function useCreateOrder(
   options: UseCreateOrderOptions = {}
 ): UseCreateOrderResult {
   const router = useRouter()
+  const { user } = useAuth()
   const { onSuccess, clearCart } = options
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [orderError, setOrderError] = useState<string | null>(null)
@@ -39,6 +42,16 @@ export function useCreateOrder(
     cartItems: CartItem[],
     orderId: string
   ) => {
+    // A-12 guard: without a session user there is no `userId` to compose.
+    // The page already redirects unauthenticated visitors, so this is a
+    // defensive edge. No fetch; friendly support fallback via the mapper.
+    if (!user) {
+      setOrderError(
+        checkoutOrderErrors(0, null, { paymentIntentId: paymentIntent.id })
+      )
+      return
+    }
+
     const subtotal = cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -55,18 +68,51 @@ export function useCreateOrder(
       paymentIntent,
     })
 
-    const response = await fetch('/api/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Trace-Id': newTraceId(),
-      },
-      credentials: 'same-origin',
-      body: JSON.stringify(orderData),
-    })
+    // D-lock wire subset (obs #1793, A-12): `orderId` travels as the path
+    // param, `orderStatus` and `total` are server-derived — none in the body.
+    const wireBody = {
+      userId: user.id,
+      paymentIntentId: orderData.paymentIntentId,
+      items: orderData.items,
+      subtotal: orderData.subtotal,
+      shipping: orderData.shipping,
+      paymentInfo: orderData.paymentInfo,
+    }
+
+    let response: Response
+    try {
+      response = await fetch(
+        `/api/orders/by-order-id/${encodeURIComponent(orderId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            // A-4: a fresh trace id per attempt, forwarded and echoed by the
+            // same-origin proxy (S1.5).
+            'X-Trace-Id': newTraceId(),
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify(wireBody),
+        }
+      )
+    } catch {
+      // Transport failure (proxy unreachable): same friendly fallback (S3.6).
+      setOrderError(
+        checkoutOrderErrors(0, null, { paymentIntentId: paymentIntent.id })
+      )
+      return
+    }
 
     if (!response.ok) {
-      throw new Error('No se pudo crear el pedido.')
+      // A-3/A-7: single translation point, no client-side retry — a bounded
+      // 409 reaching the browser is already post-convergence (obs #1783).
+      const body: unknown = await response.json().catch(() => null)
+      setOrderError(
+        checkoutOrderErrors(response.status, body, {
+          paymentIntentId: paymentIntent.id,
+        })
+      )
+      return
     }
 
     if (clearCart) clearCart()
@@ -88,6 +134,8 @@ export function useCreateOrder(
       setOrderError(null)
       await doCreateOrder(paymentIntent, cartItems, orderId)
     } catch (error) {
+      // Defensive net only: the UPSERT path maps every known failure through
+      // `checkoutOrderErrors` and never throws back to this handler.
       const errorMsg =
         error instanceof Error ? error.message : 'Error al crear la orden'
       setOrderError(

@@ -112,3 +112,40 @@ export const MOCK_ORDERS_RESPONSE = {
         }
     }
 };
+
+/**
+ * UPSERT (PUT /api/orders/by-order-id/:orderId) E2E fixtures (design A-5/A-6).
+ * Mirrors the real D-lock envelope shapes locked in
+ * src/__tests__/__fixtures__/orderPayload.ts (obs #1793): success is
+ * `{ data: { id, attributes }, meta: {} }`; errors are
+ * `{ data: null, error: { status, name, message, details: { traceId } } }`.
+ */
+export const MOCK_UPSERT_ORDER_ID = "ORD-E2E-UPSERT-1";
+
+export const MOCK_UPSERT_PAYMENT_INTENT_ID = "pi_e2e_upsert_mock";
+
+export const MOCK_UPSERT_SUCCESS = {
+    data: {
+        id: "doc-e2e-upsert-1",
+        attributes: {
+            orderId: MOCK_UPSERT_ORDER_ID,
+            orderStatus: "paid",
+            subtotal: 259.99,
+            shipping: 0,
+            total: 259.99,
+            paymentIntentId: MOCK_UPSERT_PAYMENT_INTENT_ID,
+            user: { id: 1 },
+        },
+    },
+    meta: {},
+};
+
+export const MOCK_UPSERT_CONFLICT = {
+    data: null,
+    error: {
+        status: 409,
+        name: "ConflictError",
+        message: "Order upsert conflict",
+        details: { traceId: "e2e-mock-trace-id" },
+    },
+};
