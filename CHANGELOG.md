@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.7.0...relojes-bv-beni-v1.8.0) (2026-09-09)
+
+
+### Features
+
+* **checkout:** export checkoutOrderErrors from public API ([e99ad74](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/e99ad740c60455776ddc8370e8202fb8c3ee7cff))
+* **checkout:** rewire useCreateOrder to PUT with userId ([c27e5d7](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/c27e5d74d4e09d268093fe4b7cb7c7b503a55cc3))
+* **checkout:** sprint-5-stripe-upsert PR2 — rewire hook to PUT ([16c420b](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/16c420b3c21697dd963dc826b3566b212dc10776))
+
 ## [1.7.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.6.0...relojes-bv-beni-v1.7.0) (2026-09-08)
 
 
