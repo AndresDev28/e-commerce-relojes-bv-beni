@@ -30,8 +30,12 @@ function generateTraceId(): string {
 
 /**
  * Map raw HTTP/Strapi errors to friendly, non-technical messages.
+ *
+ * Exported (not just internal) so the catalog BFF route handlers
+ * (`api/products`, `api/categories`) can reuse the same mapper when
+ * translating upstream Strapi failures into Spanish user-facing copy.
  */
-function mapApiError(status: number, statusText: string, body?: unknown): string {
+export function mapApiError(status: number, statusText: string, body?: unknown): string {
   if (status === 404) return 'No se encontraron los datos solicitados.'
   if (status === 429) return 'Demasiadas peticiones. Intenta de nuevo en unos segundos.'
   if (status >= 500) return 'Error temporal del servidor. Intenta de nuevo más tarde.'
@@ -51,6 +55,26 @@ function mapApiError(status: number, statusText: string, body?: unknown): string
 }
 
 /**
+ * Single source of truth for the server-side Strapi base URL.
+ *
+ * Order:
+ *   1. `NEXT_PUBLIC_STRAPI_API_URL` (build-time, also valid server-side)
+ *   2. `STRAPI_API_URL` (server runtime)
+ *   3. `http://127.0.0.1:1337` (local-dev fallback)
+ *
+ * Used by `fetchApiFull` and reused by the catalog BFF route handlers
+ * (`api/products`, `api/categories`) so they share one env-resolution
+ * point (D4).
+ */
+export function getStrapiServerUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
+    process.env.STRAPI_API_URL ||
+    'http://127.0.0.1:1337'
+  )
+}
+
+/**
  * Función central para hacer llamadas a la API de Strapi.
  * @param endpoint - El endpoint de la API a consultar (ej. '/products').
  * @param query - Un objeto con los parámetros de la query (ej. { populate: '*' }).
@@ -60,10 +84,7 @@ async function fetchApiFull<T>(
   endpoint: string,
   query?: Record<string, string>
 ): Promise<StrapiApiResponse<T>> {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ||
-    process.env.STRAPI_API_URL ||
-    'http://127.0.0.1:1337'
+  const apiUrl = getStrapiServerUrl()
 
   const url = new URL(`/api${endpoint}`, apiUrl)
 
