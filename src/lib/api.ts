@@ -75,6 +75,36 @@ export function getStrapiServerUrl(): string {
 }
 
 /**
+ * Resolve the base URL used to build Strapi request URLs in
+ * `fetchApiFull`. Origin-aware (F3 / design D5):
+ *
+ *   - **Browser context** (`typeof window !== 'undefined'`): returns `''`
+ *     so the resulting URL is relative (e.g. `/api/products?...`). The
+ *     browser then resolves it against the page origin, keeping the
+ *     request same-origin. This is what makes the frontend work over an
+ *     ngrok HTTPS tunnel — the visitor's browser never tries to reach
+ *     `localhost:1337` directly, so there is no CORS or mixed-content
+ *     failure to mask an underlying reachability problem.
+ *
+ *   - **Server context** (RSC, route handlers, services): returns the
+ *     absolute `getStrapiServerUrl()` so server-side fetches keep
+ *     reaching Strapi directly (no extra hop, no contract change for
+ *     server-side callers).
+ *
+ * The browser branch deliberately returns the empty string (NOT a
+ * relative URL like `/`) and the consumer uses string concatenation
+ * (`base + '/api' + endpoint + '?' + qs`) instead of `new URL(path, base)`
+ * — `new URL` throws on an empty base, so concatenation is required
+ * (design D5).
+ */
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return ''
+  }
+  return getStrapiServerUrl()
+}
+
+/**
  * Función central para hacer llamadas a la API de Strapi.
  * @param endpoint - El endpoint de la API a consultar (ej. '/products').
  * @param query - Un objeto con los parámetros de la query (ej. { populate: '*' }).
@@ -84,19 +114,24 @@ async function fetchApiFull<T>(
   endpoint: string,
   query?: Record<string, string>
 ): Promise<StrapiApiResponse<T>> {
-  const apiUrl = getStrapiServerUrl()
+  const baseUrl = getApiBaseUrl()
 
-  const url = new URL(`/api${endpoint}`, apiUrl)
+  // String concatenation (NOT `new URL(path, base)`) so the browser
+  // branch can use an empty base to produce a relative URL. Using
+  // `new URL('/api/products', '')` would throw — see design D5.
+  let url = `${baseUrl}/api${endpoint}`
 
   if (query) {
+    const params = new URLSearchParams()
     Object.entries(query).forEach(([key, value]) => {
-      url.searchParams.set(key, value)
+      params.set(key, value)
     })
+    url = `${url}?${params.toString()}`
   }
 
   const traceId = generateTraceId()
 
-  const response = await fetch(url.toString(), {
+  const response = await fetch(url, {
     cache: 'no-store',
     headers: {
       'X-Trace-Id': traceId,
