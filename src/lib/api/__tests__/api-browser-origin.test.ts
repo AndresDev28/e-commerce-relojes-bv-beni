@@ -81,12 +81,14 @@ describe('fetchApiFull — origin-aware base URL resolution', () => {
 
     it('resolves getProductBySlug and getCategories to relative URLs in browser context', async () => {
       await getProductBySlug('classic-chronograph')
-      const slugUrl = getFetchUrl()
+      const slugUrl = mockFetch.mock.calls[0][0] as string
       expect(slugUrl.startsWith('/api/products')).toBe(true)
       expect(slugUrl).not.toContain('localhost:1337')
 
+      mockFetch.mockClear()
+
       await getCategories()
-      const categoriesUrl = getFetchUrl()
+      const categoriesUrl = mockFetch.mock.calls[0][0] as string
       expect(categoriesUrl.startsWith('/api/categories')).toBe(true)
       expect(categoriesUrl).not.toContain('localhost:1337')
     })
