@@ -44,27 +44,27 @@
 
 ### Group D — RED Tests (PR2)
 
-- [ ] **D1 [R3, R6]** RED: Browser-relative vs server-absolute URL resolution tests. File: `src/lib/api/__tests__/api-browser-origin.test.ts` (+65 lines). 5 cases: jsdom browser returns relative URL, server-stub returns absolute URL, query encoding parity, no regression on existing call sites. Acceptance: tests FAIL (`getApiBaseUrl` does not exist yet).
+- [x] **D1 [R3, R6]** RED: Browser-relative vs server-absolute URL resolution tests. File: `src/lib/api/__tests__/api-browser-origin.test.ts` (+65 lines). 5 cases: jsdom browser returns relative URL, server-stub returns absolute URL, query encoding parity, no regression on existing call sites. Acceptance: tests FAIL (`getApiBaseUrl` does not exist yet).
 
-- [ ] **D2 [R3, R1, R2]** RED: Playwright origin assertion e2e. File: `tests/e2e/catalog-origin.spec.ts` (+35 lines). 3 assertions: `waitForRequest` for `api/products` origin, `waitForRequest` for `api/categories` origin, no `page.route` mocks used. Acceptance: tests FAIL in e2e suite (helper not yet wired).
+- [x] **D2 [R3, R1, R2]** RED: Playwright origin assertion e2e. File: `tests/e2e/catalog-origin.spec.ts` (+35 lines). 3 assertions: `waitForRequest` for `api/products` origin, `waitForRequest` for `api/categories` origin, no `page.route` mocks used. Acceptance: tests FAIL in e2e suite (helper not yet wired).
 
 ### Group E — GREEN Implementation (PR2)
 
-- [ ] **E1 [R3]** GREEN: Add `getApiBaseUrl()` helper to `src/lib/api.ts` (+24 lines). Browser (`typeof window !== 'undefined'`): returns `''`. Server: returns `getStrapiServerUrl()`. String-concat for relative URLs, NOT `new URL(path, '')` (D5). Acceptance: D1 tests green.
+- [x] **E1 [R3]** GREEN: Add `getApiBaseUrl()` helper to `src/lib/api.ts` (+24 lines). Browser (`typeof window !== 'undefined'`): returns `''`. Server: returns `getStrapiServerUrl()`. String-concat for relative URLs, NOT `new URL(path, '')` (D5). Acceptance: D1 tests green.
 
-- [ ] **E2** GREEN: Wire `getApiBaseUrl()` into `fetchApiFull`. Replace direct env chain reference with helper call. Acceptance: D1, D2 tests green; existing `products-pagination`/`api-security` substring assertions still pass (R6 mandate).
+- [x] **E2** GREEN: Wire `getApiBaseUrl()` into `fetchApiFull`. Replace direct env chain reference with helper call. Acceptance: D1, D2 tests green; existing `products-pagination`/`api-security` substring assertions still pass (R6 mandate).
 
-- [ ] **E3** GREEN: Update `.env.example` with comment block (+8 lines). Distinguish `NEXT_PUBLIC_STRAPI_API_URL` (build-time browser, deprecated for F3 consumers) from `STRAPI_API_URL` (server runtime, primary for F3). For local dev both can point to `http://localhost:1337`.
+- [x] **E3** GREEN: Update `.env.example` with comment block (+8 lines). Distinguish `NEXT_PUBLIC_STRAPI_API_URL` (build-time browser, deprecated for F3 consumers) from `STRAPI_API_URL` (server runtime, primary for F3). For local dev both can point to `http://localhost:1337`.
 
 ### Group F — Keep-Green (PR2)
 
-- [ ] **F1** Triple-gate sweep (PR2 only). Same commands as C1. Acceptance: all 3 exit 0; `products-pagination`/`api-security` substring assertions still pass (substr survival); no regression in F2 tests or catalog tests.
+- [x] **F1** Triple-gate sweep (PR2 only). Same commands as C1. Acceptance: all 3 exit 0; `products-pagination`/`api-security` substring assertions still pass (substr survival); no regression in F2 tests or catalog tests.
 
 ### PR2 Commit Subjects
 
-- `fix(api): route browser catalog fetches through same-origin BFF`
-- `test(api): assert browser catalog fetches stay same-origin`
-- `chore(env): document STRAPI_API_URL vs NEXT_PUBLIC_STRAPI_API_URL usage`
+- `test(api): assert browser catalog fetches stay same-origin` (be3b272 — RED, both D1 unit + D2 e2e)
+- `fix(api): route browser catalog fetches through same-origin BFF` (ecabdd6 — GREEN E1+E2)
+- `chore(env): document STRAPI_API_URL vs NEXT_PUBLIC_STRAPI_API_URL usage` (ccac245 — GREEN E3)
 
 ## Total Task Count
 
