@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.9.0...relojes-bv-beni-v1.10.0) (2026-09-14)
+
+
+### Features
+
+* **api:** route browser catalog fetches through same-origin BFF (F3 PR2) ([28d8bec](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/28d8bec6027ab0c36ba4391e66a7002fb990141f))
+
+
+### Bug Fixes
+
+* **api:** route browser catalog fetches through same-origin BFF ([ecabdd6](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/ecabdd6ecf1fa3fec52cc4fa55a9aa8c8ab4f7e8))
+
 ## [1.9.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.8.0...relojes-bv-beni-v1.9.0) (2026-09-14)
 
 
