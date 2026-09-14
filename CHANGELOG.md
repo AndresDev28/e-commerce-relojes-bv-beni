@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.8.0...relojes-bv-beni-v1.9.0) (2026-09-14)
+
+
+### Features
+
+* **api:** add /api/categories same-origin proxy ([f63123a](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/f63123ab300c16fdb648033ad28d2b9a53523718))
+* **api:** add /api/products and /api/categories same-origin proxies (F3 PR1) ([171e1ba](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/171e1ba8bfa57ec3c5b06c05ec5559c1496f53b6))
+* **api:** add /api/products same-origin proxy with X-Trace-Id and friendly Spanish errors ([cacf346](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/cacf3464f119487ac945c2a1121a250731aa5579))
+
 ## [1.8.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.7.0...relojes-bv-beni-v1.8.0) (2026-09-09)
 
 
