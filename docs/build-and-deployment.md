@@ -24,7 +24,7 @@ The application is deployed with a modern, decoupled architecture: a frontend on
 
 - **Frontend Deployment (Next.js on Vercel):** The main e-commerce application is deployed on Vercel, leveraging its seamless integration with Next.js for optimal performance and continuous deployment.
 
-- **Connecting the Services (Commit `10051e7`):** The link between the frontend and backend is managed securely and flexibly using environment variables. The `STRAPI_API_URL` and `NEXT_PUBLIC_STRAPI_API_URL` variables were updated to point to the live Render URL, officially connecting the Vercel deployment to the production API.
+- **Connecting the Services (Commit `10051e7`):** The link between the frontend and backend is managed securely and flexibly using environment variables. The `STRAPI_API_URL` and `NEXT_PUBLIC_STRAPI_API_URL` variables were updated to point to the live Render URL, officially connecting the Vercel deployment to the production API. **As of v1.10.0**, browser catalog requests go through same-origin Next.js BFF routes (`/api/products`, `/api/categories`) which forward server-side to Strapi via `STRAPI_API_URL`. `NEXT_PUBLIC_STRAPI_API_URL` is no longer required for production — only `STRAPI_API_URL` is.
 
 - **Next.js Configuration for Production (Commit `b5d95f6`):** The `next.config.js` file was modified to allow image optimization for external domains. The hostnames for the Cloudinary CDN and the Render backend were added to the `images.remotePatterns` configuration, ensuring that product images load correctly and efficiently in the production environment.
 
@@ -35,9 +35,10 @@ The application uses environment variables to manage sensitive data and configur
 ### Required Environment Variables
 
 #### Strapi CMS API
-- **`NEXT_PUBLIC_STRAPI_API_URL`**: The URL of the Strapi backend
+- **`STRAPI_API_URL`** (server runtime, primary): The URL of the Strapi backend, used by Next.js BFF route handlers
   - Development: `http://localhost:1337`
   - Production: Your deployed Strapi URL (e.g., on Render)
+- **`NEXT_PUBLIC_STRAPI_API_URL`** (build-time, legacy): Was previously inlined into the browser bundle for direct Strapi fetches. As of v1.10.0 browser catalog fetches go through `/api/products` and `/api/categories` (same-origin), so this var is no longer required for production — only `STRAPI_API_URL` is. Kept in `.env.example` for backward compatibility with existing scripts and tools that may still read it.
 
 #### Stripe Payment Gateway ([PAY-04])
 - **`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`**: Stripe public key (safe to expose)

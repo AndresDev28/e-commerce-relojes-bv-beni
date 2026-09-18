@@ -81,7 +81,8 @@ Run all tests: `npm run test:all`
 ## Environment Variables
 
 Required in `.env.local` (see `.env.example`):
-- `NEXT_PUBLIC_STRAPI_API_URL` - Strapi backend URL
+- `STRAPI_API_URL` - Strapi backend URL (server runtime, primary). Used by all same-origin Next.js BFF route handlers (`/api/products`, `/api/categories`, `/api/orders`, etc.) which forward to Strapi directly.
+- `NEXT_PUBLIC_STRAPI_API_URL` - Legacy build-time browser var. Kept for backward compatibility but new code should prefer `STRAPI_API_URL`. Same-origin proxy routing in browser means this var no longer needs to point at a public URL — the visitor's browser never reaches Strapi directly.
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe public key (pk_test_/pk_live_)
 - `STRIPE_SECRET_KEY` - Stripe secret key (sk_test_/sk_live_)
 - `RESEND_API_KEY` - Email service key
