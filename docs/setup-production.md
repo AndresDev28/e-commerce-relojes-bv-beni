@@ -128,7 +128,7 @@ INF-24 → INF-25 → INF-26 → INF-27
 ### Producción - Vercel
 
 ```
-NEXT_PUBLIC_STRAPI_API_URL=https://api.relojesbvbeni.com
+STRAPI_API_URL=https://api.relojesbvbeni.com
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 STRIPE_SECRET_KEY=sk_live_...
 RESEND_API_KEY=re_...
@@ -136,6 +136,8 @@ RESEND_FROM_EMAIL=pedidos@relojesbvbeni.com
 WEBHOOK_SECRET=...
 DEV_EMAIL=
 ```
+
+> **v1.10.0+**: `NEXT_PUBLIC_STRAPI_API_URL` ya NO es necesaria para producción. El browser ahora fetcha catalog vía `/api/products` y `/api/categories` (same-origin BFF), y el BFF usa `STRAPI_API_URL` server-side. La podés dejar configurada en Vercel para no romper nada, pero no hace nada.
 
 ### Producción - Railway
 

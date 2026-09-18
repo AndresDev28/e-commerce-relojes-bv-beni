@@ -130,7 +130,8 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local` with your actual API keys:
-- `NEXT_PUBLIC_STRAPI_API_URL`: URL of your Strapi backend
+- `STRAPI_API_URL`: URL of your Strapi backend (server runtime, primary). All catalog API requests (`/api/products`, `/api/categories`) go through the same-origin Next.js BFF which forwards to this URL.
+- `NEXT_PUBLIC_STRAPI_API_URL`: Legacy build-time browser var, kept for backward compatibility. New code should prefer `STRAPI_API_URL`.
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key (use test keys for development: `pk_test_...`)
 - `STRIPE_SECRET_KEY`: Your Stripe secret key (use test keys for development: `sk_test_...`)
 
