@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.11.0...relojes-bv-beni-v1.11.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **checkout:** idempotent useRef latch for confirmation redirect race ([414688e](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/414688efd74b6fdea8fbb6c3430af541444ff633))
+* **checkout:** idempotent useRef latch for confirmation redirect race (F7) ([dfb5339](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/dfb5339686378dd2c18315b1d6d6df1be36a20c6))
+
 ## [1.11.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.10.0...relojes-bv-beni-v1.11.0) (2026-09-21)
 
 
