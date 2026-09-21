@@ -181,8 +181,10 @@ test.describe('Checkout order UPSERT (PUT by-order-id)', () => {
     ).toBeEnabled({ timeout: 15000 })
     await page.click('button:has-text("Pagar")')
 
-    // The PUT lands exactly once regardless of which redirect wins the
-    // post-success navigation (confirmation push vs empty-cart effect).
+    // The PUT lands exactly once. The F7 order-in-flight guard ensures the
+    // confirmation push wins the post-success race (clearCart empties the
+    // cart, but the empty-cart effect MUST consult the latch and not push
+    // /tienda — see spec obs #1908).
     await expect
       .poll(() => putRequests.length, { timeout: 15000 })
       .toBe(1)
@@ -222,6 +224,13 @@ test.describe('Checkout order UPSERT (PUT by-order-id)', () => {
     await expect(
       page.locator('text=Error al registrar el pedido')
     ).not.toBeVisible()
+
+    // 6. F7 strict final-URL gate: confirmation landing is the contract,
+    // not the empty-cart /tienda push (BUG-REDIRECT-TIENDA).
+    await expect(page).toHaveURL(
+      /\/order-confirmation\?orderId=ORD-E2E-UPSERT-1/,
+      { timeout: 15000 }
+    )
   })
 
   test('renders the bounded 409 reconciliation copy in the single orderError banner', async ({

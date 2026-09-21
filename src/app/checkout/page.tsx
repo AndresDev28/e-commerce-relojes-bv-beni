@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/features/cart'
@@ -44,6 +44,24 @@ export default function CheckoutPage() {
 
   const breadcrumbs = buildBreadcrumbs({ route: 'checkout' })
 
+  // F7 Order-In-Flight Guard (BUG-REDIRECT-TIENDA). Synchronous truth in
+  // the ref; the render mirror exists so the in-flight state is visible
+  // to assistive tech via aria-busy on the root container. The effect
+  // reads the ref at execution time so a stale closure cannot push /tienda
+  // when `clearCart()` empties the cart mid-PUT.
+  const orderInFlightRef = useRef(false)
+  const [isOrderInFlight, setIsOrderInFlight] = useState(false)
+
+  // Reset the latch only when the server reports an error. Success MUST
+  // NOT reset — the latch outlives the final render so a duplicate
+  // onSuccess (Stripe retry, page re-mount) cannot trigger a second PUT.
+  useEffect(() => {
+    if (orderError) {
+      orderInFlightRef.current = false
+      setIsOrderInFlight(false)
+    }
+  }, [orderError])
+
   useEffect(() => {
     if (authLoading || !isHydrated) return
 
@@ -52,7 +70,7 @@ export default function CheckoutPage() {
       return
     }
 
-    if (cartItems.length === 0 && !orderError) {
+    if (cartItems.length === 0 && !orderError && !orderInFlightRef.current) {
       router.push('/tienda')
       return
     }
@@ -79,6 +97,14 @@ export default function CheckoutPage() {
     paymentIntent: PaymentIntent,
     orderId: string
   ) => {
+    // F7 idempotency: a duplicate onSuccess callback MUST NOT fire a
+    // second PUT. The ref is set synchronously so the empty-cart effect
+    // cannot observe a stale "not in flight" state.
+    if (orderInFlightRef.current) {
+      return
+    }
+    orderInFlightRef.current = true
+    setIsOrderInFlight(true)
     // R8 mitigation: clear any prior payment error so a stale alert does
     // not linger after a successful retry.
     setPaymentError(null)
@@ -90,7 +116,10 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div
+      className="container mx-auto px-4 py-8"
+      aria-busy={isOrderInFlight}
+    >
       <Breadcrumbs breadcrumbs={breadcrumbs} />
 
       {paymentError && (
