@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.10.0...relojes-bv-beni-v1.11.0) (2026-09-21)
+
+
+### Features
+
+* **checkout:** add paymentIntentErrors mapper for friendly Spanish errors ([31431ae](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/31431ae6ca32eaa74eba1612ee27aa5cb6b864e3))
+
+
+### Bug Fixes
+
+* **checkout:** friendly Spanish error mapping for /api/create-payment-intent (F4) ([88b8b1c](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/88b8b1c2f209cec641749c89adbe6ae8b1244505))
+* **checkout:** route payment-intent errors through friendly Spanish mapper ([8e4d9eb](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/8e4d9eb6320446654d84fac514edbe2929ef22a9))
+
 ## [1.10.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.9.0...relojes-bv-beni-v1.10.0) (2026-09-14)
 
 
