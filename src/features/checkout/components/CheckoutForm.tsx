@@ -6,6 +6,7 @@ import {
 } from '@/lib/stripe/errorHandler'
 import { retryWithBackoff } from '@/lib/stripe/retryHandler'
 import { newTraceId } from '@/lib/trace'
+import { paymentIntentErrors } from '@/features/checkout/utils/checkoutPaymentErrors'
 import type { RetryResult } from '@/lib/stripe/retryHandler'
 import type { PaymentIntent } from '@stripe/stripe-js'
 import type { CartItem } from '@/types'
@@ -78,20 +79,29 @@ export default function CheckoutForm({
           }),
         })
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'No se pudo inicializar el pago.')
+          // `.json()` can itself throw (truncated body, mid-response
+          // disconnect, non-JSON HTML 5xx page). Wrap the parse so any
+          // failure routes through the mapper with status + undefined body,
+          // never a raw throw (AGENT.md:51, spec checkout-error-display R2).
+          const parsedBody = await response.json().catch(() => undefined)
+          const friendly = paymentIntentErrors(
+            response.status,
+            parsedBody ?? undefined
+          )
+          onError?.(friendly)
+          return
         }
         const data = await response.json()
         setClientSecret(data.clientSecret)
         if (typeof data.orderId === 'string') {
           setServerOrderId(data.orderId)
         }
-      } catch (error) {
-        onError?.(
-          error instanceof Error
-            ? error.message
-            : 'No se pudo inicializar el pago. Por favor, recarga la página.'
-        )
+      } catch {
+        // Network throw, abort, or any other fetch failure (no Response
+        // object). Route through the mapper with status 0 + undefined body
+        // so the user sees STRIPE_ERROR_MESSAGES.network_error, never the
+        // raw browser/DOMException message (AGENT.md:51).
+        onError?.(paymentIntentErrors(0, undefined))
       } finally {
         setIsLoadingIntent(false)
       }

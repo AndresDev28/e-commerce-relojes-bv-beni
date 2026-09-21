@@ -5,5 +5,6 @@ export type { AssembledOrderData } from './services/assembleOrderData';
 export { createPaymentIntentService } from './services/createPaymentIntentService';
 export type { CreatePaymentIntentInput } from './services/createPaymentIntentService';
 export { checkoutOrderErrors } from './utils/checkoutOrderErrors';
+export { paymentIntentErrors } from './utils/checkoutPaymentErrors';
 export { useCreateOrder } from './hooks/useCreateOrder';
 export { useCheckoutTotals } from './hooks/useCheckoutTotals';

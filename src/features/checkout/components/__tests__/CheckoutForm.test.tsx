@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import CheckoutForm from '../CheckoutForm' // ← Cambiado
 import userEvent from '@testing-library/user-event'
+import { STRIPE_ERROR_MESSAGES } from '@/lib/stripe/errorMessages'
 import type { Stripe, StripeElements } from '@stripe/stripe-js'
 import type { CartItem } from '@/types'
 
@@ -456,5 +457,97 @@ describe('Integración con ErrorMessage - [PAY-09]', () => {
 
     // El formulario debe tener role="form"
     expect(screen.getByRole('form')).toBeInTheDocument()
+  })
+})
+
+/**
+ * Payment-intent friendly-error mapping (F4, spec R2 + AC1/AC3/AC7).
+ *
+ * The page-level <ErrorMessage> is owned by checkout/page.tsx; this suite
+ * asserts the form-level contract — `onError` is invoked with the friendly
+ * Spanish copy produced by `paymentIntentErrors`, never with the raw
+ * backend error string from `body.error` / `body.message`.
+ */
+describe('Payment-intent friendly error mapping - F4', () => {
+  const f4MockStripe = {
+    confirmCardPayment: vi.fn(),
+  }
+  const f4MockCardElement = {
+    mount: vi.fn(),
+    destroy: vi.fn(),
+    on: vi.fn(),
+    update: vi.fn(),
+  }
+  const f4MockElements = {
+    getElement: vi.fn(() => f4MockCardElement),
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockUseStripe.mockReturnValue(f4MockStripe as unknown as Stripe)
+    mockUseElements.mockReturnValue(f4MockElements as unknown as StripeElements)
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-jwt-token')
+    f4MockStripe.confirmCardPayment.mockResolvedValue({
+      paymentIntent: { id: 'pi_test_123', status: 'succeeded' },
+      error: undefined,
+    })
+  })
+
+  it('routes a 500 with raw error body through friendly mapper (no raw text leaks)', async () => {
+    const onError = vi.fn()
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'Internal Server Error' }),
+    })
+
+    render(
+      <CheckoutForm amount={100} cartItems={mockCartItems} onError={onError} />
+    )
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalled()
+    }, { timeout: 3000 })
+
+    const message = onError.mock.calls[0][0] as string
+    expect(message).toBe(STRIPE_ERROR_MESSAGES.api_error)
+    expect(message).not.toContain('Internal Server Error')
+  })
+
+  it('routes a network fetch throw to STRIPE_ERROR_MESSAGES.network_error', async () => {
+    const onError = vi.fn()
+    mockFetch.mockRejectedValue(new TypeError('Network request failed'))
+
+    render(
+      <CheckoutForm amount={100} cartItems={mockCartItems} onError={onError} />
+    )
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalled()
+    }, { timeout: 3000 })
+
+    const message = onError.mock.calls[0][0] as string
+    expect(message).toBe(STRIPE_ERROR_MESSAGES.network_error)
+  })
+
+  it('routes a 400 with raw error body through Spanish validation mapper (no raw text leaks)', async () => {
+    const onError = vi.fn()
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'malformed request' }),
+    })
+
+    render(
+      <CheckoutForm amount={100} cartItems={mockCartItems} onError={onError} />
+    )
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalled()
+    }, { timeout: 3000 })
+
+    const message = onError.mock.calls[0][0] as string
+    expect(message).toContain('No pudimos procesar tu método de pago')
+    expect(message).not.toContain('malformed request')
   })
 })
