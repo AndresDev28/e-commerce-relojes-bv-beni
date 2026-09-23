@@ -67,7 +67,7 @@ test.describe('Favorites error feedback when API fails (UXW-01 TC-14)', () => {
         });
 
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const firstCard = page.locator('.group').first();
         await expect(firstCard).toBeVisible({ timeout: 10000 });
@@ -133,7 +133,7 @@ test.describe('Favorites error feedback when API fails (UXW-01 TC-14)', () => {
         });
 
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const firstCard = page.locator('.group').first();
         await expect(firstCard).toBeVisible({ timeout: 10000 });

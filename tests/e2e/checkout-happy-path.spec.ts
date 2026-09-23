@@ -45,7 +45,7 @@ test.describe('Checkout Happy Path', () => {
     test('Should complete purchase successfully', async ({ page }) => {
         // 1. Navegar al catálogo
         await page.goto('/tienda');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const productCard = page.locator('.group').filter({ hasText: 'Classic Chronograph' });
         await expect(productCard).toBeVisible({ timeout: 10000 });

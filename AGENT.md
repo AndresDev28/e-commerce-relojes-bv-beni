@@ -59,6 +59,7 @@ Structure code so the business domain (Catalog, Checkout, Shipping, Payments) is
 
 - **Vitest command**: Always use `npx vitest run --maxWorkers=2`. Running `npx vitest` without worker limits is prohibited — it saturates RAM on high-core-count hardware.
 - **Hang recovery**: If the system hangs or lags during test execution, stop background processes and check the Node PID before retrying.
+- **CI verify gates**: A CI run is complete only when lint, build, unit tests (`npx vitest run --maxWorkers=2`), and Playwright e2e (`npm run test:e2e`) all pass. In CI, `playwright.config.ts` boots `npm run start` against the pre-built `.next/` produced by the e2e job; locally it keeps `npm run dev` so developer ergonomics stay unchanged. The Playwright HTML report is uploaded as a workflow artifact on failure so regressions stay diagnosable from the run view.
 
 ## Cross-Repo SSOT
 

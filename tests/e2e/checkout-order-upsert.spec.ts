@@ -123,7 +123,7 @@ async function primeCheckout(page: Page) {
   // same navigation path proven by checkout-happy-path.spec.ts (the direct
   // goto('/checkout') can race client cart hydration and bounce to /tienda).
   await page.goto('/tienda')
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('load')
   const productCard = page
     .locator('.group')
     .filter({ hasText: 'Classic Chronograph' })

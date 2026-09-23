@@ -46,7 +46,7 @@ test.describe('Favorites Auth Prompt a11y (UXW-01 TC-07)', () => {
         page,
     }) => {
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Wait for at least one product card to render.
         await expect(page.locator('.group').first()).toBeVisible({ timeout: 10000 });
@@ -68,7 +68,7 @@ test.describe('Favorites Auth Prompt a11y (UXW-01 TC-07)', () => {
         page,
     }) => {
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const firstCard = page.locator('.group').first();
         await expect(firstCard).toBeVisible({ timeout: 10000 });
@@ -90,7 +90,7 @@ test.describe('Favorites Auth Prompt a11y (UXW-01 TC-07)', () => {
         page,
     }) => {
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const cards = page.locator('.group');
         await expect(cards.first()).toBeVisible({ timeout: 10000 });
@@ -115,7 +115,7 @@ test.describe('Favorites Auth Prompt a11y (UXW-01 TC-07)', () => {
         page,
     }) => {
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const firstCard = page.locator('.group').first();
         await expect(firstCard).toBeVisible({ timeout: 10000 });

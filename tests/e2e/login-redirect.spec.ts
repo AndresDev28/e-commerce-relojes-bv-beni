@@ -26,7 +26,7 @@ test.describe('Login redirect round-trip (TC-01 / TC-02)', () => {
     page,
   }) => {
     await page.goto(`${BASE_URL}/login?redirect=/tienda`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Fill in credentials
     await page.fill('input#Identifier', 'jdoe@example.com');
@@ -45,7 +45,7 @@ test.describe('Login redirect round-trip (TC-01 / TC-02)', () => {
     page,
   }) => {
     await page.goto(`${BASE_URL}/login?redirect=/tienda/classic-chronograph`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Fill in credentials
     await page.fill('input#Identifier', 'jdoe@example.com');

@@ -40,7 +40,7 @@ test.describe('UXW-01 regression sweep (TC-15 to TC-20)', () => {
         page,
     }) => {
         await page.goto(`${BASE_URL}/`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Hero section heading should be visible.
         await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
@@ -62,7 +62,7 @@ test.describe('UXW-01 regression sweep (TC-15 to TC-20)', () => {
         // directly from the cart context. We don't need to navigate to the
         // detail page (which is a server component calling Strapi).
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const firstCard = page.locator('.group').first();
         await expect(firstCard).toBeVisible({ timeout: 10000 });
@@ -122,7 +122,7 @@ test.describe('UXW-01 regression sweep (TC-15 to TC-20)', () => {
         });
 
         await page.goto(`${BASE_URL}/checkout`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // The checkout page should render. Look for a checkout-specific heading.
         // (The exact text varies; we just verify the page loads without crashing.)
@@ -154,7 +154,7 @@ test.describe('UXW-01 regression sweep (TC-15 to TC-20)', () => {
         });
 
         await page.goto(`${BASE_URL}/mi-cuenta`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // The dashboard should render. Look for a heading or user info.
         await expect(page.getByRole('heading').first()).toBeVisible({ timeout: 10000 });
@@ -188,7 +188,7 @@ test.describe('UXW-01 regression sweep (TC-15 to TC-20)', () => {
         });
 
         await page.goto(`${BASE_URL}/mi-cuenta`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Click the header's "Cerrar sesión" button (not the one in the
         // dashboard body).
@@ -208,7 +208,7 @@ test.describe('UXW-01 regression sweep (TC-15 to TC-20)', () => {
         page,
     }) => {
         await page.goto(`${BASE_URL}/tienda`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Confirmed by code inspection: CatalogContent does not have a search
         // input element. The catalog only filters by categorySlug via URL.
