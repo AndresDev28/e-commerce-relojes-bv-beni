@@ -45,7 +45,7 @@ test.describe('Favorites Page accessibility for anonymous users (UXW-01 TC-11)',
         page,
     }) => {
         await page.goto(`${BASE_URL}/favoritos`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // We should stay on /favoritos, NOT be redirected to home.
         await expect(page).toHaveURL(/\/favoritos$/);
@@ -65,7 +65,7 @@ test.describe('Favorites Page accessibility for anonymous users (UXW-01 TC-11)',
         page,
     }) => {
         await page.goto(`${BASE_URL}/favoritos`);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         await expect(page).toHaveURL(/\/favoritos$/);
 

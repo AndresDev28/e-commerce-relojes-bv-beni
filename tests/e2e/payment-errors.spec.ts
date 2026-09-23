@@ -39,7 +39,7 @@ test.describe('Payment and API Errors Handling', () => {
         // /tienda — see obs #1808). Walk through /tienda → /carrito → /checkout
         // so the CheckoutForm mounts with a hydrated cart.
         await page.goto('/tienda');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const card = page.locator('.group').filter({ hasText: 'Classic Chronograph' }).first();
         await expect(card).toBeVisible({ timeout: 15000 });

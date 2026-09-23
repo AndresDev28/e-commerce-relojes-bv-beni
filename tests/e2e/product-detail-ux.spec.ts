@@ -72,7 +72,7 @@ test.describe('Product detail UX (UXW-02 / UXW-03)', () => {
 
   test('renders the blocks description as paragraphs', async ({ page }) => {
     await page.goto(`${BASE_URL}/tienda/classic-chronograph`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(
       page.getByText('A timeless classic for any occasion.'),
@@ -91,7 +91,7 @@ test.describe('Product detail UX (UXW-02 / UXW-03)', () => {
     page,
   }) => {
     await page.goto(`${BASE_URL}/tienda/classic-chronograph`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const trailingCrumb = page.locator(
       'li[aria-current="page"] span[title="Classic Chronograph"]',
