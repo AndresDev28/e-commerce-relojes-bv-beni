@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.12.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.11.1...relojes-bv-beni-v1.12.0) (2026-09-24)
+
+
+### Features
+
+* **checkout:** bounded inline retry for transient UPSERT failures (F8 part 2) ([#148](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/148)) ([5e8aea4](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/5e8aea47efff87076ddb532ac0feaadaca6af9aa))
+
+
+### Bug Fixes
+
+* **checkout:** close useCreateOrder outer catch leak (S-MOD.8) ([#146](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/issues/146)) ([ccc62e6](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/ccc62e693c9bb0a937a5d9940260b45914133567))
+
 ## [1.11.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.11.0...relojes-bv-beni-v1.11.1) (2026-09-21)
 
 
