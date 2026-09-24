@@ -10,6 +10,24 @@ import { newTraceId } from '@/lib/trace'
 import { useAuth } from '@/context/AuthContext'
 import type { CartItem } from '@/types'
 
+// F8 (S-RET.1..S-RET.7): bounded inline retry for transient UPSERT
+// failures. File-local constants and helpers — no new module is added
+// because the second-consumer case (CheckoutForm payment-intent) has
+// its own retry surface and a generic `withRetry` is deferred to a
+// follow-up when two concrete consumers exist.
+const MAX_ORDER_UPSERT_ATTEMPTS = 3
+const ORDER_UPSERT_BACKOFF_BASE_MS = 500
+
+function isRetryableOrderUpsertStatus(status: number): boolean {
+  // 500, 502, 503, 504 are transient. 4xx (incl. 409) and 1xx/2xx/3xx
+  // are terminal — the mapper handles them.
+  return status === 500 || status === 502 || status === 503 || status === 504
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 interface UseCreateOrderOptions {
   onSuccess?: (orderId: string) => void
   clearCart?: () => void
@@ -79,39 +97,76 @@ export function useCreateOrder(
       paymentInfo: orderData.paymentInfo,
     }
 
-    let response: Response
-    try {
-      response = await fetch(
-        `/api/orders/by-order-id/${encodeURIComponent(orderId)}`,
-        {
+    // F8 (S-RET.1..S-RET.7): bounded inline retry with exponential backoff.
+    // The wire body and URL are captured ONCE before the loop (D-lock
+    // invariant — every retry re-sends the same bytes; only the
+    // `X-Trace-Id` header rotates per attempt so the server can
+    // correlate each attempt independently, F4 A-4).
+    const upsertUrl = `/api/orders/by-order-id/${encodeURIComponent(orderId)}`
+    const wireBodyJson = JSON.stringify(wireBody)
+
+    let attempt = 0
+    let response: Response | null = null
+    let terminalStatus: number | null = null
+    let terminalBody: unknown = null
+
+    while (attempt < MAX_ORDER_UPSERT_ATTEMPTS) {
+      attempt += 1
+      try {
+        response = await fetch(upsertUrl, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            // A-4: a fresh trace id per attempt, forwarded and echoed by the
-            // same-origin proxy (S1.5).
             'X-Trace-Id': newTraceId(),
           },
           credentials: 'same-origin',
-          body: JSON.stringify(wireBody),
+          body: wireBodyJson,
+        })
+      } catch {
+        // Transport failure (proxy unreachable, abort, network).
+        // Retry transient if attempts remain; otherwise surface the
+        // friendly fallback (same as the no-fetch branch).
+        if (attempt < MAX_ORDER_UPSERT_ATTEMPTS) {
+          await sleep(ORDER_UPSERT_BACKOFF_BASE_MS * 2 ** (attempt - 1))
+          continue
         }
-      )
-    } catch {
-      // Transport failure (proxy unreachable): same friendly fallback (S3.6).
-      setOrderError(
-        checkoutOrderErrors(0, null, { paymentIntentId: paymentIntent.id })
-      )
-      return
+        setOrderError(
+          checkoutOrderErrors(0, null, { paymentIntentId: paymentIntent.id })
+        )
+        return
+      }
+
+      if (response.ok) {
+        break
+      }
+
+      // Drain body to release the connection before the next attempt.
+      const body: unknown = await response.json().catch(() => null)
+
+      if (
+        isRetryableOrderUpsertStatus(response.status) &&
+        attempt < MAX_ORDER_UPSERT_ATTEMPTS
+      ) {
+        await sleep(ORDER_UPSERT_BACKOFF_BASE_MS * 2 ** (attempt - 1))
+        continue
+      }
+
+      // Terminal: 4xx (incl. 409 per F4 invariant), or 5xx after the
+      // final attempt. Single translation point — mapper handles it.
+      terminalStatus = response.status
+      terminalBody = body
+      break
     }
 
-    if (!response.ok) {
-      // A-3/A-7: single translation point, no client-side retry — a bounded
-      // 409 reaching the browser is already post-convergence (obs #1783).
-      const body: unknown = await response.json().catch(() => null)
-      setOrderError(
-        checkoutOrderErrors(response.status, body, {
-          paymentIntentId: paymentIntent.id,
-        })
-      )
+    if (!response || !response.ok) {
+      if (terminalStatus !== null) {
+        setOrderError(
+          checkoutOrderErrors(terminalStatus, terminalBody, {
+            paymentIntentId: paymentIntent.id,
+          })
+        )
+      }
+      // Else: the transport-fail branch above already set orderError.
       return
     }
 
