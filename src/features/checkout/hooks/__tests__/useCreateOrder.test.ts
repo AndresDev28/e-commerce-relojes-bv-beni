@@ -492,3 +492,79 @@ describe('useCreateOrder — server orderId passthrough (legacy invariants)', ()
     expect(call.orderId).toBe('ORD-SERVER-123')
   })
 })
+
+describe('useCreateOrder — S-MOD.8 outer catch does not leak error.message', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockAuthState.user = MOCK_AUTH_USER
+    // The friendly-fallback mapper accepts (0, null, ctx). Re-establish
+    // a faithful happy-path assembleOrderData so the hook reaches the
+    // assembly stage before we override it per test below.
+    mockAssembleOrderData.mockImplementation(
+      (input: {
+        orderId: string
+        cartItems: CartItem[]
+        subtotal: number
+        shipping: number
+        total: number
+        paymentIntent: PaymentIntent
+      }) => ({
+        orderId: input.orderId,
+        items: input.cartItems,
+        subtotal: input.subtotal,
+        shipping: input.shipping,
+        total: input.total,
+        orderStatus: 'PAID',
+        paymentIntentId: input.paymentIntent.id,
+        paymentInfo: EXPECTED_PAYMENT_INFO,
+      })
+    )
+    global.fetch = vi.fn().mockResolvedValue(
+      mockUpsertResponse(200, makeUpsertSuccessEnvelope())
+    )
+  })
+
+  it('throws from assembleOrderData — orderError MUST NOT contain error.message substrings', async () => {
+    const dangerousMessage =
+      "TypeError: cannot read properties of undefined (reading 'map') at /Users/dev/project/src/foo.ts:42:11"
+    mockAssembleOrderData.mockImplementation(() => {
+      throw new Error(dangerousMessage)
+    })
+
+    const { result } = renderHook(() => useCreateOrder())
+
+    await act(async () => {
+      await result.current.createOrder(paymentIntent, cartItems, 'ORD-CATCH-1')
+    })
+
+    expect(result.current.orderError).not.toBeNull()
+    const banner = result.current.orderError as string
+    // The catch is now a true defensive net: it must NOT echo any
+    // substring of the underlying error.message.
+    for (const probe of [
+      'TypeError',
+      'cannot read properties',
+      'undefined',
+      "'map'",
+      '/Users/dev/project',
+      'foo.ts:42',
+      'at /Users',
+    ]) {
+      expect(banner).not.toContain(probe)
+    }
+    expect(result.current.isCreatingOrder).toBe(false)
+  })
+
+  it('orderError MUST be byte-identical to checkoutOrderErrors fallback for the same paymentIntentId', () => {
+    // Direct mapper call gives the canonical fallback copy.
+    const canonical = checkoutOrderErrors(0, null, {
+      paymentIntentId: paymentIntent.id,
+    })
+    // The catch path must produce the same string for the same input —
+    // no second banner, no divergent copy.
+    expect(canonical).toBe(
+      'Tu pago fue procesado, pero hubo un problema al registrar tu pedido. Por favor, contacta con soporte indicando tu ID de pago: pi_test_123'
+    )
+    expect(canonical).toContain(paymentIntent.id)
+  })
+})

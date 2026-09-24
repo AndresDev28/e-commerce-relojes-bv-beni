@@ -133,14 +133,13 @@ export function useCreateOrder(
       setIsCreatingOrder(true)
       setOrderError(null)
       await doCreateOrder(paymentIntent, cartItems, orderId)
-    } catch (error) {
-      // Defensive net only: the UPSERT path maps every known failure through
-      // `checkoutOrderErrors` and never throws back to this handler.
-      const errorMsg =
-        error instanceof Error ? error.message : 'Error al crear la orden'
+    } catch (_error) {
+      // S-MOD.8: defensive catch MUST NOT leak error.message to the UI.
+      // The friendly fallback copy is identical to the transport-fail branch
+      // (line ~99) so the catch becomes a true defensive net rather than a
+      // divergent copy path.
       setOrderError(
-        `Tu pago fue procesado, pero hubo un problema al registrar tu pedido: ${errorMsg}. ` +
-          `Por favor, contacta con soporte indicando tu ID de pago: ${paymentIntent.id}`
+        checkoutOrderErrors(0, null, { paymentIntentId: paymentIntent.id })
       )
     } finally {
       setIsCreatingOrder(false)
