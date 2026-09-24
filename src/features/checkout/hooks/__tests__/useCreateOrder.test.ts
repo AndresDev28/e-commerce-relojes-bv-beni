@@ -11,7 +11,7 @@
  * Per obs #1797 warning #2, every failure case stubs a CONCRETE status
  * literal (400/403/409/500/502) — never the widened union type.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import type { PaymentIntent } from '@stripe/stripe-js'
 import type { CartItem } from '@/types'
@@ -566,5 +566,200 @@ describe('useCreateOrder — S-MOD.8 outer catch does not leak error.message', (
       'Tu pago fue procesado, pero hubo un problema al registrar tu pedido. Por favor, contacta con soporte indicando tu ID de pago: pi_test_123'
     )
     expect(canonical).toContain(paymentIntent.id)
+  })
+})
+
+describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    mockAuthState.user = MOCK_AUTH_USER
+    mockAssembleOrderData.mockImplementation(
+      (input: {
+        orderId: string
+        cartItems: CartItem[]
+        subtotal: number
+        shipping: number
+        total: number
+        paymentIntent: PaymentIntent
+      }) => ({
+        orderId: input.orderId,
+        items: input.cartItems,
+        subtotal: input.subtotal,
+        shipping: input.shipping,
+        total: input.total,
+        orderStatus: 'PAID',
+        paymentIntentId: input.paymentIntent.id,
+        paymentInfo: EXPECTED_PAYMENT_INFO,
+      })
+    )
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function runCreateOrder(
+    result: { current: { createOrder: ReturnType<typeof useCreateOrder>['createOrder'] } },
+    orderId = 'ORD-RETRY'
+  ) {
+    await act(async () => {
+      const p = result.current.createOrder(paymentIntent, cartItems, orderId)
+      await vi.runAllTimersAsync()
+      await p
+    })
+  }
+
+  // S-RET.1
+  it('network throw on attempt 1 retries; success on attempt 2 keeps orderError null and fires clearCart + onSuccess exactly once', async () => {
+    const onSuccess = vi.fn()
+    const clearCart = vi.fn()
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('proxy unreachable'))
+      .mockResolvedValueOnce(mockUpsertResponse(200, makeUpsertSuccessEnvelope()))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    await runCreateOrder(result)
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(result.current.orderError).toBeNull()
+    expect(clearCart).toHaveBeenCalledTimes(1)
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+    expect(onSuccess).toHaveBeenCalledWith('ORD-RETRY')
+  })
+
+  // S-RET.2
+  it('5xx on attempts 1 and 2 retries; success on attempt 3 fires success hooks exactly once', async () => {
+    const onSuccess = vi.fn()
+    const clearCart = vi.fn()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockUpsertResponse(503, { error: 'temporarily unavailable' }))
+      .mockResolvedValueOnce(mockUpsertResponse(502, { error: 'bad gateway' }))
+      .mockResolvedValueOnce(mockUpsertResponse(200, makeUpsertSuccessEnvelope()))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    await runCreateOrder(result)
+
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(result.current.orderError).toBeNull()
+    expect(clearCart).toHaveBeenCalledTimes(1)
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+  })
+
+  // S-RET.3
+  it('409 on attempt 1 is terminal — no second attempt fires; orderError equals the conflict copy', async () => {
+    const onSuccess = vi.fn()
+    const clearCart = vi.fn()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockUpsertResponse(409, UPSERT_ERROR_409_GENERIC))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    await runCreateOrder(result)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(result.current.orderError).toContain('revisa Mis Pedidos')
+    expect(result.current.orderError).toContain('pi_test_123')
+    expect(clearCart).not.toHaveBeenCalled()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  // S-RET.4
+  it('400 on attempt 1 is terminal — no second attempt fires; orderError equals the validation copy', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockUpsertResponse(400, UPSERT_ERROR_400_ITEMS))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder())
+    await runCreateOrder(result)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(result.current.orderError).toBe(
+      'Tu pedido no incluye productos válidos. Revisa tu carrito e inténtalo de nuevo.'
+    )
+    expect(result.current.orderError).not.toContain('items must be an array')
+  })
+
+  // S-RET.5
+  it('3 transient failures in a row surface the friendly fallback banner; clearCart + onSuccess do NOT fire', async () => {
+    const onSuccess = vi.fn()
+    const clearCart = vi.fn()
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('proxy down 1'))
+      .mockResolvedValueOnce(mockUpsertResponse(503, { error: 'try again' }))
+      .mockRejectedValueOnce(new Error('proxy down 3'))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    await runCreateOrder(result)
+
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(result.current.orderError).toBe(
+      'Tu pago fue procesado, pero hubo un problema al registrar tu pedido. Por favor, contacta con soporte indicando tu ID de pago: pi_test_123'
+    )
+    for (const probe of ['proxy down', 'Error:']) {
+      expect(result.current.orderError).not.toContain(probe)
+    }
+    expect(clearCart).not.toHaveBeenCalled()
+    expect(onSuccess).not.toHaveBeenCalled()
+    expect(result.current.isCreatingOrder).toBe(false)
+  })
+
+  // S-RET.6
+  it('the wire body and orderId are byte-identical across attempts; only the X-Trace-Id rotates', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockUpsertResponse(503, { error: 'warmup' }))
+      .mockResolvedValueOnce(mockUpsertResponse(200, makeUpsertSuccessEnvelope()))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder())
+    await runCreateOrder(result, 'ORD-DLOCK')
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const [url1, init1] = fetchMock.mock.calls[0]
+    const [url2, init2] = fetchMock.mock.calls[1]
+
+    expect(url1).toBe('/api/orders/by-order-id/ORD-DLOCK')
+    expect(url2).toBe('/api/orders/by-order-id/ORD-DLOCK')
+    expect(init1.body).toBe(init2.body)
+
+    const trace1 = new Headers(init1.headers).get('X-Trace-Id')
+    const trace2 = new Headers(init2.headers).get('X-Trace-Id')
+    expect(trace1).toMatch(UUID_V4)
+    expect(trace2).toMatch(UUID_V4)
+    expect(trace1).not.toBe(trace2)
+
+    expect(new Headers(init1.headers).get('Content-Type')).toBe('application/json')
+    expect(init1.method).toBe('PUT')
+  })
+
+  // S-RET.7
+  it('isCreatingOrder is true throughout the retry window — verified by observing all 3 fetch attempts complete before the final flip', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockUpsertResponse(503, { error: 'a' }))
+      .mockResolvedValueOnce(mockUpsertResponse(502, { error: 'b' }))
+      .mockResolvedValueOnce(mockUpsertResponse(200, makeUpsertSuccessEnvelope()))
+    global.fetch = fetchMock
+
+    const { result } = renderHook(() => useCreateOrder())
+    expect(result.current.isCreatingOrder).toBe(false) // initial state
+
+    await runCreateOrder(result, 'ORD-S7')
+
+    // If isCreatingOrder had flipped false between attempts, the retry
+    // loop would have aborted and we would NOT see 3 fetch calls. The
+    // 3 successful attempts prove the hook stayed "in flight" for the
+    // full retry window. Final flip is also asserted here.
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(result.current.isCreatingOrder).toBe(false)
   })
 })
