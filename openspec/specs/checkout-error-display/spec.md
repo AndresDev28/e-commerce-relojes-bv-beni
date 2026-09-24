@@ -85,3 +85,81 @@ The page-level error alert MUST render only friendly Spanish strings from `STRIP
 - WHEN the page-level error state updates
 - THEN the rendered alert MUST contain `DEFAULT_ERROR_MESSAGE`
 - AND neither the raw code value nor the raw English message MUST appear in the visible DOM
+
+#### Scenario: Outer defensive catch in useCreateOrder.createOrder does not leak error.message (S-MOD.8, F8)
+
+- GIVEN `useCreateOrder.createOrder` is invoked and `doCreateOrder` throws an `Error` whose `message` contains a non-user-facing substring (an internal path, a stack frame line, a URL, or a Stripe SDK error string)
+- WHEN the outer `try/catch` in `createOrder` runs
+- THEN `setOrderError` MUST be called with `checkoutOrderErrors(0, null, { paymentIntentId })` — the friendly fallback copy
+- AND the resulting `orderError` banner MUST NOT contain any substring of `error.message`
+- AND the resulting `orderError` MUST NOT contain any stack frame line, URL path, or Stripe API string
+- AND the resulting `orderError` MUST be byte-identical to the banner produced by the transport-fail branch for the same `paymentIntentId` — the catch is a true defensive net, not a divergent path
+
+### Requirement: Order Upsert Retry Contract (F8)
+
+The order-upsert flow inside `useCreateOrder.doCreateOrder` MUST retry the PUT against `/api/orders/by-order-id/:orderId` on transient outcomes only. The retry contract MUST hold:
+
+- Retry triggers MUST be limited to network throws (fetch rejects, abort errors) and HTTP 5xx responses (500, 502, 503, 504).
+- HTTP 4xx (including 400, 401, 403, 404) MUST NOT trigger a retry — those responses are terminal and the existing mapper handles them.
+- HTTP 409 MUST NOT trigger a retry (F4 invariant: a 409 reaching the browser is already post-convergence, see `checkoutOrderErrors` 409 branch).
+- The total number of attempts MUST be capped at 3 (one initial plus up to two retries).
+- The retry loop MUST re-send the same `wireBody` (same `userId`, `paymentIntentId`, `items`, `subtotal`, `shipping`, `paymentInfo`) and the same `orderId` path parameter on every attempt — D-lock invariant.
+- Each attempt MUST carry a fresh `X-Trace-Id` from `newTraceId()` — A-4 invariant.
+- `isCreatingOrder` MUST stay `true` across all retry attempts (no flicker) and MUST transition to `false` only on the final outcome (success or terminal failure).
+- `clearCart` and `onSuccess` MUST fire exactly once and only on the final 2xx; they MUST NOT fire on any non-final-success path (retry exhausted, 4xx, 409).
+- Backoff between attempts MUST be exponential with a base delay of at least 500 ms.
+
+#### Scenario: S-RET.1 — network throw triggers retry
+
+- GIVEN the PUT to `/api/orders/by-order-id/:orderId` rejects with a network error on attempt 1
+- WHEN the retry loop runs
+- THEN attempt 2 fires the same PUT with the same `orderId` and a fresh `X-Trace-Id`
+- AND on attempt 2 returning 2xx, `orderError` stays `null`
+- AND `clearCart` and `onSuccess` (when provided) fire exactly once after attempt 2
+
+#### Scenario: S-RET.2 — 5xx retries up to 3 attempts then succeeds
+
+- GIVEN the PUT returns HTTP 503 on attempt 1, HTTP 503 on attempt 2, and HTTP 200 on attempt 3
+- WHEN the retry loop completes
+- THEN `orderError` MUST be `null`
+- AND `clearCart` MUST have fired exactly once
+- AND `onSuccess` MUST have fired exactly once with the server orderId
+
+#### Scenario: S-RET.3 — 409 is terminal, never retried
+
+- GIVEN the PUT returns HTTP 409 on attempt 1
+- WHEN the retry loop checks the response
+- THEN no second attempt fires
+- AND `orderError` MUST equal the 409 copy from `checkoutOrderErrors` (the conflict copy for the matching `paymentIntentId`)
+- AND `clearCart` MUST NOT have fired
+
+#### Scenario: S-RET.4 — 4xx is terminal, never retried
+
+- GIVEN the PUT returns HTTP 400 on attempt 1
+- WHEN the retry loop checks the response
+- THEN no second attempt fires
+- AND `orderError` MUST equal the 400 copy from `checkoutOrderErrors`
+
+#### Scenario: S-RET.5 — exhausted retries surface the friendly fallback banner
+
+- GIVEN the PUT fails three times with HTTP 5xx (or three times with network errors, or a mix)
+- WHEN the retry loop exhausts
+- THEN `orderError` MUST equal the fallback copy returned by `checkoutOrderErrors(0, null, { paymentIntentId })`
+- AND `orderError` MUST NOT contain any raw status code, response body substring, or stack trace fragment
+- AND `isCreatingOrder` MUST be `false`
+- AND `clearCart` MUST NOT have fired
+
+#### Scenario: S-RET.6 — D-lock wire body preserved across retries
+
+- GIVEN the retry loop fires attempt 2 after attempt 1 fails with a transient outcome
+- WHEN attempt 2 sends its PUT
+- THEN the request body MUST equal the attempt-1 body byte-for-byte (same `userId`, same `paymentIntentId`, same `items`, same `subtotal`, same `shipping`, same `paymentInfo`)
+- AND the URL path MUST contain the same `orderId`
+- AND the `X-Trace-Id` header MUST differ from attempt 1 (fresh trace per attempt)
+
+#### Scenario: S-RET.7 — isCreatingOrder stays true across retries
+
+- GIVEN the PUT is in its retry window
+- WHEN any consumer reads `isCreatingOrder`
+- THEN the value MUST be `true` (no false-true transitions between attempts)
+- AND the value transitions to `false` exactly once, after the final outcome
