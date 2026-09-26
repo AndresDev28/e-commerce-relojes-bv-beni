@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.12.0...relojes-bv-beni-v1.12.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **orders:** map non-cancellable order statuses to friendly Spanish copy ([1f446bd](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/1f446bdc8535a3a2c8911f80b0d879048f9c9dfa))
+* **orders:** map non-cancellable order statuses to friendly Spanish copy ([21f70ed](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/21f70edb04d79e2b7c62c59748a52f7bf1d2d34b))
+
 ## [1.12.0](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.11.1...relojes-bv-beni-v1.12.0) (2026-09-24)
 
 
