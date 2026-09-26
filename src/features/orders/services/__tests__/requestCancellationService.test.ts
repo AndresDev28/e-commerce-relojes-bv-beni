@@ -459,7 +459,7 @@ describe('requestCancellationService', () => {
         expect(result.error.status).toBe(400)
         const body = await result.error.json()
         expect(body.error).toBe(
-          'No se puede cancelar un pedido en estado: shipped'
+          'Tu pedido ya fue enviado y no se puede cancelar.'
         )
         expect(result.error.headers.get('X-Trace-Id')).toBe('trace-xyz')
       }
@@ -484,7 +484,7 @@ describe('requestCancellationService', () => {
         expect(result.error.status).toBe(400)
         const body = await result.error.json()
         expect(body.error).toBe(
-          'No se puede cancelar un pedido en estado: cancellation_requested'
+          'Ya solicitaste la cancelación de este pedido; la estamos procesando.'
         )
         expect(result.error.headers.get('X-Trace-Id')).toBe('trace-xyz')
       }

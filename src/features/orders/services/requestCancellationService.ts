@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { API_URL } from '@/lib/constants'
 import type { AuthUser } from '@/lib/auth/validate-request'
+import { OrderStatus } from '@/types'
 import { normalizeStrapiOrder } from './normalizeStrapiOrder'
 
 interface OrderLookupResponse {
@@ -13,6 +14,20 @@ interface OrderLookupResponse {
 }
 
 export const CANCELLABLE_STATUSES = ['pending', 'paid', 'processing'] as const
+
+// Friendly Spanish copy per non-cancellable order status.
+// Keeps user-facing messages out of the raw enum value (which can be
+// anything the backend returns — see F4/F7 friendly-error-mapping for rationale).
+const NON_CANCELLABLE_STATUS_COPY: Record<string, string> = {
+  [OrderStatus.SHIPPED]:
+    'Tu pedido ya fue enviado y no se puede cancelar.',
+  [OrderStatus.DELIVERED]:
+    'Tu pedido ya fue entregado y no se puede cancelar.',
+  [OrderStatus.CANCELLED]: 'Este pedido ya fue cancelado.',
+  [OrderStatus.REFUNDED]: 'Este pedido ya fue reembolsado.',
+  [OrderStatus.CANCELLATION_REQUESTED]:
+    'Ya solicitaste la cancelación de este pedido; la estamos procesando.',
+}
 
 export async function requestCancellationService(params: {
   user: AuthUser
@@ -128,7 +143,9 @@ export async function requestCancellationService(params: {
       return {
         error: NextResponse.json(
           {
-            error: `No se puede cancelar un pedido en estado: ${orderData.orderStatus}`,
+            error:
+              NON_CANCELLABLE_STATUS_COPY[orderData.orderStatus as string] ??
+              'Este pedido no se puede cancelar en su estado actual.',
           },
           { status: 400, headers: { 'X-Trace-Id': traceId } }
         ),
