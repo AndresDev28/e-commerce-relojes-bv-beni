@@ -17,11 +17,11 @@ test.describe('Payment and API Errors Handling', () => {
         });
     });
 
-    // Hotfix (sprint-5-stripe-upsert): Test 2 below stays skipped — the
-    // unauthenticated-redirect path is a separate ticket (F9 candidate, obs
-    // #1808). Test 1 was re-enabled for F4 (friendly-error mapping) and now
-    // asserts the page-level <ErrorMessage> shows the friendly Spanish copy
-    // instead of the raw "Internal Server Error" text.
+    // Hotfix (sprint-5-stripe-upsert): Test 1 asserts the page-level
+    // <ErrorMessage> shows the friendly Spanish copy (F4 friendly-error
+    // mapping). Test 2 (below) asserts the new "Unauthenticated Visitor
+    // Redirect" requirement added by F9 to
+    // openspec/specs/checkout-error-display/spec.md (S-UNAUTH.1).
 
     test('Should show friendly Spanish copy when payment intent creation fails', async ({ page }) => {
         // Mock the payment-intent endpoint to return 500 with a raw English
@@ -65,7 +65,7 @@ test.describe('Payment and API Errors Handling', () => {
         expect(bodyText).not.toContain('Internal Server Error');
     });
 
-    test.skip('Should show error when authentication is missing in checkout', async ({ page }) => {
+    test('Should show error when authentication is missing in checkout', async ({ page }) => {
         // Drop the authenticated session mock so the real route runs and
         // returns { user: null } (no bv_session cookie is ever set here).
         await page.unroute('**/api/auth/session');
