@@ -163,3 +163,44 @@ The order-upsert flow inside `useCreateOrder.doCreateOrder` MUST retry the PUT a
 - WHEN any consumer reads `isCreatingOrder`
 - THEN the value MUST be `true` (no false-true transitions between attempts)
 - AND the value transitions to `false` exactly once, after the final outcome
+
+### Requirement: Unauthenticated Visitor Redirect
+
+When an unauthenticated visitor navigates to `/checkout`, the page MUST redirect them to `/login?redirect=<encoded current path>` before any checkout UI renders. The redirect contract MUST hold:
+
+- The redirect fires only after `useAuth().hydrateSession()` resolves (`!isLoading`) and after cart hydration (`isHydrated`).
+- The unauthenticated branch wins over the empty-cart branch when both conditions are true (`!user` is evaluated BEFORE `cartItems.length === 0` at `src/app/checkout/page.tsx:65-77`).
+- The redirect target preserves the originating path via `encodeURIComponent(pathname)` so the login form can return the visitor to `/checkout` after successful authentication.
+- When the visitor is authenticated but has no items in their cart, the existing empty-cart redirect to `/tienda` continues to apply (no regression).
+- When the visitor is authenticated with an order-creation PUT in-flight (F7 race guard), the empty-cart bounce MUST NOT fire — the `orderInFlightRef` keeps the CheckoutForm mounted until the PUT resolves.
+
+Test 2 of `tests/e2e/payment-errors.spec.ts` asserts this requirement end-to-end via the Playwright browser.
+
+#### Scenario: S-UNAUTH.1 — Direct navigation to /checkout as guest redirects to /login
+
+- GIVEN an unauthenticated visitor (no `bv_session` cookie; `/api/auth/session` returns `{ user: null }`) navigates directly to `/checkout`
+- WHEN `useAuth.hydrateSession()` resolves with `{user: null}` and `isHydrated` flips true
+- THEN the page MUST call `router.push('/login?redirect=' + encodeURIComponent(pathname))` BEFORE rendering any `<CheckoutForm>` or Stripe `<Elements>` UI
+- AND the visitor's final URL MUST match `/login?redirect=%2Fcheckout`
+
+#### Scenario: S-UNAUTH.2 — Guest with empty cart still bounces to /login (not /tienda)
+
+- GIVEN an unauthenticated visitor with no items in their cart
+- WHEN `useAuth.hydrateSession()` resolves
+- THEN the redirect MUST target `/login?redirect=...`, NOT `/tienda`
+- AND the `!user` branch MUST be evaluated BEFORE the empty-cart branch in the page's redirect effect
+
+#### Scenario: S-UNAUTH.3 — Authenticated visitor with empty cart bounces to /tienda
+
+- GIVEN an authenticated visitor with no items in their cart and no in-flight order
+- WHEN the page resolves
+- THEN the redirect MUST target `/tienda`, not `/login`
+- AND the page MUST NOT render CheckoutForm
+
+#### Scenario: S-UNAUTH.4 — In-flight order prevents empty-cart bounce during PUT
+
+- GIVEN an authenticated visitor with no items in their cart AND an order-creation PUT in-flight (`orderInFlightRef.current === true` per F7 race guard)
+- WHEN the page resolves
+- THEN the empty-cart redirect MUST NOT fire
+- AND the page MUST keep rendering `<CheckoutForm>` until the PUT resolves
+- AND the F7 race guard contract is preserved (F8's `useCreateOrder` retry semantics remain untouched)
