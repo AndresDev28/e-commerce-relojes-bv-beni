@@ -48,3 +48,5 @@ storybook-static
 # Local AI runtime state
 .atl/
 .codegraph/
+.gga
+.gentle-ai-default-agent.json
