@@ -95,6 +95,14 @@ The page-level error alert MUST render only friendly Spanish strings from `STRIP
 - AND the resulting `orderError` MUST NOT contain any stack frame line, URL path, or Stripe API string
 - AND the resulting `orderError` MUST be byte-identical to the banner produced by the transport-fail branch for the same `paymentIntentId` — the catch is a true defensive net, not a divergent path
 
+#### Scenario: Payment-intent friendly mapping extends the R4 scope (S-MOD.9, F4)
+
+- GIVEN the `paymentIntentErrors(status, body)` mapper at `src/features/checkout/utils/checkoutPaymentErrors.ts` covers HTTP 5xx, HTTP 4xx, network (status 0), and parse failures from `api/create-payment-intent`
+- WHEN `CheckoutForm.tsx` submits a payment and the fetch fails (HTTP 4xx/5xx, network throw, parse throw)
+- THEN `CheckoutForm` MUST route the error through `paymentIntentErrors` and pass the resulting friendly Spanish copy to `onError(localizedMessage)` — never the raw backend `body.error`, `body.message`, or nested `body.error.message`
+- AND this scenario is ADDITIVE to the existing R4 scenarios (including S-MOD.8) — the Stripe SDK friendly-mapping contract remains unchanged
+- AND cross-references the F4 delta spec archived at `openspec/changes/archive/2026-09-21-follow-ups-sprint-5-stripe-upsert-f4-friendly-error-mapping/specs/checkout-error-display/spec.md` for the full F4 scope-extension text
+
 ### Requirement: Order Upsert Retry Contract (F8)
 
 The order-upsert flow inside `useCreateOrder.doCreateOrder` MUST retry the PUT against `/api/orders/by-order-id/:orderId` on transient outcomes only. The retry contract MUST hold:
@@ -204,3 +212,94 @@ Test 2 of `tests/e2e/payment-errors.spec.ts` asserts this requirement end-to-end
 - THEN the empty-cart redirect MUST NOT fire
 - AND the page MUST keep rendering `<CheckoutForm>` until the PUT resolves
 - AND the F7 race guard contract is preserved (F8's `useCreateOrder` retry semantics remain untouched)
+
+### Requirement: Payment-Intent Friendly Error Mapping
+
+A pure function `paymentIntentErrors(status: number, body: unknown): string` MUST exist in `src/features/checkout/utils/checkoutPaymentErrors.ts` that maps every `api/create-payment-intent` failure mode to friendly Spanish copy. The function MUST NOT return any raw backend string from `body.error`, `body.message`, or nested `body.error.message`.
+
+Branch precedence is **status-first** (5xx wins over 4xx wins over 0/network):
+
+- **HTTP 5xx (500, 502, 503, 504)**: MUST return `STRIPE_ERROR_MESSAGES.api_error`.
+- **HTTP 4xx**: MUST return fixed Spanish copy keyed to the status code:
+  - 400 → validation copy ("No pudimos procesar tu método de pago. Verificá los datos e intentá nuevamente.")
+  - 401 → session copy
+  - 403 → permission copy
+  - 429 → rate-limit copy
+  - other 4xx → generic validation fallback
+- **HTTP status 0 / undefined / NaN** (network failure, fetch throw, abort): MUST return `STRIPE_ERROR_MESSAGES.network_error`.
+- **Unparseable body** (when `response.json()` throws): the caller passes `undefined`; the mapper returns the appropriate Spanish fallback for the status.
+
+#### Scenario: 500 Internal Server Error surfaces as Spanish copy
+
+- GIVEN the `api/create-payment-intent` route returns HTTP 500 with body `{ error: 'Internal Server Error' }`
+- WHEN `paymentIntentErrors(500, body)` is called
+- THEN the return value equals `STRIPE_ERROR_MESSAGES.api_error` exactly
+- AND the return value does NOT contain the substring `'Internal Server Error'`.
+
+#### Scenario: 400 surfaces as Spanish validation fallback
+
+- GIVEN body `{ error: 'malformed request' }`
+- WHEN `paymentIntentErrors(400, body)` is called
+- THEN the return value is a Spanish validation fallback.
+- AND the return value does NOT contain `'malformed request'`.
+
+#### Scenario: Network failure surfaces as Spanish network copy
+
+- GIVEN `status = 0` (fetch threw)
+- WHEN `paymentIntentErrors(0, undefined)` is called
+- THEN the return value equals `STRIPE_ERROR_MESSAGES.network_error`.
+
+#### Scenario: Parse failure handled by caller
+
+- GIVEN `response.json()` throws (network mid-response, truncated body, etc.)
+- WHEN the caller catches and calls `paymentIntentErrors(response.status ?? 0, undefined)`
+- THEN the return value is a Spanish fallback appropriate for the status.
+
+### Requirement: CheckoutForm Integration
+
+`CheckoutForm.tsx` MUST call `paymentIntentErrors` after every `api/create-payment-intent` fetch failure (HTTP 4xx/5xx, network throw, parse throw) before invoking `onError`. The `response.json()` call MUST be wrapped (`.catch(() => undefined)`) so parse failure routes through the mapper, not a raw throw.
+
+The `onError` callback signature `(localizedMessage: string) => void` MUST remain unchanged — the change is in WHAT is passed (always localized), not in HOW.
+
+#### Scenario: 500 propagates Spanish through onError
+
+- GIVEN `CheckoutForm` submits payment
+- WHEN `api/create-payment-intent` returns 500 with `{ error: 'Internal Server Error' }`
+- THEN `<ErrorMessage>` (in the page that owns the alert) renders the `STRIPE_ERROR_MESSAGES.api_error` Spanish copy
+- AND the literal text `'Internal Server Error'` does NOT appear in the DOM.
+
+#### Scenario: Network throw propagates Spanish network copy
+
+- GIVEN `CheckoutForm` submits payment
+- WHEN the fetch throws (network failure)
+- THEN `<ErrorMessage>` renders `STRIPE_ERROR_MESSAGES.network_error`.
+
+### Requirement: Public API Exposure
+
+`paymentIntentErrors` MUST be exported from `src/features/checkout/index.ts` for parity with `checkoutOrderErrors`.
+
+#### Scenario: Module resolution succeeds
+
+- GIVEN any consumer
+- WHEN `import { paymentIntentErrors } from '@/features/checkout'` is executed
+- THEN the import resolves without error.
+
+### Requirement: Unit Coverage and No-Leak Guarantee
+
+Unit tests MUST cover all four branches (5xx, 4xx, network, parse) AND a defensive case proving that the raw text `'Internal Server Error'` from any input body shape (flat `error`, top-level `message`, nested `error.message`) NEVER appears in the mapper output.
+
+#### Scenario: Defensive no-leak under saturated body
+
+- GIVEN input body `{ error: 'Internal Server Error', message: 'Internal Server Error', error: { message: 'Internal Server Error' } }`
+- WHEN `paymentIntentErrors(500, body)` is called
+- THEN the return value does NOT contain the substring `'Internal Server Error'`.
+
+### Requirement: Existing UPSERT Mapping Isolation
+
+The `checkoutOrderErrors` mapper for the order UPSERT flow MUST remain untouched. This change is additive to the checkout error display contract.
+
+#### Scenario: Existing checkoutOrderErrors tests untouched
+
+- GIVEN the existing `checkoutOrderErrors` unit tests
+- WHEN this change lands
+- THEN all existing tests pass without modification.
