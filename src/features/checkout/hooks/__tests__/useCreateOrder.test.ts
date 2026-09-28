@@ -216,10 +216,9 @@ describe('useCreateOrder — UPSERT rewire (S3.1–S3.6)', () => {
     expect(result.current.isCreatingOrder).toBe(false)
   })
 
-  it('S3.2 — 200 clears the cart and invokes onSuccess with the server orderId', async () => {
-    const onSuccess = vi.fn()
+  it('S3.2 — 200 clears the cart and navigates to /order-confirmation', async () => {
     const clearCart = vi.fn()
-    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    const { result } = renderHook(() => useCreateOrder({ clearCart }))
 
     await act(async () => {
       await result.current.createOrder(
@@ -230,13 +229,14 @@ describe('useCreateOrder — UPSERT rewire (S3.1–S3.6)', () => {
     })
 
     expect(clearCart).toHaveBeenCalledTimes(1)
-    expect(onSuccess).toHaveBeenCalledTimes(1)
-    expect(onSuccess).toHaveBeenCalledWith('ORD-SERVER-5')
+    expect(mockPush).toHaveBeenCalledWith(
+      '/order-confirmation?orderId=ORD-SERVER-5'
+    )
     expect(result.current.orderError).toBeNull()
     expect(result.current.isCreatingOrder).toBe(false)
   })
 
-  it('S3.2 — 200 without onSuccess navigates to the order-confirmation page', async () => {
+  it('S3.2 — 200 with no options still navigates to /order-confirmation', async () => {
     const { result } = renderHook(() => useCreateOrder())
 
     await act(async () => {
@@ -256,9 +256,8 @@ describe('useCreateOrder — UPSERT rewire (S3.1–S3.6)', () => {
     global.fetch = vi
       .fn()
       .mockResolvedValue(mockUpsertResponse(400, UPSERT_ERROR_400_ITEMS))
-    const onSuccess = vi.fn()
     const clearCart = vi.fn()
-    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    const { result } = renderHook(() => useCreateOrder({ clearCart }))
 
     await act(async () => {
       await result.current.createOrder(
@@ -275,7 +274,7 @@ describe('useCreateOrder — UPSERT rewire (S3.1–S3.6)', () => {
     expect(result.current.orderError).not.toContain('BadRequestError')
     // Failed persistence must not clear the cart or fire navigation.
     expect(clearCart).not.toHaveBeenCalled()
-    expect(onSuccess).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
   })
 
   it('S3.4 — 403 maps verbatim to the ownership copy without echoing identifiers', async () => {
@@ -389,8 +388,7 @@ describe('useCreateOrder — UPSERT rewire (S3.1–S3.6)', () => {
 
   it('S3.6 — fetch rejection (network down) maps to the support copy without throwing', async () => {
     global.fetch = vi.fn().mockRejectedValue(new TypeError('NetworkError'))
-    const onSuccess = vi.fn()
-    const { result } = renderHook(() => useCreateOrder({ onSuccess }))
+    const { result } = renderHook(() => useCreateOrder())
 
     await act(async () => {
       await result.current.createOrder(
@@ -400,7 +398,7 @@ describe('useCreateOrder — UPSERT rewire (S3.1–S3.6)', () => {
       )
     })
 
-    expect(onSuccess).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
     expect(result.current.orderError).toContain(
       'contacta con soporte indicando tu ID de pago: pi_test_123'
     )
@@ -611,8 +609,7 @@ describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () =
   }
 
   // S-RET.1
-  it('network throw on attempt 1 retries; success on attempt 2 keeps orderError null and fires clearCart + onSuccess exactly once', async () => {
-    const onSuccess = vi.fn()
+  it('network throw on attempt 1 retries; success on attempt 2 keeps orderError null and fires clearCart + navigates exactly once', async () => {
     const clearCart = vi.fn()
     const fetchMock = vi
       .fn()
@@ -620,19 +617,19 @@ describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () =
       .mockResolvedValueOnce(mockUpsertResponse(200, makeUpsertSuccessEnvelope()))
     global.fetch = fetchMock
 
-    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    const { result } = renderHook(() => useCreateOrder({ clearCart }))
     await runCreateOrder(result)
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(result.current.orderError).toBeNull()
     expect(clearCart).toHaveBeenCalledTimes(1)
-    expect(onSuccess).toHaveBeenCalledTimes(1)
-    expect(onSuccess).toHaveBeenCalledWith('ORD-RETRY')
+    expect(mockPush).toHaveBeenCalledWith(
+      '/order-confirmation?orderId=ORD-RETRY'
+    )
   })
 
   // S-RET.2
-  it('5xx on attempts 1 and 2 retries; success on attempt 3 fires success hooks exactly once', async () => {
-    const onSuccess = vi.fn()
+  it('5xx on attempts 1 and 2 retries; success on attempt 3 navigates exactly once', async () => {
     const clearCart = vi.fn()
     const fetchMock = vi
       .fn()
@@ -641,32 +638,31 @@ describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () =
       .mockResolvedValueOnce(mockUpsertResponse(200, makeUpsertSuccessEnvelope()))
     global.fetch = fetchMock
 
-    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    const { result } = renderHook(() => useCreateOrder({ clearCart }))
     await runCreateOrder(result)
 
     expect(fetchMock).toHaveBeenCalledTimes(3)
     expect(result.current.orderError).toBeNull()
     expect(clearCart).toHaveBeenCalledTimes(1)
-    expect(onSuccess).toHaveBeenCalledTimes(1)
+    expect(mockPush).toHaveBeenCalledTimes(1)
   })
 
   // S-RET.3
   it('409 on attempt 1 is terminal — no second attempt fires; orderError equals the conflict copy', async () => {
-    const onSuccess = vi.fn()
     const clearCart = vi.fn()
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(mockUpsertResponse(409, UPSERT_ERROR_409_GENERIC))
     global.fetch = fetchMock
 
-    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    const { result } = renderHook(() => useCreateOrder({ clearCart }))
     await runCreateOrder(result)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(result.current.orderError).toContain('revisa Mis Pedidos')
     expect(result.current.orderError).toContain('pi_test_123')
     expect(clearCart).not.toHaveBeenCalled()
-    expect(onSuccess).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
   })
 
   // S-RET.4
@@ -687,8 +683,7 @@ describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () =
   })
 
   // S-RET.5
-  it('3 transient failures in a row surface the friendly fallback banner; clearCart + onSuccess do NOT fire', async () => {
-    const onSuccess = vi.fn()
+  it('3 transient failures in a row surface the friendly fallback banner; clearCart + navigation do NOT fire', async () => {
     const clearCart = vi.fn()
     const fetchMock = vi
       .fn()
@@ -697,7 +692,7 @@ describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () =
       .mockRejectedValueOnce(new Error('proxy down 3'))
     global.fetch = fetchMock
 
-    const { result } = renderHook(() => useCreateOrder({ onSuccess, clearCart }))
+    const { result } = renderHook(() => useCreateOrder({ clearCart }))
     await runCreateOrder(result)
 
     expect(fetchMock).toHaveBeenCalledTimes(3)
@@ -708,7 +703,7 @@ describe('useCreateOrder — inline retry with backoff (S-RET.1..S-RET.7)', () =
       expect(result.current.orderError).not.toContain(probe)
     }
     expect(clearCart).not.toHaveBeenCalled()
-    expect(onSuccess).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
     expect(result.current.isCreatingOrder).toBe(false)
   })
 
