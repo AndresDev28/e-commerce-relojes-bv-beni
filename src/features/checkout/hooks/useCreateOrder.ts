@@ -29,7 +29,6 @@ function sleep(ms: number): Promise<void> {
 }
 
 interface UseCreateOrderOptions {
-  onSuccess?: (orderId: string) => void
   clearCart?: () => void
 }
 
@@ -49,7 +48,7 @@ export function useCreateOrder(
 ): UseCreateOrderResult {
   const router = useRouter()
   const { user } = useAuth()
-  const { onSuccess, clearCart } = options
+  const { clearCart } = options
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [orderError, setOrderError] = useState<string | null>(null)
 
@@ -172,11 +171,7 @@ export function useCreateOrder(
 
     if (clearCart) clearCart()
 
-    if (onSuccess) {
-      onSuccess(orderId)
-    } else {
-      router.push(`/order-confirmation?orderId=${orderId}`)
-    }
+    router.push(`/order-confirmation?orderId=${orderId}`)
   }
 
   const createOrder = async (
