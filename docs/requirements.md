@@ -39,7 +39,7 @@ Scenario: Pago exitoso con tarjeta válida
   And hace click en "Pagar ahora"
   Then el pago se procesa correctamente
   And se muestra un mensaje de confirmación "¡Pago exitoso!"
-  And se redirige a la página de confirmación "/checkout/success"
+  And se redirige a la página de confirmación "/order-confirmation?orderId=<server-order-id>"
   And el carrito se vacía automáticamente
   And recibe un email con el resumen del pedido
 
@@ -64,11 +64,11 @@ Scenario: Validación en tiempo real de datos de tarjeta
 
 ### Tareas técnicas
 
-- [ ] [PAY-01] Instalar y configurar Stripe SDK
-- [ ] [PAY-02] Crear componente CheckoutForm con Stripe Elements
-- [ ] [PAY-03] Implementar página /checkout con diseño responsive
-- [ ] [PAY-04] Configurar variables de entorno para Stripe (test/prod)
-- [ ] [PAY-05] Tests: Formulario de pago renderiza correctamente
+- [x] [PAY-01] Instalar y configurar Stripe SDK
+- [x] [PAY-02] Crear componente CheckoutForm con Stripe Elements
+- [x] [PAY-03] Implementar página /checkout con diseño responsive
+- [x] [PAY-04] Configurar variables de entorno para Stripe (test/prod)
+- [x] [PAY-05] Tests: Formulario de pago renderiza correctamente
 
 **Prioridad:** Alta  
 **Estimación:** 5-8 horas
@@ -114,11 +114,11 @@ Scenario: CVC incorrecto
 
 ### Tareas técnicas
 
-- [ ] [PAY-06] Implementar manejo de errores de Stripe
-- [ ] [PAY-07] Crear componente ErrorMessage reutilizable
-- [ ] [PAY-08] Implementar retry logic para timeouts
-- [ ] [PAY-09] Tests: Errores se muestran correctamente
-- [ ] [PAY-10] Tests: Retry funciona después de error
+- [x] [PAY-06] Implementar manejo de errores de Stripe
+- [x] [PAY-07] Crear componente ErrorMessage reutilizable
+- [x] [PAY-08] Implementar retry logic para timeouts
+- [x] [PAY-09] Tests: Errores se muestran correctamente
+- [x] [PAY-10] Tests: Retry funciona después de error
 
 **Prioridad:** Alta  
 **Estimación:** 3-4 horas
@@ -165,11 +165,11 @@ Scenario: Cambio de cantidad durante checkout
 
 ### Tareas técnicas
 
-- [ ] [PAY-11] Crear componente OrderSummary
-- [ ] [PAY-12] Integrar OrderSummary en CheckoutPage
-- [ ] [PAY-13] Implementar cálculo de totales
-- [ ] [PAY-14] Tests: OrderSummary renderiza correctamente
-- [ ] [PAY-15] Tests: Totales se calculan correctamente
+- [x] [PAY-11] Crear componente OrderSummary
+- [x] [PAY-12] Integrar OrderSummary en CheckoutPage
+- [x] [PAY-13] Implementar cálculo de totales
+- [x] [PAY-14] Tests: OrderSummary renderiza correctamente
+- [x] [PAY-15] Tests: Totales se calculan correctamente
 
 **Prioridad:** Media  
 **Estimación:** 2-3 horas
@@ -189,7 +189,7 @@ Feature: Confirmación de pago exitoso
 
 Scenario: Mostrar página de éxito después del pago
   Given el pago se procesó correctamente
-  When el usuario es redirigido a "/checkout/success"
+  When el usuario es redirigido a "/order-confirmation?orderId=<server-order-id>"
   Then se muestra un mensaje "¡Gracias por tu compra!"
   And se muestra el número de pedido "#PED-12345"
   And se muestra el resumen de lo comprado
@@ -206,7 +206,7 @@ Scenario: Email de confirmación enviado
     | Fecha estimada    | Entrega aproximada              |
 
 Scenario: No se puede volver a pagar pedido ya procesado
-  Given el usuario está en "/checkout/success"
+  Given el usuario está en "/order-confirmation?orderId=<server-order-id>"
   When intenta volver a "/checkout"
   Then se redirige a la tienda
   And el carrito está vacío
@@ -215,11 +215,11 @@ Scenario: No se puede volver a pagar pedido ya procesado
 
 ### Tareas técnicas
 
-- [ ] [PAY-16] Crear página /checkout/success
-- [ ] [PAY-17] Implementar generación de número de pedido
-- [ ] [PAY-18] Crear orden en Strapi después de pago exitoso
-- [ ] [PAY-19] Tests: Página de éxito renderiza correctamente
-- [ ] [PAY-20] Tests: Orden se guarda en backend
+- [x] [PAY-16] Crear página /order-confirmation?orderId=<server-order-id>
+- [x] [PAY-17] Implementar generación de número de pedido
+- [x] [PAY-18] Crear orden en Strapi después de pago exitoso
+- [x] [PAY-19] Tests: Página de éxito renderiza correctamente
+- [x] [PAY-20] Tests: Orden se guarda en backend
 
 **Prioridad:** Media  
 **Estimación:** 3-4 horas
@@ -259,11 +259,11 @@ Scenario: HTTPS obligatorio en producción
 
 ### Tareas técnicas
 
-- [ ] [PAY-21] Verificar que Stripe Elements maneja tokenización
-- [ ] [PAY-22] Configurar variables de entorno por ambiente
-- [ ] [PAY-23] Implementar validación de HTTPS en producción
-- [ ] [PAY-24] Documentar proceso de deployment seguro
-- [ ] [PAY-25] Tests: Verificar que no se exponen datos sensibles
+- [x] [PAY-21] Verificar que Stripe Elements maneja tokenización
+- [x] [PAY-22] Configurar variables de entorno por ambiente
+- [x] [PAY-23] Implementar validación de HTTPS en producción
+- [x] [PAY-24] Documentar proceso de deployment seguro
+- [x] [PAY-25] Tests: Verificar que no se exponen datos sensibles
 
 **Prioridad:** Alta (seguridad)  
 **Estimación:** 2-3 horas
@@ -285,7 +285,7 @@ Scenario: HTTPS obligatorio en producción
 8. Stripe procesa el pago
 9. Backend recibe confirmación
 10. Crear orden en Strapi
-11. Redirect a /checkout/success
+11. Redirect a /order-confirmation?orderId=<server-order-id>
 12. Enviar email de confirmación
 13. Limpiar carrito
 ```
@@ -1172,6 +1172,7 @@ Para asegurar la estabilidad del MVP antes del lanzamiento, se requiere una suit
   **Prioridad:** Media
   **Severidad:** Baja (no bloquea UX)
   **Sprint:** Post-MVP
+  **Estado:** ✅ RESUELTO (2026-09-28, cierre del Sprint 5)
 
   ### Contexto
 
@@ -1186,6 +1187,18 @@ Para asegurar la estabilidad del MVP antes del lanzamiento, se requiere una suit
   | Tests Passed | 580 |
   | Tests Skipped | 11 |
   | **Tasa de Éxito** | **88.82%** |
+
+### Estado Resuelto (2026-09-28, cierre Sprint 5)
+
+| Métrica | Valor |
+|---------|-------|
+| Test Files Failed | 1 (S1 flake pre-existente, `test/integration/image-allowlist.test.ts > C3.S1`, pasa 3/3 aislado) |
+| Tests Failed | 1 |
+| Tests Passed | **1157** |
+| Tests Skipped | 0 |
+| **Tasa de Éxito** | **99.91%** (100% excluyendo el flake S1 documentado en F7 verify-report S1) |
+
+Comando de verificación: `npx vitest run --maxWorkers=2` (cumple AGENT.md cap de hardware). El flake S1 (cloudinary DNS rejection intermitente) está documentado en el F7 verify-report S1 — file unchanged vs `origin/main`, no es regresión de código.
 
   ### Impacto
 
