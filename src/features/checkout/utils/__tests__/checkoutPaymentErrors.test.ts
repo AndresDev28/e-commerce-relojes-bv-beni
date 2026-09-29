@@ -68,7 +68,7 @@ describe('paymentIntentErrors — 4xx branch (S1.2)', () => {
     const message = paymentIntentErrors(401, { error: 'unauthorized' })
 
     expect(message).toContain('sesión')
-    expect(message).toContain('Iniciá sesión')
+    expect(message).toContain('Inicia sesión')
     expect(message).not.toContain('unauthorized')
   })
 
@@ -87,8 +87,30 @@ describe('paymentIntentErrors — 4xx branch (S1.2)', () => {
     const message = paymentIntentErrors(429, { error: 'too many requests' })
 
     expect(message).toContain('Demasiadas peticiones')
-    expect(message).toContain('Esperá')
+    expect(message).toContain('Espera')
     expect(message).not.toContain('too many requests')
+  })
+
+  it('uses tuteo register across every 4xx copy (W2 — market is Spain)', async () => {
+    const { paymentIntentErrors } = await import('../checkoutPaymentErrors')
+
+    // The rest of the error surface (errorMessages.ts, mapApiError,
+    // checkoutOrderErrors) is tuteo. A user can hit two registers on the
+    // SAME alert surface if this mapper keeps voseo forms. Pin the register.
+    const voseoMarkers = [
+      'Verificá',
+      'intentá',
+      'Intentá',
+      'Iniciá',
+      'Esperá',
+      'tenés',
+    ]
+    for (const status of [400, 401, 403, 429, 418]) {
+      const message = paymentIntentErrors(status, { error: 'x' })
+      for (const marker of voseoMarkers) {
+        expect(message).not.toContain(marker)
+      }
+    }
   })
 
   it('returns the generic 4xx Spanish fallback for other 4xx codes', async () => {
