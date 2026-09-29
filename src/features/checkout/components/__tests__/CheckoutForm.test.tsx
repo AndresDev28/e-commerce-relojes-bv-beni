@@ -550,4 +550,32 @@ describe('Payment-intent friendly error mapping - F4', () => {
     expect(message).toContain('No pudimos procesar tu método de pago')
     expect(message).not.toContain('malformed request')
   })
+
+  it('routes a 200 with unparseable body through the friendly mapper (W1)', async () => {
+    const onError = vi.fn()
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new SyntaxError('Unexpected end of JSON input')
+      },
+    })
+
+    render(
+      <CheckoutForm amount={100} cartItems={mockCartItems} onError={onError} />
+    )
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalled()
+    }, { timeout: 3000 })
+
+    const message = onError.mock.calls[0][0] as string
+    // Characterization test: a 2xx parse failure must surface the same
+    // friendly network_error copy — never the raw SyntaxError text. Pins
+    // the observable contract across the W1 letter fix (spec R2: the
+    // response.json() call is wrapped so parse failure routes through the
+    // mapper, not a raw throw).
+    expect(message).toBe(STRIPE_ERROR_MESSAGES.network_error)
+    expect(message).not.toContain('Unexpected end of JSON')
+  })
 })

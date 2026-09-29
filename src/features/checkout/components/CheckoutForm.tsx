@@ -91,7 +91,16 @@ export default function CheckoutForm({
           onError?.(friendly)
           return
         }
-        const data = await response.json()
+        // W1 (spec R2 letter): wrap the success-path parse too, so a
+        // truncated or non-JSON 2xx body routes through the mapper with the
+        // real status instead of throwing into the outer catch. Behavior is
+        // unchanged (both paths yield the network_error copy); the wrap makes
+        // the code match the spec's "response.json() MUST be wrapped" clause.
+        const data = await response.json().catch(() => undefined)
+        if (data === undefined) {
+          onError?.(paymentIntentErrors(response.status ?? 0, undefined))
+          return
+        }
         setClientSecret(data.clientSecret)
         if (typeof data.orderId === 'string') {
           setServerOrderId(data.orderId)
