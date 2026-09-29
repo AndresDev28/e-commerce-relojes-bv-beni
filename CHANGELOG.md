@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.2](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.12.1...relojes-bv-beni-v1.12.2) (2026-09-29)
+
+
+### Bug Fixes
+
+* **checkout:** align payment-intent error copy to tuteo register (W2) ([bf6343a](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/bf6343a405970bdbadf153ae49926cf6118af7f7))
+* **checkout:** tuteo register + wrap 2xx json() parse (W1+W2 carry-forwards) ([32a9d50](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/commit/32a9d50c312408ca935ce531d8664f78cb51895b))
+
 ## [1.12.1](https://github.com/AndresDev28/e-commerce-relojes-bv-beni/compare/relojes-bv-beni-v1.12.0...relojes-bv-beni-v1.12.1) (2026-09-26)
 
 
