@@ -221,7 +221,7 @@ Branch precedence is **status-first** (5xx wins over 4xx wins over 0/network):
 
 - **HTTP 5xx (500, 502, 503, 504)**: MUST return `STRIPE_ERROR_MESSAGES.api_error`.
 - **HTTP 4xx**: MUST return fixed Spanish copy keyed to the status code:
-  - 400 → validation copy ("No pudimos procesar tu método de pago. Verificá los datos e intentá nuevamente.")
+  - 400 → validation copy ("No pudimos procesar tu método de pago. Verifica los datos e intenta nuevamente.")
   - 401 → session copy
   - 403 → permission copy
   - 429 → rate-limit copy

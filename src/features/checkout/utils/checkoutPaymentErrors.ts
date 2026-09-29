@@ -19,15 +19,18 @@
 
 import { STRIPE_ERROR_MESSAGES } from '@/lib/stripe/errorMessages'
 
+// Register: tuteo (Spain market). The rest of the error surface
+// (errorMessages.ts, mapApiError, checkoutOrderErrors) is tuteo — mixing
+// voseo here would show two registers on the same alert surface (W2).
 const COPY = {
   validation400:
-    'No pudimos procesar tu método de pago. Verificá los datos e intentá nuevamente.',
-  session401: 'Tu sesión expiró. Iniciá sesión de nuevo.',
-  permission403: 'No tenés permiso para realizar esta acción.',
+    'No pudimos procesar tu método de pago. Verifica los datos e intenta nuevamente.',
+  session401: 'Tu sesión expiró. Inicia sesión de nuevo.',
+  permission403: 'No tienes permiso para realizar esta acción.',
   rateLimit429:
-    'Demasiadas peticiones. Esperá un momento e intentá nuevamente.',
+    'Demasiadas peticiones. Espera un momento e intenta nuevamente.',
   generic4xx:
-    'No pudimos procesar tu método de pago. Intentá nuevamente.',
+    'No pudimos procesar tu método de pago. Intenta nuevamente.',
 } as const
 
 /**
